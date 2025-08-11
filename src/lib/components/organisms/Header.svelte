@@ -11,8 +11,18 @@
 		<a class="logo" href="/" aria-label="Site logo">
 			<Logo />
 		</a>
+
+		<div class="links">
+			<a href="/contact">Contacto</a>
+		</div>
+
+		<div class="links">
+			<a href="/about">Nosotros</a>
+		</div>
+
 		<div class="links">
 			<a href="/blog">Blog</a>
+
 			<RssLink />
 			<ThemeToggle />
 		</div>
