@@ -1,0 +1,89 @@
+// Estilos específicos para el mapa de Leaflet
+
+// Personalización de los controles de zoom
+.leaflet-control-zoom {
+  border-radius: 10px !important;
+  overflow: hidden;
+  box-shadow: var(--card-shadow) !important;
+  
+  a {
+    background-color: var(--color--card-background) !important;
+    color: var(--color--text) !important;
+    
+    &:hover {
+      background-color: rgb(var(--color--primary-tint-rgb)) !important;
+      color: rgb(var(--color--primary-rgb)) !important;
+    }
+  }
+}
+
+// Personalización de los popups
+.leaflet-popup-content-wrapper {
+  border-radius: 10px !important;
+  background-color: var(--color--card-background) !important;
+  color: var(--color--text) !important;
+  box-shadow: var(--card-shadow) !important;
+}
+
+.leaflet-popup-tip {
+  background-color: var(--color--card-background) !important;
+}
+
+// Personalización para los marcadores
+.custom-marker-icon {
+  border-radius: 50%;
+  border: 2px solid white;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+  
+  &.restaurant {
+    background-color: #FF5733;
+  }
+  
+  &.hotel {
+    background-color: #33A1FF;
+  }
+  
+  &.store {
+    background-color: #33FF57;
+  }
+  
+  &.attraction {
+    background-color: #F033FF;
+  }
+}
+
+// Personalización para las atribuciones
+.leaflet-control-attribution {
+  background-color: rgba(var(--color--card-background-rgb), 0.7) !important;
+  color: var(--color--text-shade) !important;
+  font-size: 0.7rem !important;
+}
+
+// Personalización del contenido del popup
+.map-popup-content {
+  padding: 5px;
+  text-align: center;
+  
+  h3 {
+    margin: 0 0 5px 0;
+    font-size: 1.1rem;
+    color: rgb(var(--color--primary-rgb));
+  }
+  
+  p {
+    margin: 5px 0;
+    font-size: 0.9rem;
+    color: var(--color--text-shade);
+  }
+}
+
+// Animación para marcadores al cargar
+@keyframes marker-bounce {
+  0% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0); }
+}
+
+.animated-marker {
+  animation: marker-bounce 0.5s ease-in-out;
+}

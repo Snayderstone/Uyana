@@ -8,9 +8,13 @@
 
 <header class:has-background={showBackground}>
 	<nav class="container">
-		<a class="logo" href="/" aria-label="Site logo">
+		<a class="logo" href="/" aria-label="Uyana - Página principal">
 			<Logo />
 		</a>
+
+		<div class="links">
+			<a href="/map">Mapa</a>
+		</div>
 
 		<div class="links">
 			<a href="/contact">Contacto</a>
@@ -59,12 +63,18 @@
 						display: none;
 					}
 				}
+
+				.logo {
+					flex: 0;
+				}
 			}
 		}
 
 		.logo {
 			height: 44px;
 			flex: 1;
+			display: flex;
+			align-items: center;
 		}
 
 		a {
