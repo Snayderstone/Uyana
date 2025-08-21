@@ -5,6 +5,8 @@
 	import MapLegend from '$lib/components/molecules/MapLegend.svelte';
 	import { onMount } from 'svelte';
 	import type { Map, LatLngTuple, Marker } from 'leaflet';
+	/* CÓDIGO ROCKET */
+	import RocketMapOverlay from '$lib/components/molecules/RocketMapOverlay.svelte';
 
 	// Props para el mapa
 	export let center: LatLngTuple = [40.416775, -3.70379]; // Madrid por defecto
@@ -17,6 +19,7 @@
 	// Referencias
 	let map: Map;
 	let mapComponent: LeafletMapComponent;
+	let rocket: any; // referencia a la overlay para llamar launch/land/toggle
 
 	// Datos de ejemplo para marcadores
 	const sampleMarkers = [
@@ -84,16 +87,50 @@
 	onMount(() => {
 		handleMapReady();
 	});
+	// --- nos llega el map real desde el hijo
+	function onMapReady(e: CustomEvent<{ map: Map }>) {
+		map = e.detail.map;
+		// cargar marcadores cuando el mapa ya está OK
+		setTimeout(addSampleMarkers, 300);
+	}
 </script>
 
 <div class="map-container">
 	<div class="map-header">
 		<MapFilters {categories} bind:selectedCategory />
 		<MapSearch on:search={handleSearch} />
+		<!-- Controles del cohete -->
+		<div class="rocket-controls">
+			<button on:click={() => rocket?.toggle()}>Despegar / Aterrizar</button>
+			<button on:click={() => rocket?.launch()}>Despegar</button>
+			<button on:click={() => rocket?.land()}>Aterrizar</button>
+		</div>
 	</div>
 
 	<div class="map-body">
-		<LeafletMapComponent bind:this={mapComponent} id="main-map" {center} {zoom} />
+		<LeafletMapComponent
+			bind:this={mapComponent}
+			id="main-map"
+			{center}
+			{zoom}
+			on:ready={onMapReady}
+		/>
+
+		<!-- CÓDIGO NUEVO: Overlay del cohete -->
+		<RocketMapOverlay
+			bind:this={rocket}
+			{center}
+			{map}
+			nearZoom={zoom}
+			farZoom={4}
+			duration={2}
+			borderRadius="var(--map-radius, 10px)"
+			lengthRatio={0.44}
+			holeRatio={0.33}
+			holeFeather={10}
+			blur={6}
+			intensity={1}
+		/>
 
 		<div class="map-legend-container">
 			<MapLegend />
@@ -139,6 +176,7 @@
 		overflow: hidden;
 		box-shadow: var(--card-shadow);
 		min-height: 500px;
+		--map-radius: 10px;
 	}
 
 	.map-legend-container {
@@ -151,5 +189,18 @@
 			bottom: 10px;
 			right: 10px;
 		}
+	}
+	/* CÓDIGO para el ROCKET */
+	.rocket-controls {
+		display: flex;
+		gap: 0.5rem;
+		align-items: center;
+	}
+	.rocket-controls button {
+		padding: 0.45rem 0.75rem;
+		border-radius: 0.6rem;
+		border: 1px solid color-mix(in srgb, var(--color--text, #1c1e26) 16%, transparent);
+		background: color-mix(in srgb, var(--color--card-background, #fff) 94%, transparent);
+		cursor: pointer;
 	}
 </style>

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount, onDestroy } from 'svelte';
+	import { onMount, onDestroy, createEventDispatcher } from 'svelte';
 	import { browser } from '$app/environment';
 	import type { Map, LatLngTuple } from 'leaflet';
 
@@ -12,6 +12,7 @@
 	let mapElement: HTMLElement;
 	let map: Map;
 	let leafletLoaded = false;
+	const dispatch = createEventDispatcher(); 
 
 	// Exposición de la instancia del mapa para que los componentes padre puedan interactuar con ella
 	export function getMap() {
@@ -90,9 +91,12 @@
 			}).setView(center, zoom);
 
 			// Añadimos una capa de mapa más estética
+			//https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png (Original del Luis)
+			//https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png (Original de StreetMap)
+			//https://{s}.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}{r}.png (Dark)
 			L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-				attribution:
-					'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+				attribution: 
+					'Love Rusia &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
 				subdomains: 'abcd',
 				maxZoom: 19
 			}).addTo(map);
@@ -114,6 +118,7 @@
 			setTimeout(() => {
 				map.invalidateSize();
 				leafletLoaded = true;
+				dispatch('ready', { map }); 
 			}, 100);
 		}
 	});
