@@ -158,6 +158,61 @@
 			max-height: 400px;
 			object-fit: cover;
 		}
+		/* Asegura posicionamiento para el pseudo-elemento */
+		:global(.cover-image) {
+			position: relative;
+			border-radius: 6px; /* ya lo tienes, lo reitero por claridad */
+			/* no cambies tu box-shadow existente; sumaremos el brillo encima */
+		}
+		/* Capa de “aura” encima de la imagen para no mover el layout */
+		:global(.cover-image::after) {
+			content: '';
+			position: absolute;
+			inset: 0;
+			border-radius: inherit;
+			pointer-events: none;
+			opacity: 0;
+			/* Fallback: usamos el color directo; si color-mix está soportado, lo sobreescribe */
+			--primary-glow: var(--color--primary);
+			/* Glow más suave usando color-mix (soportado en navegadores modernos) */
+			--primary-glow: color-mix(in oklab, var(--color--primary) 90%, transparent);
+			box-shadow:
+				/* “borde” interno */ inset 0 0 0 100px transparent,
+				/* “borde” externo */ 0 0 0 0 transparent, /* halo */ 0 0 0 0 transparent;
+			transition: box-shadow 1020ms ease, opacity 2020ms ease;
+		}
+		/* Transición suave también para la imagen (por si quieres ajustar brillo/foco) */
+		:global(.cover-image img) {
+			transition: filter 220ms ease, transform 220ms ease;
+			will-change: filter, transform;
+		}
+		:global(.content img.hoverable) { position: relative; border-radius: 6px; }
+		:global(.content img.hoverable) { transition: filter 220ms ease; }
+
+		/* Solo aplica en dispositivos con puntero fino (evita móviles) */
+		@media (hover: hover) and (pointer: fine) {
+			:global(.cover-image:hover::after) {
+				opacity: 1;
+				box-shadow:
+					/* borde interno del contenedor (no recorta la imagen) */ inset 0 0 0 2px
+						var(--color--primary),
+					/* borde externo (anillo) */ 0 0 0 2px var(--color--primary),
+					/* halo/brillo suave */ 0 0 108px 6px var(--primary-glow);
+			}
+
+			/* opcional: un toque ínfimo de enfoque a la imagen */
+			:global(.cover-image:hover img) {
+				filter: saturate(1.04) contrast(1.02);
+			}
+		}
+
+		/* Accesibilidad: respeta “reduced motion” */
+		@media (prefers-reduced-motion: reduce) {
+			:global(.cover-image::after),
+			:global(.cover-image img) {
+				transition: none;
+			}
+		}
 
 		.content {
 			display: grid;
