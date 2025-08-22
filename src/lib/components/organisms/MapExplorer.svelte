@@ -7,6 +7,8 @@
 	import type { Map, LatLngTuple, Marker } from 'leaflet';
 	/* CÓDIGO ROCKET */
 	import RocketMapOverlay from '$lib/components/molecules/RocketMapOverlay.svelte';
+	/* CÓDIGO BORDES FACULTADES */
+	import UCEFacultyChoropleth from '$lib/components/molecules/UCEFacultyChoropleth.svelte';
 
 	// Props para el mapa
 	export let center: LatLngTuple = [40.416775, -3.70379]; // Madrid por defecto
@@ -115,8 +117,16 @@
 			{zoom}
 			on:ready={onMapReady}
 		/>
-
-		<!-- CÓDIGO NUEVO: Overlay del cohete -->
+		<!-- CÓDIGO FACULTADES: capa choropleth de facultades -->
+		<UCEFacultyChoropleth
+			{map}
+			src="/geo/map_uce_facultades_v5.geojson"
+			valueProp="value"
+			strokeVar="var(--color--primary)"
+			baseOpacity={0.6}
+			hoverOpacity={1.85}
+		/>
+		<!-- CÓDIGO ROCKET: Overlay del cohete -->
 		<RocketMapOverlay
 			bind:this={rocket}
 			{center}
