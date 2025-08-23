@@ -17,6 +17,10 @@
 		</div>
 
 		<div class="links">
+			<a href="/investigadores">Investigadores</a>
+		</div>
+
+		<div class="links">
 			<a href="/contact">Contacto</a>
 		</div>
 

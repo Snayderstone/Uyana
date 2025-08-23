@@ -16,7 +16,6 @@
 	class={`ep-card ${className}`}
 	data-glow={glow}
 	style={`--radius:${radius}; --pad:${pad}; ${style}`}
-	tabindex="0"
 	aria-label="Párrafo destacado"
 >
 	<p class="ep-text">{text}</p>
@@ -70,17 +69,12 @@
 		filter: blur(0.5px);
 	}
 
-	/* Hover/focus sólo cuando data-glow=true */
+	/* Hover sólo cuando data-glow=true */
 	@media (hover: hover) and (pointer: fine) {
 		.ep-card[data-glow='true']:hover::before,
 		.ep-card[data-glow='true']:hover::after {
 			opacity: 1;
 		}
-	}
-	.ep-card[data-glow='true']:focus-visible::before,
-	.ep-card[data-glow='true']:focus-visible::after {
-		opacity: 1;
-		outline: none;
 	}
 
 	@media (prefers-reduced-motion: reduce) {
@@ -89,5 +83,4 @@
 			transition: none;
 		}
 	}
-
 </style>
