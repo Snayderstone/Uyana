@@ -17,8 +17,8 @@ export const load = (async () => {
 
 	return {
 		mapConfig: {
-			initialCenter: [40.416775, -3.70379] as [number, number], // Madrid
-			initialZoom: 13,
+			initialCenter: [-0.1992, -78.5059] as [number, number], // Quito - UCE
+			initialZoom: 16,
 			apiKeys: {
 				// Aquí podrías incluir claves de API si fueran necesarias
 				// Por ejemplo: mapbox: 'tu_clave_api_mapbox'
