@@ -2,7 +2,7 @@
 slug: RepresentacionGraficaInfo
 title: Representacion Gráfica de la Información
 date: 2025-08-22T21:55:21.800Z
-excerpt: Universidad Central del Ecuador. Dirección de Investigación tiene por objetivo orientar, promover y coordinar la actividad investigativa en la UCE.
+excerpt: Representar la información —especialmente con visualizaciones— sirve para transformar datos crudos en estructuras perceptibles que aceleran tareas cognitivas.
 coverImage: /images/posts/imgRepresentacionBlog.png
 tags:
   - Representación
