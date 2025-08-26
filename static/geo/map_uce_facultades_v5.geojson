@@ -5,6 +5,7 @@
       "type": "Feature",
       "properties": {
         "universidad": "Universidad Central Del Ecuador",
+        "facultad_o_entidad_o_area_responsable": "Universidad Central Del Ecuador",
         "rector": "Dr. Patricio Espinosa",
         "vicerector-investigacion": "Dra. Katherine Zurita",
         "vicerector-administrativo-y-financiero": "Dr. Silvio Toscano",
@@ -802,7 +803,7 @@
       "type": "Feature",
       "properties": {
         "universidad": "Universidad Central Del Ecuador",
-        "facultad": "Facultad De Ingeniería En Geología, Minas, Petróleos Y Ambiental",
+        "facultad_o_entidad_o_area_responsable": "Facultad De Ingeniería En Geología, Minas, Petróleos Y Ambiental",
         "area": "Geología",
         "decano": "Ing. Elias Ibadango Anrrango, MSc",
         "subdecano": "Ing. Silvia Garcia Gonzalez, PhD",
@@ -870,7 +871,7 @@
       "type": "Feature",
       "properties": {
         "universidad": "Universidad Central Del Ecuador",
-        "facultad": "Facultad De Medicina Veterinaria Y Zootecnia",
+        "facultad_o_entidad_o_area_responsable": "Facultad De Medicina Veterinaria Y Zootecnia",
         "area": "Medicina Veterinaria",
         "decano": "Dr. Javier Vargas E. Msc,",
         "subdecano": "Sr. Richard Salazar S. MSc.",
@@ -950,7 +951,7 @@
       "type": "Feature",
       "properties": {
         "universidad": "Universidad Central Del Ecuador",
-        "facultad": "Facultad De Ciencias Médicas",
+        "facultad_o_entidad_o_area_responsable": "Facultad De Ciencias Médicas",
         "area": "Medicina",
         "decano": "PhD. Juan Emilio Ocampo B.",
         "subdecano": "PhD. Tamara León",
@@ -1002,7 +1003,7 @@
       "type": "Feature",
       "properties": {
         "universidad": "Universidad Central Del Ecuador",
-        "facultad": "Facultad De Ciencias Químicas",
+        "facultad_o_entidad_o_area_responsable": "Facultad De Ciencias Químicas",
         "area": "Química",
         "decano": "MSc. Trosky German Yánez Darquea",
         "subdecano": "PhD. Milene Fernanda Díaz Basantes",
@@ -1066,7 +1067,7 @@
       "type": "Feature",
       "properties": {
         "universidad": "Universidad Central Del Ecuador",
-        "facultad": "Facultad De Ciencias Agrícolas",
+        "facultad_o_entidad_o_area_responsable": "Facultad De Ciencias Agrícolas",
         "area": "Agrícola",
         "decano": "MSc. Juan Borja",
         "subdecano": "Dr. Enrique Cabanilla",
@@ -1138,7 +1139,7 @@
       "type": "Feature",
       "properties": {
         "universidad": "Universidad Central Del Ecuador",
-        "facultad": "Facultad De Jurisprudencia Ciencias Políticas Y Sociales",
+        "facultad_o_entidad_o_area_responsable": "Facultad De Jurisprudencia Ciencias Políticas Y Sociales",
         "area": "Jurisprudencia",
         "decano": "Dra. Solimar Herrera Garcés",
         "subdecano": "Dr. Franklin Vásquez Chicaiza",
@@ -1246,7 +1247,7 @@
       "type": "Feature",
       "properties": {
         "universidad": "Universidad Central Del Ecuador",
-        "facultad": "Facultad De Odontología",
+        "facultad_o_entidad_o_area_responsable": "Facultad De Odontología",
         "area": "Odontología",
         "decano": "Esp. Karla Vallejo",
         "subdecano": "Dra. Mayra Paltas",
@@ -1342,7 +1343,7 @@
       "type": "Feature",
       "properties": {
         "universidad": "Universidad Central Del Ecuador",
-        "facultad": "Facultad De Ciencias Económicas",
+        "facultad_o_entidad_o_area_responsable": "Facultad De Ciencias Económicas",
         "area": "Economía",
         "decano": "Ing. Jenny A. Loor G",
         "subdecano": "Dra. Tatiana de Lourdes Lara N.",
@@ -1438,7 +1439,7 @@
       "type": "Feature",
       "properties": {
         "universidad": "Universidad Central Del Ecuador",
-        "facultad": "Facultad De Ingeniería Química",
+        "facultad_o_entidad_o_area_responsable": "Facultad De Ingeniería Química",
         "area": "Química",
         "decano": "Ing. Andrés Fernando de la Rosa Martinez",
         "subdecano": "Hugo Fernando Solis Garcia",
@@ -1522,7 +1523,7 @@
       "type": "Feature",
       "properties": {
         "universidad": "Universidad Central Del Ecuador",
-        "facultad": "Facultad De Cultura Física",
+        "facultad_o_entidad_o_area_responsable": "Facultad De Cultura Física",
         "area": "Cultura Física",
         "decano": "MSc. Eduardo Arturo Aguirre Obando",
         "subdecano": "MSc. Giovanny Capote Lavandero",
@@ -1646,7 +1647,7 @@
       "type": "Feature",
       "properties": {
         "universidad": "Universidad Central Del Ecuador",
-        "facultad": "Facultad De Ingeniería Y Ciencias Aplicadas",
+        "facultad_o_entidad_o_area_responsable": "Facultad De Ingeniería Y Ciencias Aplicadas",
         "area": "Ingeniería y Ciencias Aplicadas",
         "decano": "Ing. Jorge Santamaría Carrera, PhD",
         "subdecano": "Ing, Santiago Morales Cardoso, PhD",
@@ -1714,7 +1715,7 @@
       "type": "Feature",
       "properties": {
         "universidad": "Universidad Central Del Ecuador",
-        "facultad": "Facultad De Filosofía Letras Y Ciencias de la Educación",
+        "facultad_o_entidad_o_area_responsable": "Facultad De Filosofía Letras Y Ciencias de la Educación",
         "area": "Filosofía",
         "decano": "PhD. Ana Lucia Arias Balarezo",
         "subdecano": "PhD. Carlos Manuel Calderon Guevara",
@@ -1778,7 +1779,7 @@
       "type": "Feature",
       "properties": {
         "universidad": "Universidad Central Del Ecuador",
-        "facultad": "Facultad De Ciencias Psicológicas",
+        "facultad_o_entidad_o_area_responsable": "Facultad De Ciencias Psicológicas",
         "area": "Psicología",
         "decano": "Dr. Luis G. Landeta Bejarano, PhD.",
         "subdecano": "PhD. Geovanny Carrera Viver",
@@ -1890,7 +1891,7 @@
       "type": "Feature",
       "properties": {
         "universidad": "Universidad Central Del Ecuador",
-        "facultad": "Facultad De Ciencias Sociales Y Humanas",
+        "facultad_o_entidad_o_area_responsable": "Facultad De Ciencias Sociales Y Humanas",
         "area": "Sociales",
         "decano": "MSc. Jorge Piedra",
         "subdecano": "Dra. Daisy Valdivieso",
@@ -1950,7 +1951,7 @@
       "type": "Feature",
       "properties": {
         "universidad": "Universidad Central Del Ecuador",
-        "facultad": "Facultad De Comunicación Social",
+        "facultad_o_entidad_o_area_responsable": "Facultad De Comunicación Social",
         "area": "Comunicación",
         "decano": "MSc. Luis Rúben Molina Toapanta",
         "subdecano": "PhD. Leonardo Alfredo Vinueza Montúfar",
@@ -2010,7 +2011,7 @@
       "type": "Feature",
       "properties": {
         "universidad": "Universidad Central Del Ecuador",
-        "facultad": "Facultad De Ciencias De La Discapacidad, Atención Prehospitalaria Y Desastres",
+        "facultad_o_entidad_o_area_responsable": "Facultad De Ciencias De La Discapacidad, Atención Prehospitalaria Y Desastres",
         "area": "Discapacidad",
         "decano": "Dr. Baiter Renan Cazares Cadena",
         "subdecano": "MSc. Victor Hugo Minango Mendez",
@@ -2098,7 +2099,7 @@
       "type": "Feature",
       "properties": {
         "universidad": "Universidad Central Del Ecuador",
-        "facultad": "Facultad De Ciencias",
+        "facultad_o_entidad_o_area_responsable": "Facultad De Ciencias",
         "area": "Ciencias",
         "decano": "Ing. Franz del Pozo Sánchez, PhD",
         "subdecano": "Dr. Iván Naula Reina",
@@ -2162,7 +2163,7 @@
       "type": "Feature",
       "properties": {
         "universidad": "Universidad Central Del Ecuador",
-        "facultad": "Facultad De Artes",
+        "facultad_o_entidad_o_area_responsable": "Facultad De Artes",
         "area": "Artes",
         "decano": "PhD. Elena Pasionaria Rodríguez Pazmiño",
         "subdecano": "MsC. Roberto Jacinto Calle Barreto",
@@ -2266,7 +2267,7 @@
       "type": "Feature",
       "properties": {
         "universidad": "Universidad Central Del Ecuador",
-        "facultad": "Facultad De Arquitectura Y Urbanismo",
+        "facultad_o_entidad_o_area_responsable": "Facultad De Arquitectura Y Urbanismo",
         "area": "Arquitectura",
         "decano": "Dr. Arq. Sergio Andrés Bermeo Alvarez",
         "subdecano": "Arq. Mishell Echeverria Bucheli, MSc",
@@ -2394,7 +2395,7 @@
       "type": "Feature",
       "properties": {
         "universidad": "Universidad Central Del Ecuador",
-        "facultad": "Facultad De Ciencias Administrativas",
+        "facultad_o_entidad_o_area_responsable": "Facultad De Ciencias Administrativas",
         "area": "Administración",
         "decano": "MSc. Nancy del Rocio Flores Hinojosa",
         "subdecano": "Ing. Mauricio Alberto Balarezo Noboa",
@@ -2446,7 +2447,7 @@
       "type": "Feature",
       "properties": {
         "universidad": "Universidad Central Del Ecuador",
-        "facultad": "Facultad De Ciencias Biológicas",
+        "facultad_o_entidad_o_area_responsable": "Facultad De Ciencias Biológicas",
         "area": "Biología",
         "decano": "PhD. Gorky Gómez ",
         "subdecano": "PhD. Jenny Morillo",
@@ -2510,6 +2511,7 @@
       "type": "Feature",
       "properties": {
         "universidad": "Universidad De Las Américas",
+        "facultad_o_entidad_o_area_responsable": "Universidad De Las Américas",
         "rector": "Dr. Gonzalo Mendieta",
         "vicerrector": "Dr. Diego Buenaño",
         "fill": "#1f77b4",
@@ -2550,6 +2552,7 @@
       "type": "Feature",
       "properties": {
         "universidad": "Escuela Superior Politécnica De Chimborazo",
+        "facultad_o_entidad_o_area_responsable": "Escuela Superior Politécnica De Chimborazo",
         "rector": "Dr. Byron Vaca Barahona",
         "vicerrectora": "Dra. Gloria Miño",
         "fill": "#1f77b4",
@@ -2702,6 +2705,7 @@
       "type": "Feature",
       "properties": {
         "universidad": "Universidad De New York",
+        "facultad_o_entidad_o_area_responsable": "Universidad De New York",
         "rector": "Dr. Richard Reissman",
         "vicerector": "Dr. Martin Klimke",
         "fill": "#1f77b4",
@@ -2822,6 +2826,7 @@
       "type": "Feature",
       "properties": {
         "universidad": "Le Mans University",
+        "facultad_o_entidad_o_area_responsable": "Le Mans University",
         "rector": "Dr. Pascal Leroux",
         "vicerector": "Dr. Omar Zanna",
         "fill": "#1f77b4",
@@ -2874,6 +2879,7 @@
       "type": "Feature",
       "properties": {
         "universidad": "Universidad De Cuenca",
+        "facultad_o_entidad_o_area_responsable": "Universidad De Cuenca",
         "rectora": "Dra. María Augusta Hermida",
         "vicerector": "Dr. Juan Leonardo Espinoza",
         "fill": "#1f77b4",
@@ -3002,7 +3008,7 @@
       "type": "Feature",
       "properties": {
         "universidad": "Universidad Central Del Ecuador",
-        "facultad": "Facultad De Ingeniería en Geología, Minas, Petróleos y Ambiental",
+        "facultad_o_entidad_o_area_responsable": "Facultad De Ingeniería en Geología, Minas, Petróleos y Ambiental",
         "area": "Instituto De Investigaciones Hidrocarburiferas",
         "decano": "Ing. Elias Ibadango Anrrango, MSc",
         "subdecano": "Ing. Silvia Garcia Gonzalez, PhD",
@@ -3042,6 +3048,7 @@
       "type": "Feature",
       "properties": {
         "universidad": "Universidad Pablo De Olavide",
+        "facultad_o_entidad_o_area_responsable": "Universidad Pablo De Olavide",
         "rector": "Dr. Francisco Oliva Blázquez",
         "fill": "#1f77b4",
         "stroke": "#1f77b4",
@@ -3169,7 +3176,7 @@
       "type": "Feature",
       "properties": {
         "universidad": "Universidad Central Del Ecuador",
-        "facultad": "Instituto Académico De Idiomas",
+        "facultad_o_entidad_o_area_responsable": "Instituto Académico De Idiomas",
         "area": "Idiomas",
         "decano": "PhD. Wilson Patricio Chiluiza Vásquez",
         "subdecano": "PhD. Diego Hurtado",
