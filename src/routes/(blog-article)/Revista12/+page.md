@@ -18,7 +18,7 @@ Para la Unidad de Divulgación Científica (UDC) de la Dirección de Investigaci
 ## AMBIENTE LABORAL Y COMPETENCIAS DEL TRABAJADOR SOCIAL EN QUITO
 ---
 <FloatingImage 
-  src="/images/posts/imgInvestiga13Blog01.png" alt="UCE" 
+  src="/images/posts/imgInvestiga12Blog01.png" alt="UCE" 
   style="display:block; margin-inline:auto; max-width: 720px"
   fit="cover"
   amplitude={8}
