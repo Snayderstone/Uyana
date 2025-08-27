@@ -1,5 +1,5 @@
 <script lang="ts">
-	import MapExplorer from '$lib/components/organisms/MapExplorer.svelte';
+	import ProjectMapExplorer from '$lib/components/organisms/ProjectMapExplorer.svelte';
 	import ProjectDashboard from '$lib/components/organisms/ProjectDashboard.svelte';
 	import { onMount } from 'svelte';
 	import { fade, fly } from 'svelte/transition';
@@ -34,21 +34,21 @@
 </script>
 
 <svelte:head>
-	<title>Explorador de Mapa | Uyana</title>
+	<title>Explorador de Proyectos | Uyana</title>
 	<meta
 		name="description"
-		content="Explora ubicaciones interesantes y datos de investigación en nuestro mapa interactivo"
+		content="Explora la distribución geográfica de proyectos de investigación en nuestro mapa interactivo por facultad y obtén estadísticas detalladas."
 	/>
 </svelte:head>
 
 <div class="map-page" style="--page-height: {pageHeight}px">
 	<div class="map-header">
 		<div class="header-content">
-			<h1>Explorador de Mapa</h1>
+			<h1>Explorador de Proyectos</h1>
 			<p class="description">
-				Descubre y explora ubicaciones interesantes en nuestro mapa interactivo. Utiliza los filtros
-				para encontrar lugares específicos o consulta el dashboard para ver estadísticas de
-				proyectos.
+				Explora la distribución geográfica de proyectos de investigación por facultad. Utiliza los
+				filtros para buscar proyectos específicos o consulta el dashboard para ver estadísticas
+				detalladas.
 			</p>
 		</div>
 
@@ -69,7 +69,7 @@
 					<line x1="8" y1="2" x2="8" y2="18" />
 					<line x1="16" y1="6" x2="16" y2="22" />
 				</svg>
-				Mapa
+				Mapa de Proyectos
 			</button>
 			<button
 				class="tab-button"
@@ -103,7 +103,7 @@
 			in:fade={{ duration: 300 }}
 			out:fade={{ duration: 200 }}
 		>
-			<MapExplorer center={mapConfig.initialCenter} zoom={mapConfig.initialZoom} />
+			<ProjectMapExplorer center={mapConfig.initialCenter} zoom={mapConfig.initialZoom} />
 		</div>
 	{:else if activeTab === 'dashboard'}
 		<div class="dashboard-container" in:fade={{ duration: 300 }} out:fade={{ duration: 200 }}>

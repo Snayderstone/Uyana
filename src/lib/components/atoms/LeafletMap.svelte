@@ -12,7 +12,7 @@
 	let mapElement: HTMLElement;
 	let map: Map;
 	let leafletLoaded = false;
-	const dispatch = createEventDispatcher(); 
+	const dispatch = createEventDispatcher();
 
 	// Exposición de la instancia del mapa para que los componentes padre puedan interactuar con ella
 	export function getMap() {
@@ -78,10 +78,10 @@
 			link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
 			document.head.appendChild(link);
 
-			// Inicializamos el mapa con opciones mejoradas
+			// Inicializamos el mapa con opciones mejoradas y sin controles por defecto
 			map = L.map(id, {
-				zoomControl: true,
-				attributionControl: true,
+				zoomControl: false, // Desactivamos los controles de zoom nativos
+				attributionControl: false, // Desactivamos la atribución en la esquina inferior derecha
 				scrollWheelZoom: true,
 				doubleClickZoom: true,
 				dragging: true,
@@ -95,13 +95,10 @@
 			//https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png (Original de StreetMap)
 			//https://{s}.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}{r}.png (Dark)
 			L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-				attribution: 
-					'Love Rusia &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+				attribution: '', // Eliminamos el texto de atribución
 				subdomains: 'abcd',
 				maxZoom: 19
-			}).addTo(map);
-
-			// Arreglamos el problema de los íconos de Leaflet para casos donde no usamos marcadores personalizados
+			}).addTo(map); // Arreglamos el problema de los íconos de Leaflet para casos donde no usamos marcadores personalizados
 			const defaultIcon = L.icon({
 				iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
 				iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
@@ -118,7 +115,7 @@
 			setTimeout(() => {
 				map.invalidateSize();
 				leafletLoaded = true;
-				dispatch('ready', { map }); 
+				dispatch('ready', { map });
 			}, 100);
 		}
 	});
