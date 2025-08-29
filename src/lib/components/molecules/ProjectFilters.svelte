@@ -91,6 +91,11 @@
 	// Emitir evento cuando cambian los proyectos filtrados
 	$: {
 		dispatch('filter', filteredProyectos);
+
+		// Si hay una facultad seleccionada, emitir evento específico
+		if (filtroFacultad) {
+			dispatch('facultadSelected', filtroFacultad);
+		}
 	}
 
 	// Contar filtros activos
@@ -132,6 +137,9 @@
 		filtroAlcanceTerritorial = '';
 		filtroFuenteFinanciamiento = '';
 		filtroTexto = '';
+
+		// Notificar que se ha eliminado la selección de facultad
+		dispatch('facultadSelected', '');
 
 		// Mostrar mensaje de éxito
 		showClearSuccess = true;

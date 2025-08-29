@@ -29,6 +29,12 @@
   background-color: var(--color--card-background) !important;
 }
 
+// Popup personalizado para el componente GeoJsonChoropleth
+.leaflet-popup-content .uce-popup {
+  font-family: inherit;
+  color: var(--color--text, #1c1e26);
+}
+
 // Personalización para los marcadores
 .custom-marker-icon {
   border-radius: 50%;

@@ -26,6 +26,7 @@
 	let filteredProyectos: Proyecto[] = [];
 	let selectedFacultad: string | null = null;
 	let isFullscreenMap = false;
+	let highlightedFacultad: string | null = null; // Facultad que debe resaltarse en el mapa
 
 	// Estado de paneles
 	let showFiltersPanel = false;
@@ -85,10 +86,61 @@
 	function handleFilter(event: CustomEvent<Proyecto[]>) {
 		filteredProyectos = event.detail;
 
+		// Determinar si hay una sola facultad seleccionada
+		const facultadesUnicas = [
+			...new Set(
+				filteredProyectos.map((p) => p.facultad_o_entidad_o_area_responsable).filter(Boolean)
+			)
+		];
+
+		if (facultadesUnicas.length === 1) {
+			// Si hay una sola facultad en los resultados, la destacamos
+			highlightedFacultad = facultadesUnicas[0];
+			selectedFacultad = facultadesUnicas[0];
+		} else {
+			// Si hay varias facultades o ninguna, eliminamos el resaltado
+			highlightedFacultad = null;
+		}
+
 		// Si hay filtros aplicados, mostrar automáticamente el panel de resultados
 		if (filteredProyectos.length < proyectos.length) {
 			showResultsPanel = true;
+			showFiltersPanel = false; // Cerrar el panel de filtros para evitar conflictos
 			activePanelTab = 'results';
+
+			// Dar tiempo para que los cambios se apliquen antes de invalidar el mapa
+			setTimeout(() => {
+				if (map) {
+					map.invalidateSize();
+				}
+			}, 300);
+		}
+	}
+
+	// Manejar selección de facultad específica desde el filtro
+	function handleFacultadSelected(event: CustomEvent<string>) {
+		const facultad = event.detail;
+		if (facultad) {
+			highlightedFacultad = facultad;
+			selectedFacultad = facultad;
+
+			// Mostrar los resultados cuando se selecciona una facultad específica
+			showFiltersPanel = false; // Asegurarse de que el panel de filtros está cerrado
+			showResultsPanel = true;
+			activePanelTab = 'results';
+
+			// Dar tiempo para que el sistema pueda aplicar el resaltado antes de mostrar resultados
+			setTimeout(() => {
+				showResultsPanel = true;
+				activePanelTab = 'results';
+				// También invalidar el tamaño del mapa para asegurar que se renderiza correctamente
+				if (map) {
+					map.invalidateSize();
+				}
+			}, 500);
+		} else {
+			highlightedFacultad = null;
+			selectedFacultad = null;
 		}
 	}
 
@@ -97,6 +149,31 @@
 		selectedFacultad = event.detail;
 		showResultsPanel = true;
 		activePanelTab = 'results';
+
+		// Cerrar cualquier popup abierto
+		// Esta parte ya se maneja directamente en el evento view-faculty-projects
+
+		// Invalidar el tamaño del mapa después de mostrar el panel de resultados
+		setTimeout(() => {
+			if (map) {
+				map.invalidateSize();
+			}
+		}, 300);
+	}
+
+	// Manejar clic en el mapa para cerrar los paneles
+	function handleMapClick(event: CustomEvent) {
+		// Verificar si el clic fue sobre un popup (en ese caso no cerrar los paneles)
+		const isPopupClick = event.detail?.originalEvent?.originalTarget?.closest('.leaflet-popup');
+
+		if (!isPopupClick) {
+			// Cerrar los paneles cuando se hace clic en el mapa
+			showFiltersPanel = false;
+			showResultsPanel = false;
+
+			// Invalidar tamaño del mapa después de cerrar los paneles
+			setTimeout(() => map?.invalidateSize(), 300);
+		}
 	}
 
 	// Alternar vista de pantalla completa del mapa
@@ -155,6 +232,47 @@
 		if (map) {
 			map.zoomOut();
 		}
+	}
+
+	// Función para restablecer todos los filtros y el mapa
+	function resetAll() {
+		// Restablecer filtros
+		filteredProyectos = proyectos;
+
+		// Restablecer selección de facultad
+		selectedFacultad = null;
+		highlightedFacultad = null;
+
+		// Cerrar paneles
+		showFiltersPanel = false;
+		showResultsPanel = false;
+
+		// Notificar a los componentes hijos para que limpien su estado
+		const resetEvent = new CustomEvent('reset-highlights');
+		document.dispatchEvent(resetEvent);
+
+		// Restablecer posición del mapa
+		if (map) {
+			map.setView(center, zoom);
+			setTimeout(() => {
+				if (map) {
+					// Verificar que map no sea null dentro del setTimeout
+					map.invalidateSize();
+				}
+			}, 100);
+		}
+
+		// Mostrar notificación visual al usuario
+		const notification = document.createElement('div');
+		notification.className = 'reset-notification';
+		notification.textContent = 'Mapa restablecido';
+		document.querySelector('.project-map-explorer')?.appendChild(notification);
+
+		// Eliminar la notificación después de 2 segundos
+		setTimeout(() => {
+			notification.classList.add('fade-out');
+			setTimeout(() => notification.remove(), 500);
+		}, 1500);
 	} // Inicializar
 	onMount(() => {
 		cargarProyectos();
@@ -229,7 +347,10 @@
 				<ProjectsChoropleth
 					{map}
 					{filteredProyectos}
+					{highlightedFacultad}
 					on:viewFacultyProjects={handleViewFacultyProjects}
+					on:mapClick={handleMapClick}
+					on:resetHighlights={() => (highlightedFacultad = null)}
 				/>
 			{/if}
 
@@ -291,6 +412,7 @@
 					class:active={showStatsPanel}
 					on:click={toggleStatsPanel}
 					aria-label="Mostrar estadísticas"
+					title="Mostrar estadísticas"
 				>
 					<svg
 						xmlns="http://www.w3.org/2000/svg"
@@ -308,12 +430,14 @@
 						<path d="M6 20v-6" />
 					</svg>
 				</button>
+
 				<!-- Botón para filtros -->
 				<button
 					class="map-control-btn"
 					class:active={activePanelTab === 'filters' && showFiltersPanel}
 					on:click={toggleFiltersPanel}
 					aria-label="Mostrar filtros"
+					title="Mostrar filtros"
 				>
 					<svg
 						xmlns="http://www.w3.org/2000/svg"
@@ -339,6 +463,7 @@
 					class:active={activePanelTab === 'results' && showResultsPanel}
 					on:click={toggleResultsPanel}
 					aria-label="Mostrar resultados"
+					title="Mostrar resultados"
 				>
 					<svg
 						xmlns="http://www.w3.org/2000/svg"
@@ -360,12 +485,39 @@
 					<span class="control-badge">{filteredProyectos.length}</span>
 				</button>
 
-
-
+				<!-- Botón para restablecer todo -->
+				<button
+					class="map-control-btn reset-btn"
+					on:click={resetAll}
+					aria-label="Restablecer mapa y filtros"
+					title="Restablecer mapa y filtros"
+				>
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="20"
+						height="20"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+					>
+						<path d="M3 2v6h6" />
+						<path d="M21 12A9 9 0 0 0 6 5.3L3 8" />
+						<path d="M21 22v-6h-6" />
+						<path d="M3 12a9 9 0 0 0 15 6.7l3-2.7" />
+					</svg>
+				</button>
 				<!-- Controles de zoom -->
 				<div class="zoom-controls">
 					<!-- Botón zoom in -->
-					<button class="map-control-btn zoom-btn" on:click={zoomIn} aria-label="Acercar mapa">
+					<button
+						class="map-control-btn zoom-btn"
+						on:click={zoomIn}
+						aria-label="Acercar mapa"
+						title="Acercar mapa"
+					>
 						<svg
 							xmlns="http://www.w3.org/2000/svg"
 							width="20"
@@ -385,7 +537,12 @@
 					</button>
 
 					<!-- Botón zoom out -->
-					<button class="map-control-btn zoom-btn" on:click={zoomOut} aria-label="Alejar mapa">
+					<button
+						class="map-control-btn zoom-btn"
+						on:click={zoomOut}
+						aria-label="Alejar mapa"
+						title="Alejar mapa"
+					>
 						<svg
 							xmlns="http://www.w3.org/2000/svg"
 							width="20"
@@ -413,8 +570,17 @@
 						<h2>Filtros de proyectos</h2>
 						<button
 							class="close-panel-btn"
-							on:click={() => (showFiltersPanel = false)}
+							on:click={() => {
+								showFiltersPanel = false;
+								// Invalidar el tamaño del mapa cuando se cierra el panel
+								setTimeout(() => {
+									if (map) {
+										map.invalidateSize();
+									}
+								}, 300);
+							}}
 							aria-label="Cerrar panel"
+							title="Cerrar panel"
 						>
 							<svg
 								xmlns="http://www.w3.org/2000/svg"
@@ -433,7 +599,11 @@
 						</button>
 					</div>
 					<div class="panel-content filters-panel">
-						<ProjectFilters {proyectos} on:filter={handleFilter} />
+						<ProjectFilters
+							{proyectos}
+							on:filter={handleFilter}
+							on:facultadSelected={handleFacultadSelected}
+						/>
 					</div>
 				{/if}
 
@@ -450,8 +620,17 @@
 						</h2>
 						<button
 							class="close-panel-btn"
-							on:click={() => (showResultsPanel = false)}
+							on:click={() => {
+								showResultsPanel = false;
+								// Invalidar el tamaño del mapa cuando se cierra el panel
+								setTimeout(() => {
+									if (map) {
+										map.invalidateSize();
+									}
+								}, 300);
+							}}
 							aria-label="Cerrar panel"
+							title="Cerrar panel"
 						>
 							<svg
 								xmlns="http://www.w3.org/2000/svg"
@@ -715,6 +894,28 @@
 			.control-badge {
 				background: white;
 				color: var(--color--primary);
+			}
+		}
+
+		&.reset-btn {
+			background: color-mix(
+				in srgb,
+				var(--color--callout-accent--warning) 20%,
+				var(--color--card-background)
+			);
+
+			&:hover {
+				background: color-mix(
+					in srgb,
+					var(--color--callout-accent--warning) 40%,
+					var(--color--card-background)
+				);
+				color: var(--color--text);
+				transform: translateY(-2px) rotate(45deg);
+			}
+
+			svg {
+				transition: transform 0.3s ease;
 			}
 		}
 	}

@@ -61,7 +61,9 @@
 
 	// Normalizador de valores → [0,1]
 	function to01(v: number, lo: number, hi: number) {
-		const span = hi - lo || 1;
+		// Asegurar que span no sea 0 para evitar divisiones por cero
+		const span = Math.max(0.1, hi - lo);
+		// Normalizar y limitar a [0,1]
 		return Math.max(0, Math.min(1, (v - lo) / span));
 	}
 
@@ -69,12 +71,42 @@
 	let geoLayer: any = null;
 	let loadedData: any = null;
 
+	// Facultad destacada actualmente
+	export let highlightedFacultad: string | null = null;
+
+	// Estilos para la entidad destacada
+	export let highlightStyle = {
+		color: '#ff00ff', // Color fluorescente para el borde
+		weight: 4,
+		opacity: 1,
+		fillOpacity: baseFillOpacity + 0.2,
+		dashArray: '5, 10', // Línea punteada
+		className: 'highlighted-feature' // Clase CSS para animaciones
+	};
+
 	// Recalcula min/max si no vienen dados
 	function computeDomain(values: number[]): { lo: number; hi: number } {
+		// Si no hay valores, devolvemos un rango predeterminado
 		if (!values.length) return { lo: 0, hi: 1 };
-		const lo = min ?? Math.min(...values);
-		const hi = max ?? Math.max(...values);
-		return { lo, hi: lo === hi ? lo + 1 : hi }; // evita span = 0
+
+		// Usamos valores proporcionados o los calculamos de los datos
+		let lo = min !== null ? min : Math.min(...values);
+		let hi = max !== null ? max : Math.max(...values);
+
+		// Evitar span = 0 y asegurar un margen mínimo entre lo y hi
+		if (lo === hi) hi = lo + 1;
+
+		// Asegurar que valores extremos (como el máximo) sean tratados adecuadamente
+		// reduciendo ligeramente lo para que los valores altos destaquen más
+		lo = Math.max(0, lo * 0.9);
+
+		console.log(
+			`Dominio calculado: [${lo}, ${hi}] de valores: [${Math.min(...values)}, ${Math.max(
+				...values
+			)}]`
+		);
+
+		return { lo, hi };
 	}
 
 	async function ensureLeaflet() {
@@ -95,8 +127,20 @@
 	function styleForFeature(f: any) {
 		const id = f?.properties?.[idProperty];
 		const v = id != null ? valueById[id] : undefined;
-		const domain = computeDomain(Object.values(valueById).filter((x) => typeof x === 'number'));
+		// Filtramos los valores y calculamos el dominio
+		const filteredValues = Object.values(valueById).filter((x) => typeof x === 'number');
+		const domain = computeDomain(filteredValues);
+
+		// Normalizar valor entre 0 y 1
 		const t = typeof v === 'number' ? to01(v, domain.lo, domain.hi) : 0;
+
+		// Depurar valores para identificar posibles problemas
+		if (id === 'Facultad De Ciencias Agrícolas') {
+			console.log(
+				`Depuración Facultad De Ciencias Agrícolas: valor=${v}, t=${t}, dominio=[${domain.lo}, ${domain.hi}]`
+			);
+		}
+
 		const fill = colorAt(t);
 		return {
 			color: lineColor,
@@ -153,6 +197,11 @@
 	function restyleLayer() {
 		if (!geoLayer) return;
 		geoLayer.setStyle(styleForFeature);
+
+		// Si hay una facultad destacada, aplicar estilo especial
+		if (highlightedFacultad) {
+			highlightFeatureById(highlightedFacultad);
+		}
 	}
 
 	function destroyLayer() {
@@ -160,6 +209,114 @@
 			map.removeLayer(geoLayer);
 			geoLayer = null;
 		}
+	}
+
+	// Método para destacar una feature por su ID (nombre de facultad)
+	export function highlightFeatureById(id: string) {
+		if (!geoLayer || !id) return false;
+
+		let found = false;
+
+		geoLayer.eachLayer((layer: any) => {
+			const featureId = layer?.feature?.properties?.[idProperty];
+
+			if (featureId === id) {
+				// Aplicar estilo destacado
+				layer.setStyle(highlightStyle);
+
+				// Aplicar efecto de sombra directo en el SVG
+				const path = layer._path;
+				if (path) {
+					path.style.filter = 'drop-shadow(0 0 5px #ff00ff)';
+				}
+
+				// Traer al frente
+				layer.bringToFront();
+				found = true;
+			} else {
+				// Restaurar estilo normal
+				geoLayer.resetStyle(layer);
+
+				// Quitar efectos CSS
+				const path = layer._path;
+				if (path) {
+					path.style.filter = '';
+				}
+			}
+		});
+
+		return found;
+	}
+
+	// Método para centrar y hacer zoom en una facultad
+	export function zoomToFeatureById(id: string) {
+		if (!geoLayer || !map || !id) return false;
+
+		let found = false;
+
+		geoLayer.eachLayer((layer: any) => {
+			const featureId = layer?.feature?.properties?.[idProperty];
+
+			if (featureId === id) {
+				// Obtener bounds de la feature
+				const bounds = layer.getBounds();
+
+				// Calcular el nivel de zoom óptimo
+				// Determinamos qué tan grande es la facultad para calcular el zoom ideal
+				const areaSize =
+					Math.abs(bounds.getNorth() - bounds.getSouth()) *
+					Math.abs(bounds.getEast() - bounds.getWest());
+
+				// Ajustamos el padding según el tamaño para evitar zoom excesivo en facultades pequeñas
+				const paddingSize = areaSize < 0.0001 ? 200 : 50;
+
+				// Ajustar el mapa a estos límites con animación mejorada
+				map.flyToBounds(bounds, {
+					padding: [paddingSize, paddingSize],
+					duration: 1.2,
+					easeLinearity: 0.5,
+					animate: true
+				});
+
+				// Mostrar notificación flotante con nombre de la facultad
+				if (L && layer?.feature?.properties?.facultad) {
+					const facultadName = layer.feature.properties.facultad;
+					const center = bounds.getCenter();
+
+					// Crear un marcador temporal con un tooltip persistente
+					setTimeout(() => {
+						// Esperar a que termine la animación
+						if (map && L) {
+							// Verificar que L no sea null dentro del setTimeout
+							// Crear marcador invisible en el centro de la facultad
+							const marker = L.marker(center, {
+								opacity: 0,
+								interactive: false
+							}).addTo(map);
+
+							// Mostrar tooltip estático sin animación
+							marker
+								.bindTooltip(`<strong>${facultadName}</strong>`, {
+									permanent: true,
+									direction: 'top',
+									className: 'faculty-highlight-tooltip',
+									offset: [0, -20]
+								})
+								.openTooltip();
+
+							// Eliminar después de unos segundos
+							setTimeout(() => {
+								marker.remove();
+							}, 3000);
+						}
+					}, 1200);
+				}
+
+				found = true;
+			}
+		});
+
+		return found;
 	}
 
 	onMount(async () => {
@@ -183,12 +340,63 @@
 	})();
 
 	$: restyleLayer(); // se ejecuta cuando cambian reactivos usados en styleForFeature
+
+	// Método para limpiar todos los resaltados
+	export function clearHighlights() {
+		if (!geoLayer) return;
+
+		// Restaurar todos los estilos
+		geoLayer.eachLayer((layer: any) => {
+			geoLayer.resetStyle(layer);
+			const path = layer._path;
+			if (path) {
+				path.style.filter = '';
+			}
+		});
+	}
+
+	// Método para cerrar los popups abiertos
+	export function closePopups() {
+		if (map) {
+			map.closePopup();
+		}
+	} // Reaccionar cuando cambia la facultad destacada
+	$: {
+		if (geoLayer && highlightedFacultad) {
+			highlightFeatureById(highlightedFacultad);
+			zoomToFeatureById(highlightedFacultad);
+		} else if (geoLayer) {
+			// Restaurar todos los estilos si no hay facultad destacada
+			clearHighlights();
+		}
+	}
 </script>
 
+<div class="geo-json-choropleth-wrapper">
+	<!-- Componente no tiene contenido directo, renderiza en el mapa -->
+</div>
+
 <style>
-	/* popup mínimo (se usa si no tienes tu propio theme para Leaflet) */
-	:global(.leaflet-popup-content .uce-popup) {
-		font-family: inherit;
-		color: var(--color--text, #1c1e26);
+	.geo-json-choropleth-wrapper {
+		position: relative;
+		width: 100%;
+		height: 100%;
+	}
+
+	/* Estilos para la entidad destacada, sin animaciones pulsantes */
+	:global(.faculty-highlight-tooltip) {
+		background-color: var(--color--primary) !important;
+		color: white !important;
+		border: none !important;
+		box-shadow: 0 0 15px rgba(var(--color--primary-rgb), 0.6) !important;
+		font-weight: bold !important;
+		padding: 8px 12px !important;
+		border-radius: 20px !important;
+		font-size: 14px !important;
+		opacity: 0.9 !important;
+	}
+
+	:global(.faculty-highlight-tooltip::before) {
+		border-top-color: var(--color--primary) !important;
 	}
 </style>
