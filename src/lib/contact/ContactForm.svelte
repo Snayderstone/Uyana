@@ -26,12 +26,15 @@
   </script>
   
   <div class="contact-container" in:fade>
+    <p>Si tienes alguna pregunta o inquietud, no dudes en ponerte en contacto con nosotros a través del siguiente formulario.</p>
+    <p>Estaremos encantados de ayudarte.</p>
     <div class="contact-info" in:fly={{ y: 20, duration: 600 }}>
       <h2>Contáctanos</h2>
       <p>
-        Somos estudiantes de la Facultad de Ingeniería y Ciencias Aplicadas de la Universidad Central del Ecuador, 
-        carrera de Sistemas de Información. Estamos comprometidos con el desarrollo de soluciones tecnológicas 
-        innovadoras para la Comunidad <b>Ecuatoriana.</b>
+        Promover, formar, fortalecer y vigilar el desarrollo de la investigación científica y tecnológica a través
+         de convocatorias anuales obteniendo un mejor aprovechamiento de los recursos naturales que correspondan a las 
+         necesidades de generación de conocimiento, desarrollo tecnológico y solución de problemas de la sociedad 
+         ecuatoriana potenciando a la Universidad Central del Ecuador en el desarrollo de la <b>ciencia</b> y el <b>conocimiento</b>
       </p>
       
       <div class="info-details">
@@ -39,7 +42,7 @@
           <span class="icon">📍</span>
           <div>
             <h3>Ubicación</h3>
-            <p>Facultad de Ingeniería y Ciencias Aplicadas - UCE</p>
+            <p>Ciudadela Universitaria, en la calle Jerónimo Leyton y Gatto Sobral, dentro del Edificio Azul, detrás del Hospital del Día</p>
             <p>Ciudadela Universitaria, Quito - Ecuador</p>
           </div>
         </div>
@@ -48,16 +51,16 @@
           <span class="icon">📧</span>
           <div>
             <h3>Email</h3>
-            <p>renriquez@uce.edu.ec</p>
+            <p>investigacion@uce.edu.ec.</p>
           </div>
         </div>
   
         <div class="info-item">
           <span class="icon">🎓</span>
           <div>
-            <h3>Facultad</h3>
-            <p>Ingeniería y Ciencias Aplicadas</p>
-            <p>Carrera de Sistemas de Información</p>
+            <h3>Repositorio de Noticias</h3>
+            <p>Dirección de Investigación</p>
+            <p><a href="https://investigacion.uce.edu.ec/" target="_blank" rel="noopener noreferrer">Enlace</a></p>
           </div>
         </div>
       </div>

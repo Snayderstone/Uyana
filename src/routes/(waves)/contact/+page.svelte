@@ -15,6 +15,7 @@
 					<SparklingHighlight color="primary">UYANA!</SparklingHighlight>?
 				</h2>
 				<p>Estamos aquí para ayudarte. Contáctanos y te responderemos lo antes posible.</p>
+				<img src="/images/sample-image.png" alt="Contact Us" width="700" style="display: block; margin: 0 auto;" />
 			</div>
 			<ContactForm />
 		</div>
