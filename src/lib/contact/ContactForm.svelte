@@ -54,6 +54,22 @@
             <p>investigacion@uce.edu.ec.</p>
           </div>
         </div>
+
+        <div class="info-item">
+          <span class="icon">📲</span>
+          <div>
+            <h3>Telefono</h3>
+            <p>022904796</p>
+          </div>
+        </div>
+
+        <div class="info-item">
+          <span class="icon">⏱️</span>
+          <div>
+            <h3>Horarios de Atención</h3>
+            <p>Administrativo: 8h00-16h00</p>
+          </div>
+        </div>
   
         <div class="info-item">
           <span class="icon">🎓</span>
