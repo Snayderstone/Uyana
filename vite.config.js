@@ -1,5 +1,9 @@
 import { sveltekit } from '@sveltejs/kit/vite';
 import path from 'path';
+import dotenv from 'dotenv';
+
+// Cargar variables de entorno desde .env
+dotenv.config();
 
 /** @type {import('vite').UserConfig} */
 const config = {
@@ -13,6 +17,7 @@ const config = {
 	define: {
 		'import.meta.env.PUBLIC_SUPABASE_URL': JSON.stringify(process.env.PUBLIC_SUPABASE_URL),
 		'import.meta.env.PUBLIC_SUPABASE_ANON_KEY': JSON.stringify(process.env.PUBLIC_SUPABASE_ANON_KEY)
+		// No exponemos la API key de DeepSeek como variable pública por seguridad
 	}
 };
 

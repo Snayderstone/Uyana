@@ -19,7 +19,7 @@
 			"DOM",
 			"DOM.Iterable"
 		],
-		"moduleResolution": "node",
+		"moduleResolution": "bundler",
 		"module": "esnext",
 		"target": "esnext",
 		

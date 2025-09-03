@@ -1,0 +1,359 @@
+<script lang="ts">
+	import { createEventDispatcher } from 'svelte';
+	import { fade, fly } from 'svelte/transition';
+	import Button from '$lib/components/atoms/Button.svelte';
+
+	// Props
+	export let isOpen = false;
+	export let tools: any[] = [];
+	export let activeTools: Set<string> = new Set();
+
+	const dispatch = createEventDispatcher<{
+		close: void;
+		toggleTool: { toolName: string };
+	}>();
+
+	function handleClose() {
+		dispatch('close');
+	}
+
+	function handleToolToggle(toolName: string) {
+		dispatch('toggleTool', { toolName });
+	}
+
+	// Función para obtener el emoji de la herramienta
+	function getToolEmoji(toolName: string): string {
+		const emojiMap: Record<string, string> = {
+			weather: '🌤️',
+			time: '🕒',
+			chart: '📊',
+			search: '🔍',
+			document: '📄',
+			chat: '💬',
+			map: '🗺️',
+			geo: '🌍',
+			data: '💾'
+		};
+		return emojiMap[toolName] || '⚙️';
+	}
+
+	function handleBackdropClick(e: MouseEvent) {
+		if (e.target === e.currentTarget) {
+			handleClose();
+		}
+	}
+</script>
+
+{#if isOpen}
+	<!-- Backdrop -->
+	<div
+		class="tools-backdrop"
+		on:click={handleBackdropClick}
+		role="button"
+		tabindex="-1"
+		on:keydown={(e) => e.key === 'Escape' && handleClose()}
+		transition:fade={{ duration: 200 }}
+	>
+		<!-- Panel de herramientas -->
+		<div class="tools-panel" transition:fly={{ y: 20, duration: 300 }}>
+			<div class="tools-panel-header">
+				<h3>🔧 Herramientas Disponibles</h3>
+				<button class="close-button" on:click={handleClose} aria-label="Cerrar panel">
+					<svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+						<path
+							d="M18 6L6 18M6 6L18 18"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						/>
+					</svg>
+				</button>
+			</div>
+
+			<div class="tools-list">
+				{#each tools as tool}
+					<div class="tool-item">
+						<label class="tool-checkbox">
+							<input
+								type="checkbox"
+								checked={activeTools.has(tool.name)}
+								on:change={() => handleToolToggle(tool.name)}
+							/>
+							<div class="checkbox-custom">
+								<svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+									<path
+										d="M20 6L9 17L4 12"
+										stroke="currentColor"
+										stroke-width="2"
+										stroke-linecap="round"
+										stroke-linejoin="round"
+									/>
+								</svg>
+							</div>
+							<span class="tool-icon">{getToolEmoji(tool.name)}</span>
+							<span class="tool-name">{tool.title || tool.name}</span>
+						</label>
+						<div class="tool-description">{tool.description}</div>
+						{#if tool.category}
+							<div class="tool-category">📂 {tool.category}</div>
+						{/if}
+					</div>
+				{:else}
+					<div class="no-tools">
+						<div class="no-tools-icon">🔧</div>
+						<p>No hay herramientas disponibles</p>
+						<small>Verifica la conexión con el servidor MCP</small>
+					</div>
+				{/each}
+			</div>
+
+			<div class="tools-panel-footer">
+				<div class="active-count">
+					{activeTools.size} herramienta{activeTools.size !== 1 ? 's' : ''} activa{activeTools.size !==
+					1
+						? 's'
+						: ''}
+				</div>
+				<Button color="primary" style="solid" size="small" on:click={handleClose}>Aplicar</Button>
+			</div>
+		</div>
+	</div>
+{/if}
+
+<style lang="scss">
+	.tools-backdrop {
+		position: fixed;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		background: rgba(0, 0, 0, 0.4);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		z-index: 1000;
+		padding: 1rem;
+		backdrop-filter: blur(4px);
+	}
+
+	.tools-panel {
+		background: var(--color--card-background);
+		border-radius: 16px;
+		box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+		width: 100%;
+		max-width: 500px;
+		max-height: 80vh;
+		overflow: hidden;
+		display: flex;
+		flex-direction: column;
+		border: 1px solid rgba(var(--color--border-rgb), 0.1);
+	}
+
+	.tools-panel-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		padding: 1.5rem;
+		border-bottom: 1px solid rgba(var(--color--border-rgb), 0.1);
+		background: linear-gradient(
+			135deg,
+			rgba(var(--color--primary-rgb), 0.05),
+			rgba(var(--color--secondary-rgb), 0.05)
+		);
+
+		h3 {
+			margin: 0;
+			font-size: 1.1rem;
+			font-weight: 600;
+			color: var(--color--text);
+		}
+
+		.close-button {
+			width: 32px;
+			height: 32px;
+			border-radius: 8px;
+			border: none;
+			background: rgba(var(--color--text-rgb), 0.1);
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			color: var(--color--text-shade);
+			cursor: pointer;
+			transition: all 0.2s ease;
+
+			&:hover {
+				background: rgba(var(--color--text-rgb), 0.15);
+				color: var(--color--text);
+			}
+		}
+	}
+
+	.tools-list {
+		flex: 1;
+		padding: 1rem 0;
+		overflow-y: auto;
+		max-height: 400px;
+
+		/* Scrollbar personalizada */
+		&::-webkit-scrollbar {
+			width: 4px;
+		}
+
+		&::-webkit-scrollbar-track {
+			background: transparent;
+		}
+
+		&::-webkit-scrollbar-thumb {
+			background: rgba(var(--color--border-rgb), 0.3);
+			border-radius: 2px;
+		}
+	}
+
+	.tool-item {
+		padding: 0.75rem 1.5rem;
+		transition: background-color 0.2s ease;
+		border-left: 3px solid transparent;
+
+		&:hover {
+			background-color: rgba(var(--color--primary-rgb), 0.03);
+			border-left-color: rgba(var(--color--primary-rgb), 0.3);
+		}
+	}
+
+	.tool-checkbox {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		cursor: pointer;
+		user-select: none;
+		margin-bottom: 0.5rem;
+		position: relative;
+
+		input[type='checkbox'] {
+			position: absolute;
+			opacity: 0;
+			width: 0;
+			height: 0;
+
+			&:checked + .checkbox-custom {
+				background: var(--color--primary);
+				border-color: var(--color--primary);
+				color: white;
+
+				svg {
+					opacity: 1;
+					transform: scale(1);
+				}
+			}
+		}
+
+		.checkbox-custom {
+			width: 20px;
+			height: 20px;
+			border: 2px solid rgba(var(--color--border-rgb), 0.3);
+			border-radius: 4px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			transition: all 0.2s ease;
+			background: var(--color--card-background);
+
+			svg {
+				opacity: 0;
+				transform: scale(0.5);
+				transition: all 0.2s ease;
+			}
+		}
+
+		.tool-icon {
+			font-size: 1.2rem;
+			flex-shrink: 0;
+		}
+
+		.tool-name {
+			font-weight: 500;
+			color: var(--color--text);
+			text-transform: capitalize;
+		}
+	}
+
+	.tool-description {
+		margin-left: 2.95rem;
+		font-size: 0.85rem;
+		color: var(--color--text-shade);
+		line-height: 1.4;
+		margin-bottom: 0.25rem;
+	}
+
+	.tool-category {
+		margin-left: 2.95rem;
+		font-size: 0.8rem;
+		color: var(--color--primary);
+		font-weight: 500;
+		opacity: 0.8;
+	}
+
+	.no-tools {
+		padding: 2rem;
+		text-align: center;
+		color: var(--color--text-shade);
+
+		.no-tools-icon {
+			font-size: 2rem;
+			margin-bottom: 1rem;
+			opacity: 0.6;
+		}
+
+		p {
+			margin: 0 0 0.5rem;
+			font-weight: 500;
+		}
+
+		small {
+			opacity: 0.7;
+		}
+	}
+
+	.tools-panel-footer {
+		padding: 1rem 1.5rem;
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		border-top: 1px solid rgba(var(--color--border-rgb), 0.1);
+		background: rgba(var(--color--primary-rgb), 0.02);
+
+		.active-count {
+			font-size: 0.85rem;
+			color: var(--color--text-shade);
+			font-weight: 500;
+		}
+	}
+
+	@media (max-width: 768px) {
+		.tools-panel {
+			margin: 0.5rem;
+			max-width: none;
+			border-radius: 12px;
+		}
+
+		.tools-panel-header {
+			padding: 1rem;
+		}
+
+		.tool-item {
+			padding: 0.75rem 1rem;
+		}
+
+		.tool-description,
+		.tool-category {
+			margin-left: 2.75rem;
+		}
+
+		.tools-panel-footer {
+			padding: 1rem;
+			flex-direction: column;
+			gap: 0.75rem;
+		}
+	}
+</style>

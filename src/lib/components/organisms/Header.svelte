@@ -21,6 +21,10 @@
 		</div>
 
 		<div class="links">
+			<a href="/chat">Chat</a>
+		</div>
+
+		<div class="links">
 			<a href="/contact">Contacto</a>
 		</div>
 

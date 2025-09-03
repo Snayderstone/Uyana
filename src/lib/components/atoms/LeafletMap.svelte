@@ -12,6 +12,10 @@
 	let mapElement: HTMLElement;
 	let map: Map;
 	let leafletLoaded = false;
+	let currentTileLayer: any = null;
+	let observer: MutationObserver;
+	let mediaQuery: MediaQueryList;
+	let handleMediaChange: () => void;
 	const dispatch = createEventDispatcher();
 
 	// Exposición de la instancia del mapa para que los componentes padre puedan interactuar con ella
@@ -90,15 +94,67 @@
 				markerZoomAnimation: true
 			}).setView(center, zoom);
 
-			// Añadimos una capa de mapa más estética
-			//https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png (Original del Luis)
-			//https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png (Original de StreetMap)
-			//https://{s}.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}{r}.png (Dark)
-			L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+			// Añadimos una capa de mapa más estética que se adapte al tema
+			// Detectar si estamos en modo oscuro
+			const isDarkMode =
+				document.documentElement.getAttribute('data-theme') === 'dark' ||
+				(document.documentElement.getAttribute('data-theme') === 'auto' &&
+					window.matchMedia('(prefers-color-scheme: dark)').matches);
+
+			const tileUrl = isDarkMode
+				? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+				: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+
+			currentTileLayer = L.tileLayer(tileUrl, {
 				attribution: '', // Eliminamos el texto de atribución
 				subdomains: 'abcd',
 				maxZoom: 19
-			}).addTo(map); // Arreglamos el problema de los íconos de Leaflet para casos donde no usamos marcadores personalizados
+			}).addTo(map);
+
+			// Función para cambiar tiles según el tema
+			const updateTiles = () => {
+				if (!map || !currentTileLayer) return;
+
+				const isDark =
+					document.documentElement.getAttribute('data-theme') === 'dark' ||
+					(document.documentElement.getAttribute('data-theme') === 'auto' &&
+						window.matchMedia('(prefers-color-scheme: dark)').matches);
+
+				const newTileUrl = isDark
+					? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+					: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+
+				// Remover capa actual y agregar nueva
+				map.removeLayer(currentTileLayer);
+				currentTileLayer = L.tileLayer(newTileUrl, {
+					attribution: '',
+					subdomains: 'abcd',
+					maxZoom: 19
+				}).addTo(map);
+			};
+
+			// Escuchar cambios en el atributo data-theme
+			observer = new MutationObserver((mutations) => {
+				mutations.forEach((mutation) => {
+					if (mutation.type === 'attributes' && mutation.attributeName === 'data-theme') {
+						updateTiles();
+					}
+				});
+			});
+
+			observer.observe(document.documentElement, {
+				attributes: true,
+				attributeFilter: ['data-theme']
+			});
+
+			// Escuchar cambios en prefers-color-scheme para tema auto
+			mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+			handleMediaChange = () => {
+				if (document.documentElement.getAttribute('data-theme') === 'auto') {
+					updateTiles();
+				}
+			};
+			mediaQuery.addEventListener('change', handleMediaChange); // Arreglamos el problema de los íconos de Leaflet para casos donde no usamos marcadores personalizados
 			const defaultIcon = L.icon({
 				iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
 				iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
@@ -124,6 +180,14 @@
 		// Limpiamos el mapa cuando el componente se destruye
 		if (map) {
 			map.remove();
+		}
+
+		// Limpiar observers
+		if (observer) {
+			observer.disconnect();
+		}
+		if (mediaQuery && handleMediaChange) {
+			mediaQuery.removeEventListener('change', handleMediaChange);
 		}
 	});
 

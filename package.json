@@ -51,9 +51,12 @@
     "@fontsource/inter": "^4.5.15",
     "@fontsource/merriweather": "^4.5.14",
     "@fontsource/ubuntu-mono": "^4.5.11",
+    "@modelcontextprotocol/sdk": "^1.17.5",
     "@supabase/supabase-js": "^2.56.0",
     "@types/leaflet": "^1.9.20",
     "chart.js": "^4.5.0",
-    "leaflet": "^1.9.4"
+    "dotenv": "^17.2.1",
+    "leaflet": "^1.9.4",
+    "zod": "^3.25.76"
   }
 }

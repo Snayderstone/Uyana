@@ -93,3 +93,34 @@
 .animated-marker {
   animation: marker-bounce 0.5s ease-in-out;
 }
+
+// Fix para eliminar bordes negros en los tiles del mapa
+.leaflet-tile-container {
+  img {
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+  }
+}
+
+// Estilo adicional específico para el contenedor del mapa
+.leaflet-layer, 
+.leaflet-tile {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+// Fix específico para modo oscuro si es necesario
+[data-theme='dark'],
+[data-theme='auto'] {
+  @media (prefers-color-scheme: dark) {
+    .leaflet-tile-container img,
+    .leaflet-layer,
+    .leaflet-tile {
+      border: none !important;
+      outline: none !important;
+      box-shadow: none !important;
+    }
+  }
+}
