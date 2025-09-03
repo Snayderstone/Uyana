@@ -11,17 +11,16 @@
 	</div>
 	<div class="content">
 		<div class="copyright">
-			This template was built by <a
-				href="https://fantinel.dev?utm_source=site-template"
+			Universidad Central del Ecuador <a
+				href="https://www.uce.edu.ec/web/di"
 				target="_blank"
-				rel="noopener noreferrer">Matheus Fantinel</a
+				rel="noopener noreferrer">Dirección de Investigación</a
 			>.
 		</div>
 		<div class="credits">
-			Powered by <a href="https://kit.svelte.dev/" target="_blank" rel="noopener noreferrer"
-				>SvelteKit</a
-			>. Icons by
-			<a href="https://iconoir.com/" target="_blank" rel="noopener noreferrer">Iconoir</a>.
+			Impulsado por <a href="https://www.uce.edu.ec/web/fing" target="_blank" rel="noopener noreferrer"
+				>Sistemas de Información</a
+			>.
 		</div>
 		<div class="socials">
 			<Socials />
