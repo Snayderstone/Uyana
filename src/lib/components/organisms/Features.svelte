@@ -8,8 +8,8 @@
 
 <ContentSection
 	id="features"
-	title="Features"
-	description="Here are some of the features of this template"
+	title="Características"
+	description="Aqui algunas de las características principales de Uyana"
 >
 	<div class="features-container">
 		<div class="three-group-grid">

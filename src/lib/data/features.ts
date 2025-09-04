@@ -2,42 +2,43 @@ import type { Feature } from "$lib/utils/types";
 
 export default [ 
   {
-    name: 'Markdown Support',
+    name: 'Mapa Interactivo',
     description:
-      'Blog posts are written in Markdown, a simple and nearly-universal format. This means you can bring over your posts from other platforms, and easily export to another if you want to.',
-    image: 'images/features/markdown.jpg',
-    tags: [{ label: 'Powered by MDsveX' }]
+      'Los mapas interactivos permiten a los usuarios explorar datos geoespaciales de manera visual e intuitiva.',
+    image: 'images/features/interactive_map.gif',
+    tags: [{ label: 'Powered by Leaflet' }]
   }, 
   {
-    name: 'Themeable',
+    name: 'Dashbboards',
     description:
-      'You can easily theme the entire website by changing just a few colors in the _themes.scss file.',
-    image: 'images/features/themeable.jpg',
+      'Los dashboards proporcionan una vista consolidada de métricas clave y datos importantes para la toma de decisiones.',
+    image: 'images/features/interactive_dashboard.gif',
     tags: [{ label: 'Primary Color' }, { label: 'Secondary Color', color: 'secondary' }]
   }, 
   {
-    name: 'Extensible',
+    name: 'Investigaciones',
     description:
-      'Components are built to be reused, and you can build new pages and layouts without much CSS knowledge. You can see all components in Histoire by running "npm run story:dev"',
-    image: 'images/features/extensible.jpg',
+      'Sección dedicada a la presentación y análisis de investigaciones realizadas en diversas áreas del conocimiento.',
+    image: 'images/features/interactive_investigadores.gif',
   }, 
   {
-    name: 'Well Optimized',
+    name: 'Revista de la Dirección de Investigación',
     description:
-      'Images are automatically optimized and lazy loaded, to ensure the website loads as fast as possible regardless of connection speed.',
-    image: 'images/features/optimized.jpg',
-    tags: [{ label: 'Powered by Image Transmutation' }]
+      'Esta revista presenta investigaciones y estudios realizados por la Dirección de Investigación, abarcando diversas áreas del conocimiento.',
+    image: 'images/features/interactive_revista.gif',
+    tags: [{ label: 'Revista' }]
   }, 
   {
-    name: 'Light and Dark Modes',
+    name: 'Blog',
     description:
-      'This template was built with dark mode in mind. It can swap between themes automatically (based on system settings) or manually. Both themes can be tweaked in the _themes.scss file.',
-    image: 'images/features/light-dark.jpg',
+      'El blog ofrece artículos, noticias y actualizaciones sobre temas relevantes, proporcionando una plataforma para compartir conocimientos y experiencias.',
+    image: 'images/features/interactive_blog.gif',
   },
   {
-    name: 'Open Source',
+    name: 'Chat',
     description:
-      'All code is open source, which means you can copy and modify it to your heart\'s content. All I ask is that you make your code open too so that knowledge can be passed on.',
-    image: 'images/features/open-source.jpg'
+      'El chat permite solventar dudas del usuario sobre los datos presentados en el mapa interactivo y otras secciones de la plataforma.',
+    image: 'images/features/interactive_chat.gif',
+    tags: [{ label: 'AI Powered' }]
   },
 ] as Feature[];
