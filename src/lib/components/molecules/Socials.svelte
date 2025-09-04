@@ -4,14 +4,20 @@
 	import LinkedInIcon from '$lib/icons/socials/linkedin.svelte';
 	import EmailIcon from '$lib/icons/socials/email.svelte';
 	import RssIcon from '$lib/icons/rss.svelte';
-	import MastodonIcon from '$lib/icons/socials/mastodon.svelte';
+	import FacebookIcon from '$lib/icons/socials/facebook.svelte';
+	import YoutubeIcon from '$lib/icons/socials/youtube.svelte';
+	import XIcon from '$lib/icons/socials/x.svelte';
+
 
 	// Props for configurable social links
 	export let telegramUrl = 'https://t.me/yourusername';
 	export let mastodonUrl = 'https://mastodon.social/@yourusername';
-	export let githubUrl = 'https://github.com/yourusername';
-	export let linkedinUrl = 'https://linkedin.com/in/yourusername';
+	export let githubUrl = 'https://github.com/Snayderstone/Uyana';
+	export let linkedinUrl = 'https://www.linkedin.com/school/tungabhadra-b.ed-college-kottur---583134/about/';
 	export let emailUrl = 'mailto:your.email@example.com';
+	export let facebookUrl = 'https://www.facebook.com/InvestigaUCE';
+	export let youtubeUrl = 'https://www.uce.edu.ec/web/investigadores/home';
+	export let xUrl = 'https://x.com/InvestigaUCE';
 </script>
 
 <div class="socials">
@@ -23,15 +29,6 @@
 		aria-label="Telegram Profile"
 	>
 		<TelegramIcon />
-	</a>
-	<a
-		href={mastodonUrl}
-		target="_blank"
-		rel="me noreferrer"
-		title="Say Hi on Mastodon"
-		aria-label="Mastodon Profile"
-	>
-		<MastodonIcon />
 	</a>
 	<a
 		href={githubUrl}
@@ -59,6 +56,33 @@
 		aria-label="Send Email"
 	>
 		<EmailIcon />
+	</a>
+	<a
+		href={facebookUrl}
+		target="_blank"
+		rel="noopener noreferrer"
+		title="Send an email"
+		aria-label="Send Email"
+	>
+		<FacebookIcon />
+	</a>
+	<a
+		href={youtubeUrl}
+		target="_blank"
+		rel="noopener noreferrer"
+		title="Send an email"
+		aria-label="Send Email"
+	>
+		<YoutubeIcon />
+	</a>
+	<a
+		href={xUrl}
+		target="_blank"
+		rel="noopener noreferrer"
+		title="Send an email"
+		aria-label="Send Email"
+	>
+		<XIcon />
 	</a>
 </div>
 
