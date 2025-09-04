@@ -11,7 +11,6 @@
 
 	// Props for configurable social links
 	export let telegramUrl = 'https://t.me/yourusername';
-	export let mastodonUrl = 'https://mastodon.social/@yourusername';
 	export let githubUrl = 'https://github.com/Snayderstone/Uyana';
 	export let linkedinUrl = 'https://www.linkedin.com/school/tungabhadra-b.ed-college-kottur---583134/about/';
 	export let emailUrl = 'mailto:your.email@example.com';

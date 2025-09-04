@@ -1,19 +1,18 @@
 <script>
 	import FeaturesIcon from '$lib/icons/features.svelte';
+	import SparklingHighlight from '$lib/components/molecules/SparklingHighlight.svelte';
 	import GitHubIcon from '$lib/icons/socials/github.svelte';
 	import Button from '$lib/components/atoms/Button.svelte';
 	import Sparkles from '../atoms/Sparkles.svelte';
 </script>
 
 <section id="hero">
-	<h1 class="hello">This is a SvelteKit Static Blog Template!</h1>
-	<p class="intro">
-		<span class="left">It supports Markdown,</span>
-		<span class="right">and is really fast.</span>
-	</p>
+	<h1 class="hello">REPRESENTACIÓN <SparklingHighlight color="primary">GEOESPACIAL</SparklingHighlight>
+		 DE LA ACTIVIDAD INVESTIGATIVA!
+	</h1>
 	<div class="ctas">
 		<Sparkles>
-			<Button href="https://github.com/matfantinel/sveltekit-static-blog-template">
+			<Button href="https://github.com/Snayderstone/Uyana">
 				<GitHubIcon slot="icon" />
 				Source Code
 			</Button>
