@@ -2,15 +2,21 @@
 	import { createEventDispatcher } from 'svelte';
 	import { fade, fly } from 'svelte/transition';
 	import Button from '$lib/components/atoms/Button.svelte';
+	import ToolInfoPopup from './ToolInfoPopup.svelte';
 
 	// Props
 	export let isOpen = false;
 	export let tools: any[] = [];
 	export let activeTools: Set<string> = new Set();
 
+	// Estado del popup de información
+	let isToolInfoOpen = false;
+	let selectedTool: any = null;
+
 	const dispatch = createEventDispatcher<{
 		close: void;
 		toggleTool: { toolName: string };
+		useQuestion: { question: string };
 	}>();
 
 	function handleClose() {
@@ -32,7 +38,9 @@
 			chat: '💬',
 			map: '🗺️',
 			geo: '🌍',
-			data: '💾'
+			data: '💾',
+			'fecha-tiempo-ecuador': '🕒',
+			'proyectos-uce': '📊'
 		};
 		return emojiMap[toolName] || '⚙️';
 	}
@@ -41,6 +49,28 @@
 		if (e.target === e.currentTarget) {
 			handleClose();
 		}
+	}
+
+	function showToolInfo(tool: any) {
+		selectedTool = tool;
+		isToolInfoOpen = true;
+	}
+
+	function handleInfoClose() {
+		isToolInfoOpen = false;
+	}
+
+	function handleActivateTool(event: CustomEvent<{ toolName: string }>) {
+		const { toolName } = event.detail;
+		if (!activeTools.has(toolName)) {
+			handleToolToggle(toolName);
+		}
+	}
+
+	function handleUseQuestion(event: CustomEvent<{ question: string }>) {
+		// Reenviar el evento con la pregunta seleccionada
+		dispatch('useQuestion', { question: event.detail.question });
+		handleClose();
 	}
 </script>
 
@@ -95,9 +125,15 @@
 							<span class="tool-name">{tool.title || tool.name}</span>
 						</label>
 						<div class="tool-description">{tool.description}</div>
-						{#if tool.category}
-							<div class="tool-category">📂 {tool.category}</div>
-						{/if}
+						<div class="tool-actions">
+							{#if tool.category}
+								<div class="tool-category">📂 {tool.category}</div>
+							{/if}
+							<button class="info-button" on:click|stopPropagation={() => showToolInfo(tool)}>
+								<span class="info-icon">ℹ️</span>
+								<span>Más información</span>
+							</button>
+						</div>
 					</div>
 				{:else}
 					<div class="no-tools">
@@ -120,6 +156,15 @@
 		</div>
 	</div>
 {/if}
+
+<!-- Popup de información de herramienta -->
+<ToolInfoPopup
+	isOpen={isToolInfoOpen}
+	tool={selectedTool}
+	on:close={handleInfoClose}
+	on:activateTool={handleActivateTool}
+	on:useQuestion={handleUseQuestion}
+/>
 
 <style lang="scss">
 	.tools-backdrop {
@@ -286,12 +331,42 @@
 		margin-bottom: 0.25rem;
 	}
 
-	.tool-category {
+	.tool-actions {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
 		margin-left: 2.95rem;
+		margin-top: 0.5rem;
+	}
+
+	.tool-category {
 		font-size: 0.8rem;
 		color: var(--color--primary);
 		font-weight: 500;
 		opacity: 0.8;
+	}
+
+	.info-button {
+		background: none;
+		border: none;
+		padding: 0.25rem 0.5rem;
+		font-size: 0.8rem;
+		color: var(--color--text-shade);
+		display: flex;
+		align-items: center;
+		gap: 0.25rem;
+		cursor: pointer;
+		border-radius: 4px;
+		transition: all 0.2s ease;
+
+		&:hover {
+			background: rgba(var(--color--primary-rgb), 0.05);
+			color: var(--color--primary);
+		}
+
+		.info-icon {
+			font-size: 0.9rem;
+		}
 	}
 
 	.no-tools {

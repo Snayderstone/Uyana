@@ -3,6 +3,7 @@ import type { RequestHandler } from '@sveltejs/kit';
 import { processMcpRequest, deleteSession, getServerStats } from '$lib/mcp-core/server/mcpServer';
 import { McpValidation, JsonRpcErrorCodes } from '$lib/mcp-core/shared/types';
 import type { JsonRpcRequest } from '$lib/mcp-core/shared/types';
+import { mcpLogger } from '$lib/mcp-core/shared/mcpLogger';
 
 /**
  * Cabecera para el ID de sesión MCP
@@ -13,24 +14,49 @@ const SESSION_ID_HEADER = 'mcp-session-id';
  * Manejador de solicitudes POST para llamadas MCP
  */
 export const POST: RequestHandler = async ({ request, getClientAddress }) => {
+	const startTime = Date.now();
+	const requestId = `api-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+
+	// Establecer ID de solicitud para logs
+	mcpLogger.setRequestId(requestId);
+
 	try {
 		// Obtener ID de sesión y metadata
 		const sessionId = request.headers.get(SESSION_ID_HEADER);
 		const userAgent = request.headers.get('user-agent') || 'unknown';
 		const clientAddress = getClientAddress();
+		const requestUrl = request.url;
+
+		// Registrar nueva solicitud recibida
+		mcpLogger.info('API_MCP', 'REQUEST_RECEIVED', 'Nueva solicitud MCP recibida', {
+			url: requestUrl,
+			method: 'POST',
+			sessionId: sessionId || 'new-session',
+			clientAddress,
+			requestId
+		});
 
 		// Metadata de la solicitud
 		const requestMetadata = {
 			userAgent,
 			ipAddress: clientAddress,
-			timestamp: Date.now()
+			timestamp: Date.now(),
+			requestId
 		};
+
+		mcpLogger.debug('API_MCP', 'REQUEST_METADATA', 'Metadata de la solicitud', requestMetadata);
 
 		// Procesar el cuerpo de la solicitud
 		let body: JsonRpcRequest;
 		try {
 			body = await request.json();
+			mcpLogger.debug('API_MCP', 'REQUEST_BODY', 'Cuerpo de la solicitud JSON-RPC', body);
 		} catch (parseError) {
+			mcpLogger.error('API_MCP', 'PARSE_ERROR', 'Error parseando JSON de la solicitud', {
+				error: parseError,
+				headers: Object.fromEntries(request.headers.entries())
+			});
+
 			return json(
 				McpValidation.createJsonRpcError(
 					null,
@@ -43,6 +69,12 @@ export const POST: RequestHandler = async ({ request, getClientAddress }) => {
 
 		// Validar que sea una solicitud JSON-RPC válida
 		if (!McpValidation.isValidJsonRpcRequest(body)) {
+			mcpLogger.error('API_MCP', 'INVALID_REQUEST', 'Solicitud JSON-RPC inválida', {
+				body,
+				validation: 'failed',
+				requestId
+			});
+
 			return json(
 				McpValidation.createJsonRpcError(
 					(body as any)?.id || null,
@@ -53,11 +85,31 @@ export const POST: RequestHandler = async ({ request, getClientAddress }) => {
 			);
 		}
 
+		mcpLogger.info('API_MCP', 'JSON_RPC_VALID', `Solicitud JSON-RPC válida: ${body.method}`, {
+			method: body.method,
+			id: body.id
+		});
+
 		// Procesar la solicitud MCP
+		mcpLogger.info('API_MCP', 'PROCESSING_START', `Enviando solicitud a mcpServer: ${body.method}`);
+
+		const processStartTime = Date.now();
 		const { response, sessionId: newSessionId } = await processMcpRequest(
 			body,
 			sessionId || undefined,
 			requestMetadata
+		);
+
+		const processDuration = Date.now() - processStartTime;
+		mcpLogger.info(
+			'API_MCP',
+			'PROCESSING_COMPLETE',
+			`Procesamiento completado para ${body.method}`,
+			{
+				duration: `${processDuration}ms`,
+				method: body.method,
+				hasError: !!response.error
+			}
 		);
 
 		// Determinar el código de estado HTTP
@@ -67,18 +119,45 @@ export const POST: RequestHandler = async ({ request, getClientAddress }) => {
 				: 500
 			: 200;
 
+		mcpLogger.debug('API_MCP', 'RESPONSE_DATA', 'Datos de la respuesta', {
+			statusCode,
+			sessionId: newSessionId,
+			response
+		});
+
 		// Construir la respuesta
+		const totalDuration = Date.now() - startTime;
+
+		// Registrar estadísticas completas de la solicitud
+		mcpLogger.info('API_MCP', 'REQUEST_COMPLETE', `Solicitud MCP completada: ${body.method}`, {
+			method: body.method,
+			id: body.id,
+			statusCode,
+			sessionId: newSessionId,
+			duration: `${totalDuration}ms`,
+			hasError: !!response.error
+		});
+
 		return new Response(JSON.stringify(response), {
 			status: statusCode,
 			headers: {
 				'Content-Type': 'application/json',
 				[SESSION_ID_HEADER]: newSessionId,
 				'Cache-Control': 'no-cache',
-				'X-MCP-Server': 'uyana-mcp-server/2.0.0'
+				'X-MCP-Server': 'uyana-mcp-server/2.0.0',
+				'X-Request-ID': requestId,
+				'X-Response-Time': `${totalDuration}ms`
 			}
 		});
 	} catch (error) {
-		console.error('Error crítico en POST /api/mcp:', error);
+		const totalDuration = Date.now() - startTime;
+
+		mcpLogger.error('API_MCP', 'CRITICAL_ERROR', 'Error crítico en API MCP', {
+			error: error instanceof Error ? error.message : String(error),
+			stackTrace: error instanceof Error ? error.stack : undefined,
+			duration: `${totalDuration}ms`,
+			requestId
+		});
 
 		const errorResponse = McpValidation.createJsonRpcError(
 			null,
@@ -89,7 +168,9 @@ export const POST: RequestHandler = async ({ request, getClientAddress }) => {
 		return json(errorResponse, {
 			status: 500,
 			headers: {
-				'X-MCP-Error': 'internal-server-error'
+				'X-MCP-Error': 'internal-server-error',
+				'X-Request-ID': requestId,
+				'X-Response-Time': `${totalDuration}ms`
 			}
 		});
 	}

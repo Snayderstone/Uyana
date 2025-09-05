@@ -9,7 +9,7 @@
 		<Image src="/images/sample-image.png" alt="UYANA - Plataforma de investigaciones UCE" />
 		<div class="image-caption">
 			<h1>UYANA</h1>
-			<p>Unión UCE + Dirección de Investigación</p>
+			<p>Unión UCE + Dirección de Investigación = Uyana</p>
 		</div>
 	</div>
 </section>

@@ -709,6 +709,32 @@ export const weatherTool: McpTool<WeatherToolArgs> = {
 		dataSource: 'Open-Meteo API',
 		rateLimit: 'Sin límites para uso normal',
 		caching: 'Datos cacheados por 10 minutos',
-		timeout: '15 segundos con reintentos automáticos'
+		timeout: '15 segundos con reintentos automáticos',
+		// Información adicional para el popup de la herramienta
+		helpInfo: {
+			title: '🌤️ Pronóstico del Clima Global',
+			description:
+				'Esta herramienta te permite obtener información meteorológica actualizada para cualquier ciudad del mundo, incluyendo pronósticos para los próximos 7 días.',
+			howToUse: [
+				'1️⃣ Pregunta por el clima o pronóstico de cualquier ciudad del mundo.',
+				'2️⃣ Especifica el nombre de la ciudad claramente en tu consulta.',
+				'3️⃣ La herramienta detectará automáticamente la ciudad y te mostrará la información meteorológica actual y el pronóstico.'
+			],
+			suggestedQuestions: [
+				'¿Cómo está el clima en Quito?',
+				'Muéstrame el pronóstico del clima en Madrid',
+				'¿Cuál es la temperatura actual en Tokio?',
+				'¿Va a llover en Nueva York esta semana?',
+				'¿Qué tiempo hace en Buenos Aires?',
+				'Pronóstico del clima para Ciudad de México',
+				'¿Cómo estará el clima en París los próximos días?'
+			],
+			tips: [
+				'🌍 Funciona con ciudades de cualquier país y en cualquier idioma',
+				'⏱️ Los datos se actualizan cada 10 minutos para mayor precisión',
+				'🔍 Incluye el nombre completo de la ciudad para mayor precisión (ej. "Santiago de Chile" en lugar de solo "Santiago")',
+				'🌡️ Muestra temperaturas en grados Celsius, velocidad del viento en km/h y más detalles relevantes'
+			]
+		}
 	}
 };

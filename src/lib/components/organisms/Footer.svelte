@@ -14,7 +14,7 @@
 			Universidad Central del Ecuador <a
 				href="https://www.uce.edu.ec/web/di"
 				target="_blank"
-				rel="noopener noreferrer">Dirección de Investigación</a
+				rel="noopener noreferrer">- Dirección de Investigación</a
 			>.
 		</div>
 		<div class="credits">

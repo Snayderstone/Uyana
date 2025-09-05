@@ -1,4 +1,5 @@
 import type { JsonRpcRequest, JsonRpcResponse, McpValidation, McpResponse } from '../shared/types';
+import { mcpLogger } from '../shared/mcpLogger';
 
 /**
  * Configuración del cliente MCP
@@ -34,7 +35,9 @@ export class McpClient {
 	 * Genera un ID único para la solicitud
 	 */
 	private generateRequestId(): string {
-		return `${Date.now()}-${++this.requestCounter}`;
+		const requestId = `req-${Date.now()}-${++this.requestCounter}`;
+		mcpLogger.setRequestId(requestId);
+		return requestId;
 	}
 
 	/**
@@ -44,8 +47,17 @@ export class McpClient {
 		request: JsonRpcRequest,
 		attempt = 1
 	): Promise<{ response: JsonRpcResponse; sessionId?: string }> {
+		const startTime = Date.now();
 		const controller = new AbortController();
 		const timeoutId = setTimeout(() => controller.abort(), this.config.timeout);
+
+		// Registrar solicitud iniciada
+		mcpLogger.info('MCP_CLIENT', 'REQUEST_START', `Iniciando solicitud ${request.method}`, {
+			requestId: request.id,
+			method: request.method,
+			params: request.params,
+			attempt: attempt
+		});
 
 		try {
 			const headers: Record<string, string> = {
@@ -56,7 +68,19 @@ export class McpClient {
 			// Agregar ID de sesión si existe
 			if (this.sessionId) {
 				headers['mcp-session-id'] = this.sessionId;
+				mcpLogger.debug('MCP_CLIENT', 'SESSION', `Usando sessionId: ${this.sessionId}`);
 			}
+
+			// Registrar detalles de la solicitud HTTP
+			mcpLogger.debug(
+				'MCP_CLIENT',
+				'HTTP_REQUEST',
+				`Enviando solicitud POST a ${this.config.baseUrl}`,
+				{
+					headers,
+					body: request
+				}
+			);
 
 			const httpResponse = await fetch(this.config.baseUrl, {
 				method: 'POST',
@@ -66,24 +90,97 @@ export class McpClient {
 			});
 
 			if (!httpResponse.ok) {
-				throw new Error(`HTTP ${httpResponse.status}: ${httpResponse.statusText}`);
+				const errorMsg = `HTTP ${httpResponse.status}: ${httpResponse.statusText}`;
+				mcpLogger.error('MCP_CLIENT', 'HTTP_ERROR', errorMsg, {
+					status: httpResponse.status,
+					statusText: httpResponse.statusText,
+					url: this.config.baseUrl
+				});
+				throw new Error(errorMsg);
 			}
 
 			// Extraer ID de sesión de la respuesta
 			const newSessionId = httpResponse.headers.get('mcp-session-id');
 			if (newSessionId && newSessionId !== this.sessionId) {
 				this.sessionId = newSessionId;
+				mcpLogger.info('MCP_CLIENT', 'SESSION_UPDATED', `Nuevo sessionId: ${newSessionId}`);
 			}
 
 			const response: JsonRpcResponse = await httpResponse.json();
+			const duration = Date.now() - startTime;
+
+			// Registrar respuesta exitosa
+			if (response.error) {
+				mcpLogger.warn(
+					'MCP_CLIENT',
+					'JSON_RPC_ERROR',
+					`Error en respuesta JSON-RPC: ${response.error.message}`,
+					{
+						error: response.error,
+						requestId: request.id,
+						duration: `${duration}ms`
+					}
+				);
+			} else {
+				mcpLogger.info(
+					'MCP_CLIENT',
+					'REQUEST_SUCCESS',
+					`Solicitud ${request.method} completada en ${duration}ms`,
+					{
+						requestId: request.id,
+						duration: `${duration}ms`,
+						hasResult: response.result !== undefined
+					}
+				);
+
+				// Registrar detalles de respuesta en debug
+				mcpLogger.debug(
+					'MCP_CLIENT',
+					'RESPONSE_DETAIL',
+					`Respuesta detallada para ${request.method}`,
+					{
+						result: response.result
+					}
+				);
+			}
+
+			// Registrar respuesta MCP
+			mcpLogger.mcpResponse(request.method, response.result, duration);
 
 			return { response, sessionId: newSessionId || undefined };
 		} catch (error) {
+			const duration = Date.now() - startTime;
+
 			if (attempt < this.config.retries && this.shouldRetry(error)) {
-				console.warn(`Reintento ${attempt}/${this.config.retries} para solicitud MCP:`, error);
+				mcpLogger.warn(
+					'MCP_CLIENT',
+					'RETRY',
+					`Reintento ${attempt}/${this.config.retries} para solicitud MCP`,
+					{
+						error: error instanceof Error ? error.message : String(error),
+						requestId: request.id,
+						method: request.method,
+						duration: `${duration}ms`
+					}
+				);
+
 				await this.delay(Math.pow(2, attempt) * 1000); // Backoff exponencial
 				return this.makeRequest(request, attempt + 1);
 			}
+
+			mcpLogger.error(
+				'MCP_CLIENT',
+				'REQUEST_FAILED',
+				`Solicitud ${request.method} falló definitivamente`,
+				{
+					error: error instanceof Error ? error.message : String(error),
+					stackTrace: error instanceof Error ? error.stack : undefined,
+					requestId: request.id,
+					method: request.method,
+					duration: `${duration}ms`,
+					attempts: attempt
+				}
+			);
 
 			throw error;
 		} finally {
@@ -114,17 +211,27 @@ export class McpClient {
 	 * Envía una solicitud JSON-RPC al servidor MCP
 	 */
 	async sendRequest(method: string, params?: any): Promise<any> {
+		const requestId = this.generateRequestId();
 		const request: JsonRpcRequest = {
 			jsonrpc: '2.0',
-			id: this.generateRequestId(),
+			id: requestId,
 			method,
 			params
 		};
 
+		// Registrar solicitud MCP
+		mcpLogger.mcpRequest(method, params);
+
 		const { response } = await this.makeRequest(request);
 
 		if (response.error) {
-			throw new Error(`Error MCP [${response.error.code}]: ${response.error.message}`);
+			const errorMsg = `Error MCP [${response.error.code}]: ${response.error.message}`;
+			mcpLogger.error('MCP_CLIENT', 'RPC_ERROR', errorMsg, {
+				code: response.error.code,
+				message: response.error.message,
+				data: response.error.data
+			});
+			throw new Error(errorMsg);
 		}
 
 		return response.result;

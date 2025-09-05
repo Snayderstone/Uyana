@@ -16,6 +16,8 @@
 	import { useChatStore } from '$lib/stores/chatStore';
 	import { mcpClientManager } from '$lib/mcp-core/client/mcpClient';
 	import { aiClient } from '$lib/ai/aiClient';
+	import { mcpLogger } from '$lib/mcp-core/shared/mcpLogger';
+	import TimelineChart from '../molecules/TimelineChart.svelte';
 
 	// Estado de la interfaz
 	let selectedModel = 'deepseek';
@@ -50,7 +52,8 @@
 		setError,
 		setLoading,
 		getChatHistory,
-		toggleTool
+		toggleTool,
+		setActiveTools
 	} = useChatStore();
 
 	// Debug reactivo para monitorear mensajes
@@ -68,15 +71,28 @@
 	// Sugerencias para el estado vacío
 	const welcomeSuggestions = [
 		'¿Qué es UYANA y qué servicios ofrece?',
-		'Explícame sobre datos geoespaciales',
-		'¿Qué tipos de investigación realizan?',
-		'Cómo puedo acceder a los mapas interactivos?'
+		'¿Qué es la dirección general de investigación?',
+		'¿Cuál es la facultad que más proyectos de investigación tiene?',
+		'¿Cuáles son los proyectos de investigación con impacto internacional?'
 	];
 
 	// Inicialización al montar
 	onMount(async () => {
 		await initializeInterface();
 		await loadAvailableTools();
+
+		// Activar automáticamente las herramientas
+		toggleTool('fecha-tiempo-ecuador');
+		console.log('🕒 Herramienta fecha-tiempo-ecuador activada automáticamente');
+
+		toggleTool('proyectos-uce');
+		console.log('📊 Herramienta proyectos-uce activada automáticamente');
+
+		mcpLogger.info(
+			'CHAT_INTERFACE',
+			'TOOL_AUTO_ACTIVATED',
+			'Herramientas de fecha-tiempo y proyectos-uce activadas automáticamente'
+		);
 
 		// Listener global para atajos de teclado
 		function handleGlobalKeydown(event: KeyboardEvent) {
@@ -182,6 +198,44 @@
 		if (!message.trim() || $isLoading) {
 			console.log('❌ Mensaje vacío o loading activo');
 			return;
+		}
+
+		// Auto-activar herramientas basadas en el mensaje
+		const shouldActivateFechaTiempo = detectFechaTiempoEcuadorQuery(message) !== null;
+		const shouldActivateProyectos = detectProyectosUceQuery(message) !== null;
+
+		// Si debemos activar alguna herramienta, actualizar las herramientas activas
+		if (shouldActivateFechaTiempo || shouldActivateProyectos) {
+			const newActiveTools = new Set($activeTools);
+
+			if (shouldActivateFechaTiempo && !newActiveTools.has('fecha-tiempo-ecuador')) {
+				newActiveTools.add('fecha-tiempo-ecuador');
+				mcpLogger.debug(
+					'CHAT_INTERFACE',
+					'AUTO_ACTIVATE_TOOL',
+					'Activando herramienta fecha-tiempo-ecuador',
+					{
+						message: message.substring(0, 100)
+					}
+				);
+			}
+
+			if (shouldActivateProyectos && !newActiveTools.has('proyectos-uce')) {
+				newActiveTools.add('proyectos-uce');
+				mcpLogger.debug(
+					'CHAT_INTERFACE',
+					'AUTO_ACTIVATE_TOOL',
+					'Activando herramienta proyectos-uce',
+					{
+						message: message.substring(0, 100)
+					}
+				);
+			}
+
+			// Solo actualizar si hay cambios
+			if (newActiveTools.size !== $activeTools.size) {
+				setActiveTools(Array.from(newActiveTools));
+			}
 		}
 
 		// Agregar mensaje del usuario con animación
@@ -382,6 +436,10 @@
 				return detectSearchQuery(message);
 			case 'time':
 				return detectTimeQuery(message);
+			case 'fecha-tiempo-ecuador':
+				return detectFechaTiempoEcuadorQuery(message);
+			case 'proyectos-uce':
+				return detectProyectosUceQuery(message);
 			default:
 				// Para herramientas personalizadas, usar detección genérica
 				return detectGenericQuery(message, toolName);
@@ -443,6 +501,191 @@
 	}
 
 	/**
+	 * Detecta consultas de fecha y tiempo en Ecuador
+	 */
+	function detectFechaTiempoEcuadorQuery(message: string): Record<string, any> | null {
+		const lowerMessage = message.toLowerCase().trim();
+
+		// Patrones básicos de fecha y hora (sin necesidad de mencionar Ecuador)
+		const patternsFechaHora = [
+			/qué día es hoy/i,
+			/que dia es hoy/i,
+			/qué día es/i,
+			/que dia es/i,
+			/qué fecha es hoy/i,
+			/que fecha es hoy/i,
+			/qué fecha es/i,
+			/que fecha es/i,
+			/qué hora es/i,
+			/que hora es/i,
+			/qué hora tenemos/i,
+			/que hora tenemos/i,
+			/dime la hora/i,
+			/dime la fecha/i,
+			/fecha actual/i,
+			/hora actual/i,
+			/día de hoy/i,
+			/dia de hoy/i,
+			/fecha de hoy/i,
+			/hora de hoy/i,
+			/en qué semana estamos/i,
+			/en que semana estamos/i,
+			/qué trimestre es/i,
+			/que trimestre es/i,
+			/qué estación es/i,
+			/que estacion es/i
+		];
+
+		// Si contiene Ecuador o cumple con alguno de los patrones básicos
+		const tienePatronEcuador =
+			(lowerMessage.includes('ecuador') &&
+				(lowerMessage.includes('hora') ||
+					lowerMessage.includes('fecha') ||
+					lowerMessage.includes('día') ||
+					lowerMessage.includes('dia') ||
+					lowerMessage.includes('tiempo') ||
+					lowerMessage.includes('semana') ||
+					lowerMessage.includes('trimestre') ||
+					lowerMessage.includes('estación'))) ||
+			lowerMessage.includes('qué hora es en ecuador') ||
+			lowerMessage.includes('que hora es en ecuador') ||
+			lowerMessage.includes('qué fecha es en ecuador') ||
+			lowerMessage.includes('que fecha es en ecuador') ||
+			lowerMessage.includes('qué día es hoy en ecuador') ||
+			lowerMessage.includes('que dia es hoy en ecuador') ||
+			lowerMessage.includes('fecha ecuador') ||
+			lowerMessage.includes('hora ecuador');
+
+		const tienePatronFechaHora = patternsFechaHora.some((pattern) => pattern.test(lowerMessage));
+
+		// Si cumple con alguno de los patrones, devolver configuración de la herramienta
+		if (tienePatronEcuador || tienePatronFechaHora) {
+			// Determinar formato según el contenido
+			let formato = 'completo';
+			if (
+				lowerMessage.includes('hora exacta') ||
+				lowerMessage.includes('qué hora') ||
+				lowerMessage.includes('que hora')
+			) {
+				formato = 'hora';
+			} else if (
+				lowerMessage.includes('fecha completa') ||
+				lowerMessage.includes('qué fecha') ||
+				lowerMessage.includes('que fecha')
+			) {
+				formato = 'fecha';
+			}
+
+			// Determinar si incluir zona horaria
+			const incluirZonaHoraria = !lowerMessage.includes('sin zona horaria');
+
+			mcpLogger.debug(
+				'CHAT_INTERFACE',
+				'DETECT_FECHA_TIEMPO',
+				'Se detectó consulta de fecha/tiempo',
+				{
+					mensaje: message,
+					formato,
+					incluirZonaHoraria
+				}
+			);
+
+			return {
+				consulta: message,
+				formato: formato,
+				incluirZonaHoraria: incluirZonaHoraria
+			};
+		}
+
+		return null;
+	}
+
+	/**
+	 * Detecta consultas sobre proyectos de investigación UCE
+	 */
+	function detectProyectosUceQuery(message: string): Record<string, any> | null {
+		const lowerMessage = message.toLowerCase().trim();
+
+		// Patrones para detectar consultas sobre proyectos UCE
+		const patternsProyectosUce = [
+			/proyectos (de|en) (la )?uce/i,
+			/proyectos (de|en) (la )?universidad central/i,
+			/proyectos (de )?investigación/i,
+			/cuántos proyectos/i,
+			/cuantos proyectos/i,
+			/facultad(es)? (con )?(más |mas )?proyectos/i,
+			/(cuáles|cuales) son las facultad(es)?/i,
+			/qué facultad(es)?/i,
+			/que facultad(es)?/i,
+			/proyectos por facultad/i,
+			/tipos? de proyectos/i,
+			/proyectos activos/i,
+			/proyectos (en )?ejecución/i,
+			/proyectos cerrados/i,
+			/proyectos finalizados/i,
+			/estadísticas (de )?proyectos/i,
+			/estadisticas (de )?proyectos/i,
+			/financiamiento (de )?proyectos/i,
+			/alcance (de )?proyectos/i,
+			/campo(s)? (de )?conocimiento/i,
+			/área(s)? (de )?conocimiento/i,
+			/area(s)? (de )?conocimiento/i,
+			/proyectos sobre/i,
+			/proyectos de/i,
+			/ranking (de )?facultad/i,
+			/top .? (de )?facultad/i,
+			/(primeras?|mejores) .? facultad/i,
+			/muéstra(me)? (el )?ranking/i,
+			/muestra(me)? (el )?ranking/i,
+			/muéstra(me)? (las?|los?) top/i,
+			/muestra(me)? (las?|los?) top/i,
+			/ranking (de )?(las?|los?) \d+/i,
+			/top \d+ (de )?facultad/i,
+			/investigaciones sobre/i,
+			/investigaciones de/i,
+			/buscar proyectos/i
+		];
+
+		// Verificar si el mensaje coincide con alguno de los patrones
+		const tienePatronProyectosUce = patternsProyectosUce.some((pattern) =>
+			pattern.test(lowerMessage)
+		);
+
+		// Si menciona proyectos o investigación explícitamente
+		const mencionaProyectos =
+			lowerMessage.includes('proyecto') ||
+			lowerMessage.includes('proyectos') ||
+			lowerMessage.includes('investigación') ||
+			lowerMessage.includes('investigacion') ||
+			lowerMessage.includes('facultad');
+
+		// Si menciona UCE o Universidad Central explícitamente
+		const mencionaUCE =
+			lowerMessage.includes('uce') ||
+			lowerMessage.includes('universidad central') ||
+			lowerMessage.includes('central del ecuador');
+
+		// Si tiene alguno de los patrones o menciona proyectos y UCE
+		if (tienePatronProyectosUce || (mencionaProyectos && mencionaUCE)) {
+			mcpLogger.debug(
+				'CHAT_INTERFACE',
+				'PROYECTOS_DETECTED',
+				'Consulta de proyectos UCE detectada',
+				{
+					consulta: message
+				}
+			);
+
+			return {
+				consulta: message,
+				limite: 10
+			};
+		}
+
+		return null;
+	}
+
+	/**
 	 * Detección genérica para herramientas personalizadas
 	 */
 	function detectGenericQuery(message: string, toolName: string): Record<string, any> | null {
@@ -481,22 +724,34 @@
 		const messages: import('$lib/ai/aiManager').AIMessage[] = [
 			{
 				role: 'system',
-				content: `Eres UYANA, un asistente de IA especializado en investigación, geografía y datos geoespaciales de la Universidad Central del Ecuador.
+				content: `Eres **Chasky**, el asistente inteligente oficial de **UYANA**, una plataforma de divulgación de la actividad investigativa desarrollada junto con la **Dirección de Investigación de la Universidad Central del Ecuador (UCE)**. 
+**Tu rol principal:**
+- Ser el mensajero digital de la investigación, inspirado en los antiguos chaskis andinos.
+- Facilitar el acceso a la información científica y académica generada en la UCE.
+- Guiar a investigadores, estudiantes y público en general hacia el conocimiento de forma clara y confiable.
 
 **Tu personalidad:**
-- Eres amigable, profesional y conocedor
-- Respondes de manera clara y estructurada
-- Usas emojis apropiados para hacer las respuestas más amigables
-- Proporcionas información precisa sobre investigación geoespacial
+- Cercano, amigable y siempre respetuoso 🤝
+- Profesional y confiable 📚
+- Claro, estructurado y didáctico ✨
+- Usas emojis con moderación para dar calidez y dinamismo 🌍
 
-**Capacidades principales:**
-- Información sobre investigación geográfica y geoespacial
-- Datos cartográficos y SIG
-- Análisis espacial y geodatos
-- Investigaciones de la UCE
-- Mapas interactivos y visualización de datos
+**Tus capacidades principales incluyen:**
+1. Información sobre proyectos de investigación de la UCE (activos, inactivos, facultades, líneas de investigación, investigadores).
+2. Soporte en temas académicos relacionados con investigación, publicaciones y revistas de la UCE.
+3. Respuestas rápidas y útiles a preguntas del público en general, manteniendo un tono accesible y confiable.
+4. Explicar y guiar en temas de divulgación científica, publicaciones y revistas de la UCE.
+5. Dar información sobre la dirección de investigación de la UCE.
+6. Proveer información sobre el proyecto UYANA y sus actores.
 
-Responde de manera útil y concisa, manteniendo un tono profesional pero accesible.`
+**Estilo de respuesta:**
+- Sé breve pero sustancioso: responde en párrafos cortos y fáciles de leer.
+- Explica términos técnicos de forma sencilla cuando el usuario lo requiera.
+- Organiza la información con viñetas, listas o tablas si mejora la claridad.
+- Incluye referencias a la UCE o a la Dirección de Investigación cuando corresponda.
+- Siempre responde con precisión y evita divagar.
+
+Recuerda: eres **Chasky 👣**, el mensajero digital que conecta el conocimiento de la dirección de investigación de la UCE con la sociedad.`
 			},
 			...chatHistory,
 			{
@@ -570,8 +825,8 @@ Responde de manera útil y concisa, manteniendo un tono profesional pero accesib
 					</svg>
 				</div>
 				<div class="brand-text">
-					<h1>UYANA Chat</h1>
-					<p>Asistente Inteligente de Investigación</p>
+					<h1>Chasky Chat</h1>
+					<p>Asistente Inteligente en Investigación</p>
 				</div>
 			</div>
 
@@ -609,8 +864,8 @@ Responde de manera útil y concisa, manteniendo un tono profesional pero accesib
 	>
 		{#if $messages.length === 0}
 			<ChatWelcomeScreen
-				title="¡Hola! Soy UYANA 👋"
-				subtitle="Tu asistente especializado en investigación geoespacial. ¿En qué puedo ayudarte hoy?"
+				title="¡Hola! Soy Chasky 👋"
+				subtitle="Tu asistente especializado en investigación. ¿En qué puedo ayudarte hoy?"
 				suggestions={welcomeSuggestions}
 				on:suggestion={handleSuggestion}
 			/>
@@ -686,6 +941,8 @@ Responde de manera útil y concisa, manteniendo un tono profesional pero accesib
 	activeTools={$activeTools}
 	on:close={() => (isToolsPanelOpen = false)}
 	on:toggleTool={handleToggleTool}
+	on:useQuestion={(event) =>
+		handleSendMessage(new CustomEvent('send', { detail: { message: event.detail.question } }))}
 />
 
 <!-- Accesos rápidos -->

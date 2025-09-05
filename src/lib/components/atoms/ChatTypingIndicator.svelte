@@ -68,7 +68,7 @@
 			</div>
 
 			<div class="typing-text">
-				<span class="typing-label">UYANA está escribiendo</span>
+				<span class="typing-label">Chasky está escribiendo</span>
 				<div class="dots">
 					{#each Array(dots) as _, i}
 						<span class="dot" class:active={i < currentDots} style="animation-delay: {i * 150}ms" />

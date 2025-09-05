@@ -5,7 +5,7 @@
 </script>
 
 <div class="container">
-	<ContentSection title="Sobre Nosotros">
+	<ContentSection title="🌿 Sobre Nosotros">
 		<br />
 		<br />
 		<div class="card-overlay">
@@ -14,7 +14,7 @@
 					Explora nuestra misión, visión y valores
 					<SparklingHighlight color="primary">UYANA!</SparklingHighlight>
 				</h2>
-				<p>Descubre cómo estamos transformando el futuro con inovvación en Ecuador</p>
+				<p>UYANA es la plataforma digital de la Universidad Central del Ecuador, desarrollada junto con la Dirección de Investigación, que conecta y visibiliza la actividad científica mediante mapas interactivos, dashboards y el asistente inteligente Chasky</p>
 			</div>
 			<AboutUs />
 		</div>
