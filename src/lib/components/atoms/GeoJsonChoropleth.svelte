@@ -155,6 +155,7 @@
 
 		layer.on('mouseover', (e: any) => {
 			if (!hoverEnabled) return;
+			// === Estilo de borde y glow existente ===
 			e.target.setStyle({
 				color: hoverLineColor,
 				weight: Math.max(2, lineWeight + 1),
@@ -166,6 +167,19 @@
 				path.style.filter =
 					'drop-shadow(0 0 6px rgba(110,41,231,.55)) drop-shadow(0 0 14px rgba(110,41,231,.28))';
 			e.target.bringToFront?.();
+			// === HOVER: tooltip al pasar el puntero === // ADD
+			const id = feature?.properties?.[idProperty];
+			if (id && L) {
+				layer
+					.bindTooltip(`<div class="faculty-hover-tooltip">${id}</div>`, {
+						permanent: false, // se cierra solo
+						direction: 'center', // aparece dentro del polígono
+						className: 'faculty-hover-tooltip-container', // clase personalizada
+						sticky: true, // sigue el puntero
+						interactive: false // no bloquea clics
+					})
+					.openTooltip();
+			}
 		});
 
 		layer.on('mouseout', (e: any) => {
@@ -173,6 +187,10 @@
 			geoLayer.resetStyle(e.target);
 			const path: SVGPathElement | null = (e.target as any)?._path ?? null;
 			if (path) path.style.filter = '';
+			// === HOVER: cerrar tooltip cuando salga el puntero === // ADD
+			if (layer.closeTooltip) {
+				layer.closeTooltip();
+			}
 		});
 
 		if (popupEnabled) {
@@ -398,5 +416,17 @@
 
 	:global(.faculty-highlight-tooltip::before) {
 		border-top-color: var(--color--primary) !important;
+	}
+	/* === HOVER: Tooltip al pasar el puntero === */ /* ADD */
+	:global(.faculty-hover-tooltip-container) {
+		background: var(--color--background-tooltip, #000000) !important; /* fondo negro configurable */
+		color: var(--color--text-tooltip, #ffffff) !important; /* texto blanco */
+		border: 2px solid var(--color--secondary, #00bcd4) !important; /* borde usando color secondary */
+		box-shadow: 0 0 12px rgba(var(--color--secondary-rgb, 0, 188, 212), 0.7) !important; /* efecto glow */
+		padding: 6px 10px !important;
+		border-radius: 8px !important;
+		font-size: 13px !important;
+		font-weight: 600 !important;
+		pointer-events: none !important; /* no bloquear interacciones */
 	}
 </style>
