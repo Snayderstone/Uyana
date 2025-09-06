@@ -4,11 +4,14 @@
 	import type { Map } from 'leaflet';
 	import GeoJsonChoropleth from '$lib/components/atoms/GeoJsonChoropleth.svelte';
 	import { obtenerProyectosPorFacultad, type Proyecto } from '$lib/services/proyectosService';
+	import CircularStatus from '$lib/components/molecules/CircularStatus.svelte';
+	import PopupDashboard from '$lib/components/atoms/PopupDashboard.svelte';
 
 	const dispatch = createEventDispatcher();
 
 	export let map: Map | null = null;
-	export const proyectos: Proyecto[] = []; // Convertido a const para evitar advertencia de exportación no utilizada
+	//export const proyectos: Proyecto[] = []; // Convertido a const para evitar advertencia de exportación no utilizada
+	export let proyectos: Proyecto[] = [];
 	export let filteredProyectos: Proyecto[] = [];
 	export let highlightedFacultad: string | null = null; // Facultad que debe ser destacada
 
@@ -18,6 +21,7 @@
 	// Datos para la coropleta
 	let proyectosPorFacultad: { facultad: string; cantidad: number }[] = [];
 	let valueById: Record<string, number> = {};
+	let dashboards: { facultad: string; tipo: string; side: 'left' | 'right' }[] = [];
 
 	// Sistema de memoización para evitar recálculos innecesarios
 	let memoizedFilteredProyectos = {
@@ -268,79 +272,90 @@
 				: '';
 
 		return `
-      <div class="faculty-popup">
-        <div class="faculty-header facultad-${colorClass}">
-          <span class="faculty-icon">${icono}</span>
-          <h3>${facultad}</h3>
-          <span class="faculty-count stat-highlight-${colorClass}">${cantidad}</span>
-        </div>
-        
-        <div class="faculty-stats">
-          ${
-						decano
-							? `
-              <div class="stat">
-                <span class="stat-label">Decano:</span>
-                <span class="stat-value">${decano}</span>
-              </div>
-            `
-							: ''
-					}
-          ${
-						subdecano && !carreras
-							? `
-              <div class="stat">
-                <span class="stat-label">Subdecano:</span>
-                <span class="stat-value">${subdecano}</span>
-              </div>
-            `
-							: ''
-					}
-          ${
-						carreras
-							? `
-              <div class="stat">
-                <span class="stat-label">Carreras:</span>
-                <span class="stat-value">${carreras}</span>
-              </div>
-            `
-							: ''
-					}
-          ${
-						proyectosFacultad.length > 0
-							? `
-              <div class="stat">
-                <span class="stat-label">Promedio duración:</span>
-                <span class="stat-value">${promedioDuracion} meses</span>
-              </div>
-            `
-							: ''
-					}
-        </div>
-        
-        ${proyectosFacultad.length > 0 ? distribucionEstados : ''}
-        ${proyectosListaHTML}
-        
-        <div class="popup-footer">
-          <button class="view-all-btn" onclick="(function() {
-            // Cerrar popup primero
-            var map = document.querySelector('.leaflet-map-pane')?.__vue__?._map;
-            if (map && map.closePopup) {
-              map.closePopup();
-            }
-            // Luego despachar evento
-            document.dispatchEvent(new CustomEvent('view-faculty-projects', {detail: '${facultad}'}));
-          })();">
-            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-              <polyline points="15 3 21 3 21 9"></polyline>
-              <line x1="10" y1="14" x2="21" y2="3"></line>
-            </svg>
-            Ver todos los proyectos
-          </button>
-        </div>
-      </div>
-    `;
+  <div class="faculty-popup">
+    <div class="faculty-header facultad-${colorClass}">
+      <span class="faculty-icon">${icono}</span>
+      <h3>${facultad}</h3>
+      <span class="faculty-count stat-highlight-${colorClass}">${cantidad}</span>
+    </div>
+    
+    <div class="faculty-stats">
+      ${
+				decano
+					? `
+            <div class="stat">
+              <span class="stat-label">Decano:</span>
+              <span class="stat-value">${decano}</span>
+            </div>
+          `
+					: ''
+			}
+      ${
+				subdecano && !carreras
+					? `
+            <div class="stat">
+              <span class="stat-label">Subdecano:</span>
+              <span class="stat-value">${subdecano}</span>
+            </div>
+          `
+					: ''
+			}
+      ${
+				carreras
+					? `
+            <div class="stat">
+              <span class="stat-label">Carreras:</span>
+              <span class="stat-value">${carreras}</span>
+            </div>
+          `
+					: ''
+			}
+      ${
+				proyectosFacultad.length > 0
+					? `
+            <div class="stat">
+              <span class="stat-label">Promedio duración:</span>
+              <span class="stat-value">${promedioDuracion} meses</span>
+            </div>
+          `
+					: ''
+			}
+    </div>
+    
+    ${proyectosFacultad.length > 0 ? distribucionEstados : ''}
+    ${proyectosListaHTML}
+    
+    <div class="popup-footer">
+      <button class="view-all-btn" onclick="(function() {
+        var map = document.querySelector('.leaflet-map-pane')?.__vue__?._map;
+        if (map && map.closePopup) {
+          map.closePopup();
+        }
+        document.dispatchEvent(new CustomEvent('view-faculty-projects', {detail: '${facultad}'}));
+      })();">
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+          <polyline points="15 3 21 3 21 9"></polyline>
+          <line x1="10" y1="14" x2="21" y2="3"></line>
+        </svg>
+        Ver todos los proyectos
+      </button>
+    </div>
+
+    <!-- Botones laterales -->
+    <div class="popup-side-buttons">
+      <button 
+        class="side-btn left" 
+        onclick="document.dispatchEvent(new CustomEvent('open-dashboard', { detail: { facultad: '${facultad}', tipo: 'participacion' } }))">+
+      </button>
+      <button 
+        class="side-btn right" 
+        onclick="document.dispatchEvent(new CustomEvent('open-dashboard', { detail: { facultad: '${facultad}', tipo: 'estados' } }))">+
+      </button>
+    </div>
+	<div class="popup-dashboards"></div>
+  </div>
+`;
 	}
 
 	// Evento para cuando se hace clic en "Ver todos los proyectos" en el popup
@@ -363,6 +378,7 @@
 		if (map) {
 			map.on('click', handleMapClick);
 		}
+		document.addEventListener('open-dashboard', handleOpenDashboard as any);
 	});
 
 	onDestroy(() => {
@@ -373,6 +389,7 @@
 		if (map) {
 			map.off('click', handleMapClick);
 		}
+		document.removeEventListener('open-dashboard', handleOpenDashboard as any);
 	});
 
 	// Escuchar evento de restablecimiento desde el componente padre
@@ -387,6 +404,36 @@
 	function handleMapClick(e: any) {
 		// Emitir un evento cuando se haga clic en el mapa (fuera de un popup)
 		dispatch('mapClick', e);
+	}
+	function handleOpenDashboard(e: CustomEvent) {
+		const { facultad, tipo } = e.detail;
+
+		// Buscar el popup actual (donde está la facultad activa)
+		const popupEl = document.querySelector('.faculty-popup');
+		if (!popupEl) return;
+
+		// Buscar el contenedor reservado para dashboards dentro del popup
+		const container = popupEl.querySelector('.popup-dashboards') as HTMLElement;
+		if (!container) return;
+
+		// Limpiar lo que hubiera antes
+		container.innerHTML = '';
+
+		// Crear un nuevo contenedor donde montaremos el carrusel
+		const mountEl = document.createElement('div');
+		container.appendChild(mountEl);
+
+		// Montar el componente Svelte PopupDashboard directamente
+		new PopupDashboard({
+			target: mountEl,
+			props: {
+				facultad,
+				tipo
+			}
+		});
+
+		// Añadir clases para posicionarlo a izquierda/derecha
+		container.className = 'popup-dashboards ' + (tipo === 'participacion' ? 'left' : 'right');
 	}
 
 	// Función para generar color basado en el valor normalizado
@@ -503,6 +550,11 @@
 			}}
 			bind:this={geoJsonInstance}
 		/>
+		{#each dashboards as dash}
+			<div class="popup-dashboard-container {dash.side}">
+				<PopupDashboard facultad={dash.facultad} tipo={dash.tipo} />
+			</div>
+		{/each}
 	</div>
 {/if}
 
@@ -914,5 +966,119 @@
 	:global(.estado-badge) {
 		text-shadow: 0 0 2px rgba(0, 0, 0, 0.2);
 		font-weight: 700;
+	}
+	:global(.popup-side-buttons) {
+		position: absolute;
+		top: 50%;
+		left: 0;
+		right: 0;
+		transform: translateY(-50%);
+		display: flex;
+		justify-content: space-between;
+		pointer-events: none; /* deja pasar clics al mapa salvo en los botones */
+	}
+
+	:global(.popup-side-buttons .side-btn) {
+		pointer-events: auto;
+		width: 28px;
+		height: 28px;
+		border-radius: 50%;
+		border: 2px solid var(--color--secondary, #00bcd4);
+		background: #000;
+		color: white;
+		font-weight: bold;
+		box-shadow: 0 0 10px rgba(0, 188, 212, 0.7);
+		cursor: pointer;
+	}
+
+	:global(.popup-side-buttons .side-btn.left) {
+		position: relative;
+		left: -40px; /* distancia hacia afuera */
+	}
+
+	:global(.popup-side-buttons .side-btn.right) {
+		position: relative;
+		right: -40px; /* distancia hacia afuera */
+	}
+	:global(.faculty-popup) {
+		position: relative; /* clave para posicionar elementos dentro */
+	}
+	:global(.popup-dashboards) {
+		position: absolute;
+		top: 0;
+		height: 100%;
+		display: flex;
+		align-items: center;
+		pointer-events: none; /* deja pasar clics salvo dentro del dashboard */
+	}
+
+	:global(.popup-dashboards.left) {
+		right: 100%; /* coloca a la izquierda */
+		margin-right: 10px; /* separación opcional */
+	}
+
+	:global(.popup-dashboards.right) {
+		left: 100%; /* coloca a la derecha */
+		margin-left: 10px;
+	}
+
+	:global(.popup-dashboards .dashboard-content) {
+		background: #000;
+		border: 2px solid var(--color--secondary, #00bcd4);
+		box-shadow: 0 0 12px rgba(0, 188, 212, 0.6);
+		border-radius: 8px;
+		color: white;
+		padding: 8px;
+		min-width: 180px;
+		pointer-events: auto; /* que sí sean interactivos */
+	}
+	:global(.faculty-popup) {
+		position: relative; /* clave para posicionar los dashboards */
+	}
+
+	:global(.popup-dashboards) {
+		position: absolute;
+		top: 0;
+		height: 100%;
+		display: flex;
+		align-items: center;
+		pointer-events: none; /* deja pasar clics salvo en el contenido */
+	}
+
+	:global(.popup-dashboards.left) {
+		right: 100%; /* a la izquierda */
+		margin-right: 10px;
+	}
+
+	:global(.popup-dashboards.right) {
+		left: 100%; /* a la derecha */
+		margin-left: 10px;
+	}
+
+	:global(.popup-dashboards .dashboard-content) {
+		background: #000;
+		border: 2px solid var(--color--secondary, #00bcd4);
+		box-shadow: 0 0 12px rgba(0, 188, 212, 0.6);
+		border-radius: 8px;
+		color: white;
+		padding: 8px;
+		min-width: 180px;
+		pointer-events: auto;
+	}
+	:global(.popup-dashboard-container) {
+		position: absolute;
+		top: 50%;
+		transform: translateY(-50%);
+		z-index: 1000;
+	}
+
+	:global(.popup-dashboard-container.left) {
+		right: 100%; /* pegado a la izquierda */
+		margin-right: 10px;
+	}
+
+	:global(.popup-dashboard-container.right) {
+		left: 100%; /* pegado a la derecha */
+		margin-left: 10px;
 	}
 </style>

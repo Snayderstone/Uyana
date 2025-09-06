@@ -219,3 +219,28 @@ export async function obtenerEstadisticasGenerales(): Promise<{
 		proyectosPorTipoPrincipal
 	};
 }
+
+export async function obtenerEstadisticasPorFacultad(nombreFacultad: string) {
+  const proyectos = await obtenerProyectos();
+
+  const proyectosFacultad = proyectos.filter(
+    (p) => p.facultad_o_entidad_o_area_responsable === nombreFacultad
+  );
+
+  const totalProyectos = proyectos.length;
+  const cantidadFacultad = proyectosFacultad.length;
+
+  const estados = {
+    ejecucion: proyectosFacultad.filter((p) => p.estado === 'En ejecución').length,
+    cierre: proyectosFacultad.filter((p) => p.estado === 'En cierre').length,
+    cerrados: proyectosFacultad.filter(
+      (p) => p.estado === 'Cerrado' || p.estado === 'Finalizado'
+    ).length,
+  };
+
+  return {
+    totalProyectos,
+    cantidadFacultad,
+    estados,
+  };
+}
