@@ -1003,35 +1003,6 @@
 	:global(.faculty-popup) {
 		position: relative; /* clave para posicionar elementos dentro */
 	}
-	:global(.popup-dashboards) {
-		position: absolute;
-		top: 0;
-		height: 100%;
-		display: flex;
-		align-items: center;
-		pointer-events: none; /* deja pasar clics salvo dentro del dashboard */
-	}
-
-	:global(.popup-dashboards.left) {
-		right: 100%; /* coloca a la izquierda */
-		margin-right: 10px; /* separación opcional */
-	}
-
-	:global(.popup-dashboards.right) {
-		left: 100%; /* coloca a la derecha */
-		margin-left: 10px;
-	}
-
-	:global(.popup-dashboards .dashboard-content) {
-		background: #000;
-		border: 2px solid var(--color--secondary, #00bcd4);
-		box-shadow: 0 0 12px rgba(0, 188, 212, 0.6);
-		border-radius: 8px;
-		color: white;
-		padding: 8px;
-		min-width: 180px;
-		pointer-events: auto; /* que sí sean interactivos */
-	}
 	:global(.faculty-popup) {
 		position: relative; /* clave para posicionar los dashboards */
 	}
@@ -1042,7 +1013,7 @@
 		height: 100%;
 		display: flex;
 		align-items: center;
-		pointer-events: none; /* deja pasar clics salvo en el contenido */
+		//pointer-events: none; /* deja pasar clics salvo en el contenido */
 	}
 
 	:global(.popup-dashboards.left) {
