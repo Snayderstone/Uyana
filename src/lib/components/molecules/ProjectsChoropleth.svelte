@@ -983,11 +983,11 @@
 		width: 28px;
 		height: 28px;
 		border-radius: 50%;
-		border: 2px solid var(--color--secondary, #00bcd4);
-		background: #000;
+		border: 2px solid var(--color--callout-background, #00bcd4);
+		background: var(--color--secondary, #00bcd4);
 		color: white;
 		font-weight: bold;
-		box-shadow: 0 0 10px rgba(0, 188, 212, 0.7);
+		box-shadow: 0 0 10px var(--color--secondary, #00bcd4);
 		cursor: pointer;
 	}
 
@@ -1027,11 +1027,11 @@
 	}
 
 	:global(.popup-dashboards .dashboard-content) {
-		background: #000;
-		border: 2px solid var(--color--secondary, #00bcd4);
+		background: #000000;
+		border: 2px solid var(--color--primary, #00bcd4);
 		box-shadow: 0 0 12px rgba(0, 188, 212, 0.6);
 		border-radius: 8px;
-		color: white;
+		color: rgb(255, 255, 255);
 		padding: 8px;
 		min-width: 180px;
 		pointer-events: auto;

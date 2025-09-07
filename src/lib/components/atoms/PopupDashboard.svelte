@@ -145,8 +145,8 @@
 
 <style>
   .dashboard-popup {
-    background: black;
-    border: 2px solid var(--color--secondary, #00bcd4);
+    background: var(--color--callout-background, #00bcd4);
+    border: 2px solid var(--color--primary, #00bcd4);
     box-shadow: 0 0 12px rgba(0, 188, 212, 0.6);
     border-radius: 8px;
     color: white;
