@@ -4,14 +4,13 @@
 	import type { Map } from 'leaflet';
 	import GeoJsonChoropleth from '$lib/components/atoms/GeoJsonChoropleth.svelte';
 	import { obtenerProyectosPorFacultad, type Proyecto } from '$lib/services/proyectosService';
-	import CircularStatus from '$lib/components/molecules/CircularStatus.svelte';
 	import PopupDashboard from '$lib/components/atoms/PopupDashboard.svelte';
 
 	const dispatch = createEventDispatcher();
 
 	export let map: Map | null = null;
 	//export const proyectos: Proyecto[] = []; // Convertido a const para evitar advertencia de exportación no utilizada
-	export let proyectos: Proyecto[] = [];
+	export const proyectos: Proyecto[] = [];
 	export let filteredProyectos: Proyecto[] = [];
 	export let highlightedFacultad: string | null = null; // Facultad que debe ser destacada
 
