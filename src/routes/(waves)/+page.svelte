@@ -40,39 +40,4 @@
 		<RecentPosts {posts} />
 	{/if}
 	<Features {features} />
-	<CircularStatus
-		title={tituloComponenteCircular}
-		value={processedFiles}
-		total={totalFiles}
-		unit={unitMetricaComponenteCircular}
-		status={statusColorComponenteCircular}
-		size={tamanioComponenteCircular}
-		opacity={opacityComponenteCircular}
-		showValueInside={true}
-		showDetailsBelow={true}
-	/>
-	<TubeBarChart
-		data={datos}
-		unit="$"
-		title="Inventario de conocimiento"
-		width={1220}
-		height={420}
-		axisYWidth={0}
-		axisXHeight={50}
-		marginTop={20}
-		marginRight={20}
-		yMin={0}
-		yMax={100}
-		yTickCount={10}
-		xRotate={0}
-		xLabel="Conocimiento"
-		yLabel="Cantidad"
-		showGrid={true}
-		tubeGapRatio={0.9}
-		tubeCornerRatio={0.9}
-		glassOpacity={0.85}
-		waveHeight={8}
-		waveSpeed={2.5}
-		bubbles={80}
-	/>
 </div>
