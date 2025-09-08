@@ -52,12 +52,12 @@
 			<div class="header">
 				{#if post}
 					<h1>{post.title}</h1>
-					<div class="note">Published on {dateformat(post.date, 'UTC:dd mmmm yyyy')}</div>
+					<div class="note">Publicado el {dateformat(post.date, 'UTC:dd mmmm yyyy')}</div>
 					{#if post.updated}
-						<div class="note">Updated on {dateformat(post.updated, 'UTC:dd mmmm yyyy')}</div>
+						<div class="note">Actualizado el {dateformat(post.updated, 'UTC:dd mmmm yyyy')}</div>
 					{/if}
 					{#if post.readingTime}
-						<div class="note">{post.readingTime}</div>
+						<div class="note">{post.readingTime.replace("min read", "min de lectura")}</div>
 					{/if}
 					{#if post.tags?.length}
 						<div class="tags">

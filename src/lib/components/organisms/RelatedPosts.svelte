@@ -8,7 +8,7 @@
 
 <ContentSection
   id="related-posts"
-  title="Related Posts"
+  title="Publicaciones Relacionadas"
 >
   <!-- Agregamos "related-shelf" para encapsular la variable de color -->
   <div class="simple-grid related-shelf">
@@ -23,7 +23,7 @@
           title={post.title}
           excerpt={post.excerpt}
           tags={post.tags}
-          readingTime={post.readingTime}
+          readingTime={post.readingTime.replace("min read", "min de lectura")}
           showImage={false} 
         />
       </div>
