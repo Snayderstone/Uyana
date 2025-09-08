@@ -3,6 +3,7 @@
 	import { createEventDispatcher } from 'svelte';
 	import type { Proyecto } from '$lib/services/proyectosService';
 	import { fly, fade } from 'svelte/transition';
+	import ButtonSvelte from '$lib/components/atoms/Button.svelte';
 
 	export let proyectos: Proyecto[] = [];
 
@@ -30,6 +31,7 @@
 
 	// Mensaje de éxito para limpiar filtros
 	let showClearSuccess = false;
+	let filteredProyectos: Proyecto[] = [];
 
 	// Extraer opciones únicas de los datos de proyectos
 	$: {
@@ -49,52 +51,55 @@
 		}
 	}
 
-	// Aplicar filtros a los proyectos
-	$: filteredProyectos = proyectos.filter((proyecto) => {
-		// Filtro de texto (búsqueda en título, objetivo, coordinador)
-		const textMatch =
-			!filtroTexto ||
-			proyecto.titulo?.toLowerCase().includes(filtroTexto.toLowerCase()) ||
-			proyecto.objetivo?.toLowerCase().includes(filtroTexto.toLowerCase()) ||
-			proyecto.coordinador_director?.toLowerCase().includes(filtroTexto.toLowerCase()) ||
-			proyecto.facultad_o_entidad_o_area_responsable
-				?.toLowerCase()
-				.includes(filtroTexto.toLowerCase());
+	function aplicarFiltros() {
+		// Aplicar filtros a los proyectos
+		filteredProyectos = proyectos.filter((proyecto) => {
+			// Filtro de texto (búsqueda en título, objetivo, coordinador)
+			const textMatch =
+				!filtroTexto ||
+				proyecto.titulo?.toLowerCase().includes(filtroTexto.toLowerCase()) ||
+				proyecto.objetivo?.toLowerCase().includes(filtroTexto.toLowerCase()) ||
+				proyecto.coordinador_director?.toLowerCase().includes(filtroTexto.toLowerCase()) ||
+				proyecto.facultad_o_entidad_o_area_responsable
+					?.toLowerCase()
+					.includes(filtroTexto.toLowerCase());
 
-		// Filtros de selección
-		const facultadMatch =
-			!filtroFacultad || proyecto.facultad_o_entidad_o_area_responsable === filtroFacultad;
+			// Filtros de selección
+			const facultadMatch =
+				!filtroFacultad || proyecto.facultad_o_entidad_o_area_responsable === filtroFacultad;
 
-		const estadoMatch = !filtroEstado || proyecto.estado === filtroEstado;
+			const estadoMatch = !filtroEstado || proyecto.estado === filtroEstado;
 
-		const campoMatch = !filtroCampoAmplio || proyecto.campo_amplio === filtroCampoAmplio;
+			const campoMatch = !filtroCampoAmplio || proyecto.campo_amplio === filtroCampoAmplio;
 
-		const tipoMatch = !filtroTipoProyecto || proyecto.tipo_proyecto === filtroTipoProyecto;
+			const tipoMatch = !filtroTipoProyecto || proyecto.tipo_proyecto === filtroTipoProyecto;
 
-		const alcanceMatch =
-			!filtroAlcanceTerritorial || proyecto.alcance_territorial === filtroAlcanceTerritorial;
+			const alcanceMatch =
+				!filtroAlcanceTerritorial || proyecto.alcance_territorial === filtroAlcanceTerritorial;
 
-		const financiamientoMatch =
-			!filtroFuenteFinanciamiento || proyecto.fuente_financiamiento === filtroFuenteFinanciamiento;
+			const financiamientoMatch =
+				!filtroFuenteFinanciamiento ||
+				proyecto.fuente_financiamiento === filtroFuenteFinanciamiento;
 
-		return (
-			textMatch &&
-			facultadMatch &&
-			estadoMatch &&
-			campoMatch &&
-			tipoMatch &&
-			alcanceMatch &&
-			financiamientoMatch
-		);
-	});
+			return (
+				textMatch &&
+				facultadMatch &&
+				estadoMatch &&
+				campoMatch &&
+				tipoMatch &&
+				alcanceMatch &&
+				financiamientoMatch
+			);
+		});
 
-	// Emitir evento cuando cambian los proyectos filtrados
-	$: {
-		dispatch('filter', filteredProyectos);
+		// Emitir evento cuando cambian los proyectos filtrados
+		{
+			dispatch('filter', filteredProyectos);
 
-		// Si hay una facultad seleccionada, emitir evento específico
-		if (filtroFacultad) {
-			dispatch('facultadSelected', filtroFacultad);
+			// Si hay una facultad seleccionada, emitir evento específico
+			if (filtroFacultad) {
+				dispatch('facultadSelected', filtroFacultad);
+			}
 		}
 	}
 
@@ -491,7 +496,7 @@
 					</svg>
 					Limpiar filtros
 				</button>
-
+				<ButtonSvelte on:click={aplicarFiltros} color="secondary"> Aplicar </ButtonSvelte>
 				<div class="filter-stats">
 					<span class="results-count">
 						<strong>{filteredProyectos.length}</strong> de {proyectos.length} proyectos

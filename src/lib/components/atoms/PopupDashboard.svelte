@@ -45,7 +45,7 @@
         },
       ];
     } catch (err) {
-      console.error("❌ Error cargando dashboard:", err);
+      console.error(">>Mijn: Error cargando dashboard:", err);
       error = "No se pudieron cargar los datos";
     } finally {
       loading = false;
