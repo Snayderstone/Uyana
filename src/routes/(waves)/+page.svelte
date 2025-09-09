@@ -4,9 +4,8 @@
 	import RecentPosts from '$lib/components/organisms/RecentPosts.svelte';
 	import Features from '$lib/components/organisms/Features.svelte';
 	import type { Feature, BlogPost } from '$lib/utils/types';
-	import CircularStatus from '$lib/components/molecules/CircularStatus.svelte';
-	import TubeBarChart from '$lib/components/molecules/TubeBarChart.svelte';
-	import PulseLampButton from '$lib/components/organisms/PulseLampButton.svelte';
+	import Button from '$lib/components/atoms/Button.svelte';
+	import Sparkles from '$lib/components/atoms/Sparkles.svelte';
 
 	export let data: {
 		features: Feature[];
@@ -28,16 +27,29 @@
 		{ label: 'Análisis de Datos', value: 85, colorVarName: '--color--callout-accent--info' },
 		{ label: 'Belleza', value: 20, colorVarName: '--color--callout-accent--error' },
 		{ label: 'Infidelidad', value: 85, colorVarName: '--color--secondary' },
-		{ label: 'Conocimiento en Chicas', value: 20, colorVarName: '--color--callout-accent--warning' },
+		{ label: 'Conocimiento en Chicas', value: 20, colorVarName: '--color--callout-accent--warning' }
 	];
 </script>
 
 <div class="container">
 	<Hero />
-	<PulseLampButton label="Empezar Ahora!" href="/map" width={280} height={64} speed={1.2} />
+	<div class="container">
+		<Sparkles>
+			<Button href="/map" color="primary" size="medium" style="solid">Empezar Ahora!</Button>
+		</Sparkles>
+	</div>
 	<About />
 	{#if posts && posts.length > 0}
 		<RecentPosts {posts} />
 	{/if}
 	<Features {features} />
 </div>
+
+<style>
+	.container {
+		max-width: 1200px;
+		margin: 0 auto;
+		padding: 0 20px;
+		text-align: center; /* ← centra texto e inline-blocks */
+	}
+</style>

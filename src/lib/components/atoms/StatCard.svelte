@@ -128,11 +128,11 @@
 		line-height: 1;
 
 		&.positive {
-			color: #00c48f;
+			color: var(--accent-color);
 		}
 
 		&.negative {
-			color: #f95256;
+			color: var(--color--callout-accent--error);
 		}
 	}
 

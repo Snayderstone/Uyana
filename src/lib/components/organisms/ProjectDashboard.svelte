@@ -18,6 +18,8 @@
 		obtenerEstadisticasGenerales,
 		type Proyecto
 	} from '$lib/services/proyectosService';
+	import CardCircularStatus from '$lib/components/molecules/CircularStatus.svelte';
+	import Card from '../atoms/Card.svelte';
 
 	let loading = true;
 	let error: string | null = null;
@@ -257,39 +259,65 @@
 				<div class="stats-grid">
 					<div in:fly={{ y: 20, duration: 400, delay: 100 }}>
 						<StatCard
-							title="Total Proyectos"
-							value={estadisticas.totalProyectos}
 							colorVarName="--color--primary"
 							icon={iconProjects}
+							value={estadisticas.totalProyectos}
+						/>
+						<CardCircularStatus
+							title="Total de Proyectos"
+							value={estadisticas.totalProyectos}
+							size="md"
+							status="primary"
+							showValueInside={true}
+							labelPosition="inside"
+							total={estadisticas.totalProyectos}
+							opacity={0.2}
 						/>
 					</div>
 
 					<div in:fly={{ y: 20, duration: 400, delay: 200 }}>
 						<StatCard
-							title="Proyectos Activos"
 							value={estadisticas.proyectosActivos}
 							colorVarName="--color--callout-accent--success"
 							icon={iconActive}
 							trend={estadisticas.totalProyectos
 								? Math.round((estadisticas.proyectosActivos / estadisticas.totalProyectos) * 100)
 								: 0}
-							trendText="del total"
+							trendText=""
+						/>
+						<CardCircularStatus
+							title="Proyectos Activos"
+							value={estadisticas.proyectosActivos}
+							size="md"
+							status="success"
+							showValueInside={true}
+							labelPosition="inside"
+							total={estadisticas.totalProyectos}
+							opacity={0.2}
 						/>
 					</div>
 
 					<div in:fly={{ y: 20, duration: 400, delay: 300 }}>
 						<StatCard
-							title="Proyectos Cerrados"
 							value={estadisticas.proyectosCerrados}
-							colorVarName="--color--text-shade"
+							colorVarName="--color--callout-accent--warning"
 							icon={iconClosed}
 							trend={estadisticas.totalProyectos
 								? Math.round((estadisticas.proyectosCerrados / estadisticas.totalProyectos) * 100)
 								: 0}
-							trendText="del total"
+							trendText=""
+						/>
+						<CardCircularStatus
+							title="Proyectos Cerrados"
+							value={estadisticas.proyectosCerrados}
+							size="md"
+							status="warning"
+							showValueInside={true}
+							labelPosition="inside"
+							total={estadisticas.totalProyectos}
+							opacity={0.2}
 						/>
 					</div>
-
 					<div in:fly={{ y: 20, duration: 400, delay: 400 }}>
 						<StatCard
 							title="Tipo de Proyecto Principal"
@@ -368,6 +396,16 @@
 								<div class="timeline-stat__label">Proyectos por finalizar:</div>
 								<div class="timeline-stat__value">
 									{proyectos.filter((p) => p.estado === 'En cierre').length} proyectos
+									<CardCircularStatus
+										title="Proyectos por Finalizar"
+										value={proyectos.filter((p) => p.estado === 'En cierre').length}
+										total={estadisticas.totalProyectos}
+										size="md"
+										status="primary"
+										showValueInside={true}
+										labelPosition="inside"
+										opacity={0.2}
+									/>
 								</div>
 							</div>
 
