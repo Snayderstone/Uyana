@@ -28,32 +28,59 @@ export function procesarRedes(redesString: string): Array<{ nombre: string; url:
 	if (!redesString) return [];
 
 	// Dividir por el separador pipe
-	const redes = redesString.split('|').map((red) => red.trim());
+	const redes = redesString
+		.split('|')
+		.map((red) => red.trim())
+		.filter((red) => red.length > 0);
 
-	return redes.map((red) => {
-		// Detectar el tipo de red social desde la URL
-		if (red.includes('orcid.org')) {
-			return { nombre: 'ORCID', url: red };
-		} else if (red.includes('researchgate.net')) {
-			return { nombre: 'ResearchGate', url: red };
-		} else if (red.includes('facebook.com')) {
-			return { nombre: 'Facebook', url: red };
-		} else if (red.includes('twitter.com') || red.includes('x.com')) {
-			return { nombre: 'Twitter', url: red };
-		} else if (red.includes('@') && !red.includes('http')) {
-			// Es un correo
-			return { nombre: 'Email', url: `mailto:${red}` };
-		} else {
-			// Tratar de extraer el dominio para otros casos
-			try {
-				const url = new URL(red);
-				const domain = url.hostname.replace('www.', '').split('.')[0];
-				return { nombre: domain.charAt(0).toUpperCase() + domain.slice(1), url: red };
-			} catch {
-				return { nombre: 'Web', url: red };
+	return redes
+		.map((red) => {
+			// Limpiar la URL y asegurar que tenga protocolo
+			let cleanUrl = red;
+
+			// Si la URL no tiene protocolo, añadir https://
+			if (
+				!cleanUrl.startsWith('http://') &&
+				!cleanUrl.startsWith('https://') &&
+				!cleanUrl.startsWith('mailto:')
+			) {
+				// Para URLs que empiecen con HTTPS:// (mal formateadas)
+				if (cleanUrl.toUpperCase().startsWith('HTTPS://')) {
+					cleanUrl = cleanUrl.replace(/^HTTPS:\/\//i, 'https://');
+				} else if (cleanUrl.includes('@') && !cleanUrl.includes('.')) {
+					// Es un email sin dominio válido, omitir
+					cleanUrl = `mailto:${cleanUrl}`;
+				} else {
+					cleanUrl = `https://${cleanUrl}`;
+				}
 			}
-		}
-	});
+
+			// Detectar el tipo de red social desde la URL
+			if (cleanUrl.includes('orcid.org')) {
+				return { nombre: 'ORCID', url: cleanUrl };
+			} else if (cleanUrl.includes('researchgate.net')) {
+				return { nombre: 'ResearchGate', url: cleanUrl };
+			} else if (cleanUrl.includes('academia.edu')) {
+				return { nombre: 'Academia.edu', url: cleanUrl };
+			} else if (cleanUrl.includes('facebook.com')) {
+				return { nombre: 'Facebook', url: cleanUrl };
+			} else if (cleanUrl.includes('twitter.com') || cleanUrl.includes('x.com')) {
+				return { nombre: 'Twitter', url: cleanUrl };
+			} else if (cleanUrl.startsWith('mailto:')) {
+				return { nombre: 'Email', url: cleanUrl };
+			} else {
+				// Tratar de extraer el dominio para otros casos
+				try {
+					const url = new URL(cleanUrl);
+					const domain = url.hostname.replace('www.', '').split('.')[0];
+					return { nombre: domain.charAt(0).toUpperCase() + domain.slice(1), url: cleanUrl };
+				} catch {
+					// Si falla, omitir esta URL
+					return null;
+				}
+			}
+		})
+		.filter((red) => red !== null) as Array<{ nombre: string; url: string }>;
 }
 
 // Función para obtener todos los investigadores

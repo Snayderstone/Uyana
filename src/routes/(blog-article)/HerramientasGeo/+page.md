@@ -2,7 +2,15 @@
 slug: HerramientasGeo
 title: Herramientas para la represenatión visual en Mapas
 date: 2025-08-22T21:55:21.800Z
-excerpt: Las herramientas para visualización geoespacial se agrupan en varios `“sabores”` que cubren todo el flujo de trabajo
+excerpt: Las herramientas para visualización esp  /* Que cada ítem se comporte como "bloque" fijo (no se estire) */
+  .image-row :global(*) {
+    flex: 0 0 auto;
+    scroll-snap-align: center;
+  } /* Que cada ítem se comporte como "bloque" fijo (no se estire) */
+  .image-row :global(*) {
+    flex: 0 0 auto;
+    scroll-snap-align: center;
+  }agrupan en varios "sabores" que cubren todo el flujo de trabajo
 coverImage: /images/posts/imgGIS.png
 tags:
   - Herramientas
@@ -82,6 +90,7 @@ Las herramientas para visualización geoespacial se agrupan en varios `“sabore
 Para sacarles verdadero valor, decide según la tarea: análisis pesado y reproducible → GIS de escritorio con modelos/py scripts; escalabilidad y colaboración → plataformas cloud con catálogos y control de acceso; comunicación ejecutiva → dashboards/StoryMaps con indicadores bien definidos; trabajo de campo → apps móviles con formularios y geovallas. Aplica buenas prácticas: normaliza tasas por población/área (evita coropletas engañosas), alerta del MAUP/zonificación, muestra incertidumbre cuando proceda, elige paletas perceptualmente uniformes y accesibles, cuida proyecciones (no mezclar EPSG sin reproyectar), documenta metadatos y linaje, y usa servicios estándar para interoperar. En dominios como telecom (p. ej., enrutamiento de fibra, cobertura 4G/5G, line-of-sight con MDT/DEM, análisis de “drive tests”), combina modelado de terreno (Global Mapper, SAGA/GRASS), planificación/redes en GIS (QGIS/ArcGIS) y tableros web (ArcGIS Dashboards/Power BI) para cerrar el ciclo: capturar→analizar→publicar→decidir. Con esta brújula, elegirás la herramienta adecuada a los datos, la escala y el público, evitando mapas bonitos pero poco útiles.
 
 ---
+
 <!-- Fila centrada, en una sola línea (con scroll horizontal si no cabe) -->
 <div class="image-row">
   <FloatingImage 
@@ -122,10 +131,10 @@ Para sacarles verdadero valor, decide según la tarea: análisis pesado y reprod
   <TableChain {columns} {rows} accent="var(--color--primary)" headerBorder="#fff" />
 </div>
 
-Usar apps abiertas o gratuitas no te blinda del “abandono”: si baja la participación de mantenedores, aparecen riesgos prácticos—parches de seguridad tardíos, incompatibilidades con nuevos SO, APIs externas que cambian, deuda técnica y el clásico “bus factor” (pocos devs críticos). La literatura y casos reales muestran que el abandono o incidentes en dependencias puede tumbar cadenas completas (p. ej., el caso “left-pad” en npm) y que la sostenibilidad del código abierto exige respaldo institucional, gobernanza y planes de mantenimiento, no solo lanzamientos nuevos. Mitigar esto implica políticas de versiones congeladas/LTS, espejos y backups, criterios de salud del proyecto (actividad en repos, releases firmadas, número de mantenedores), y, cuando tu riesgo es alto, montar piezas core en tu propia infraestructura. 
+Usar apps abiertas o gratuitas no te blinda del “abandono”: si baja la participación de mantenedores, aparecen riesgos prácticos—parches de seguridad tardíos, incompatibilidades con nuevos SO, APIs externas que cambian, deuda técnica y el clásico “bus factor” (pocos devs críticos). La literatura y casos reales muestran que el abandono o incidentes en dependencias puede tumbar cadenas completas (p. ej., el caso “left-pad” en npm) y que la sostenibilidad del código abierto exige respaldo institucional, gobernanza y planes de mantenimiento, no solo lanzamientos nuevos. Mitigar esto implica políticas de versiones congeladas/LTS, espejos y backups, criterios de salud del proyecto (actividad en repos, releases firmadas, número de mantenedores), y, cuando tu riesgo es alto, montar piezas core en tu propia infraestructura.
 
 Dibujar tus propias fronteras (polígonos exclusivos como facultades) aporta control semántico y jurídico: delimitas exactamente lo que necesitas, con reglas topológicas para que no haya solapes, y dejas trazabilidad (metadatos) para auditoría. ¿Qué herramientas (abiertas/gratis) lo permiten? QGIS ofrece edición robusta con “snapping” y reglas topológicas; GRASS usa un modelo vectorial topológico (la frontera común se almacena una sola vez); gvSIG y uDig incluyen herramientas de edición; Google My Maps y Google Earth Pro permiten trazar polígonos de forma sencilla (útiles para trabajo ligero); kepler.gl no es un editor, pero consume GeoJSON (y tiene filtros por polígono para análisis visual); GeoDa es principalmente de análisis estadístico espacial, no un editor geométrico. Si buscas control total y continuidad, una vía es construir tu solución propia (Leaflet/CesiumJS en el front + PostGIS + QGIS Server/OGC en el back), que te deja auto-alojar y versionar tus límites para siempre.
- 
+
 <div class="table-wrap" style="--min-table-width: 1400px;">
 <TableChain
   columns={columnsOpenGis}
@@ -140,6 +149,7 @@ Primero, “open source ≠ riesgo cero” pero sí te da palancas de control qu
 Segundo, dibujar fronteras propias (facultades, campus, áreas de servicio) aporta poder semántico y jurídico, pero exige gobernanza: usa topología estricta (sin solapes/lagunas), versionado temporal (valid_from/valid_to) para evitar “boundary drift” cuando compares series históricas, y metadatos de procedencia (quién, cuándo, con qué criterio). Define una norma interna de color y simbología (“maps-as-code”: estilos versionados), pruebas automáticas de geometría en CI (área mínima/máxima, cierre de anillos, tolerancias), y una API autoritativa de límites (WFS/OGC API Features o tiles vectoriales) para que todas las apps consuman el mismo canon. Esto evita inconsistencias entre BI, web y móvil y reduce riesgos de auditoría. Si necesitas fronteras exclusivas que un SaaS no modela (p. ej., subfacultades), la ruta autoservicio con QGIS/GRASS + PostGIS te garantiza expresividad total y persistencia en el tiempo.
 
 Tercero, el benchmark estratégico no es “qué app tiene más botones” sino quién controla el plano de datos. Un patrón ganador es híbrido: datos y límites bajo tu control (PostGIS + QGIS/GRASS para edición/QA, servidores propios OGC/MVT para publicar) y, si conviene, usar visores o CDNs externos como capa de distribución intercambiable. Define KPIs de sostenibilidad (tiempo de actualización de un límite, cobertura de tests topológicos, MTTR ante vulnerabilidades, portabilidad: ¿puedo exportar todo a GeoPackage/GeoJSON hoy?). Si esos KPIs son verdes, tu stack abierto es “para siempre” en la práctica; si no, cualquier suite—abierta o cerrada—te ata por caminos menos visibles (formatos opacos, deuda operativa o dependencia de terceros). En corto: controla el dato, el esquema y los estilos; el visor es reemplazable, tu cartografía autoritativa no.
+
 <style>
   /* Contenedor de la fila */
   .image-row {

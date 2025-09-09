@@ -1,0 +1,80 @@
+---
+slug: blog-posts/Revista15
+title: 'INVESTIGA UCE Revista N° 15: Divulgación Científica y Derechos Reproductivos Indígenas'
+date: 2023-03-15T10:00:00.000Z
+excerpt: 'Reflexiones sobre la divulgación científica como herramienta para conquistar lo imposible, y análisis de las lideresas indígenas y el acceso al aborto en Ecuador desde el cyberfeminismo y la ética del cuidado.'
+coverImage: /images/posts/imgIvestiga15Blog.png
+tags:
+  - Revista
+  - Divulgación Científica
+  - Lideresas Indígenas
+  - Derechos Reproductivos
+  - Cyberfeminismo
+  - Ética del Cuidado
+  - Género y Salud
+---
+
+<script>
+  import FloatingImage from "$lib/components/atoms/FloatingImage.svelte";
+</script>
+
+Como no iniciar esta editorial con una fra-se de Carl Sagan, uno de los pioneros en divulgación científica, que dice: «La ciencia no es perfecta, con frecuencia se utiliza mal, no es más que una herramienta, pero es la mejor herramienta que tenemos, se corrige a sí misma, está siempre evolucionando y se puede aplicar a todo. Con esta herramienta conquista-mos lo imposible», ¡nada más cierto!
+A lo largo de su historia, la humanidad ha de-mostrado una innata necesidad de comprender su entorno y desentrañar la verdad que lo con-figura. La investigación, como un proceso sis-temático y riguroso, ha sido esencial para guiar a la humanidad en su búsqueda de respuestas ante la complejidad del mundo. Sin embargo, si no se participa activamente en el ámbito cientí-fico, ¿cómo se puede acceder al conocimiento que este genera? Es ahí donde la divulgación científica juega un papel fundamental.
+De hecho, la divulgación científica, comunica-ción pública de la ciencia o apropiación social del conocimiento, es el proceso de comunicar avances y hallazgos científicos a un público am-plio, no especializado. Su objetivo es hacer ac-cesible la ciencia, promoviendo el pensamiento crítico y la comprensión de fenómenos comple-jos de manera clara y atractiva.
+
+---
+
+## LIDERESAS INDÍGENAS Y ACCESO AL ABORTO EN EL ECUADOR: UNA MIRADA DESDE EL CYBER FEMINISMO Y LA ÉTICA DEL CUIDADO.
+
+---
+
+<FloatingImage 
+  src="/images/posts/imgInvestiga15Blog01.png" alt="UCE" 
+  style="display:block; margin-inline:auto; max-width: 720px"
+  fit="cover"
+  amplitude={8}
+  duration={1000}
+  hoverScale={1.03}
+  shadow="0 0 0 20px var(--color--primary),
+          0 200px 40px color-mix(in oklab, var(--color--primary) 90%, transparent)"
+/>
+
+El tema parte de la transformación de imaginarios y percep-ciones alrededor del aborto. Se aplicó una metodología cualitativa a través de entrevistas semiestructuradas que se hicieron a 10 lideresas indígenas, pero además se optó por la observación participante, esto quiere decir que se asistió a asambleas y reuniones políticas. Adicionalmente la información se analizó por ATLAS T.I. (es un software que ayuda a analizar datos cualitativos, como entrevistas, grupos focales, imágenes, audio y video). Este estudio se realizó en la provincia de Chimborazo y los resultados evidencian que en dicha provincia el aborto ha ido dejando poco a poco de ser un tema que trasgreda y silencie en las agendas comunitarias, para convertirse en parte de las conversaciones de los grupos de mujeres. Se ilustra cómo la influencia de la cuarta ola del feminismo y del Movimiento Marea Verde (movimiento feminista que lucha por la despenalización y legalización del aborto), ligada al uso de las redes sociales, ha permeado ciertos discursos comunitarios y ha incidido en la posibilidad de que las jóvenes indígenas de esta provincia accedan a información y puedan ejercer, en compañía de otras mujeres, su derecho al aborto. En este sentido, se concluye que el uso de las redes sociales online promueve el tejido de redes offline (red que permite a los usuarios compartir datos sin necesidad de conexión a internet), lo cual genera la organización de las mujeres, más allá de su ubicación geográfica, además permite tener más acceso a información y, por tanto, más posibilidad de ejercer sus derechos sexuales y reproductivos. Los feminismos de la llamada cuarta ola, a la que pertenecen el colectivo “Ni una menos” y el movimiento Marea Verde, han utilizado como una de sus estrategias prin-cipales el ciberfeminismo. Pese a la brecha en el acceso a internet, que se develó en la pos pandemia de la COVID-19, las redes sociales utilizadas por estos colectivos influyen en el movimiento de mujeres indígenas jóvenes de la provincia Chimborazo, promoviendo además el fortalecimiento del tejido de las redes sociales offline entre las mujeres que comparten información y cuidados. Lo anterior se evidencia especialmente en temas como el aborto, que no se consideran prioritarios en las agendas políticas comunitarias. En este sentido, las redes sociales virtuales promueven encuentros más allá de los límites geográficos, creando a su vez agendas comunes entre mujeres diversas. La sociedad ecuatoriana se beneficiaría porque en efecto las mujeres indígenas y el tema del aborto y cuidados está invisibilizado y se ha menospreciado la importancia del ciberfeminismo en los procesos políticos y en los avances en los derechos sexuales y reproductivos. Este artículo ayuda a comprender las nuevas realidades en un país diverso e intercultural. El ciberfeminismo es importante en el contexto in-ternacional, en un momento en que la política y grupos conservadores apuestan por el retorno de políticas convencionales, que afectan a las mujeres más pobres. En este contexto, reivindicar las voces de feministas indígenas es trascendental para el avance de los derechos sexuales y reproductivos de las mujeres latinoamericanas. VarEaVItErI (2024)
+
+---
+
+## ANÁLISIS BIOCLIMÁTICO DE TRES EDIFICIOS EN LA UNIVERSIDAD CENTRAL DEL ECUADOR.
+
+---
+
+<FloatingImage 
+  src="/images/posts/imgInvestiga15Blog02.png" alt="UCE" 
+  style="display:block; margin-inline:auto; max-width: 720px"
+  fit="cover"
+  amplitude={8}
+  duration={1000}
+  hoverScale={1.03}
+  shadow="0 0 0 20px var(--color--primary),
+          0 200px 40px color-mix(in oklab, var(--color--primary) 90%, transparent)"
+/>
+
+A nivel ecuatoriano, la literatura sobre este tema es limitada. La difusión de investigaciones so-bre este tema evitará la proliferación de errores de diseño que causan por un lado espacios crónicamente fríos, y por otro, espacios sobre asoleados y sobrecalentados en arquitectura contemporánea. El calentamiento global vuelve a más ciudades ecuatorianas y edificios susceptibles a sufrir estos problemas. Estos resultados pueden tener un impacto sobre normativa arquitectónica y urbana, en términos de retiros, densidades, alturas de edificación, y recomendaciones de diseño en forma y material para evitar frío crónico, sobreasoleamiento y sobrecalentamiento. Estudiar este fenómeno permitirá evitar estos errores y tendría un impacto directo y a largo plazo sobre la salud de la gente, en ese artículo en particular sobre edificaciones educativas.Esta investigación contribuye al estudio de la arquitectura moderna desde un punto de vista nuevo, porque denota que Gilberto Gatto Sobral fue poco entendido en términos de la calidad bioclimática de sus proyectos, a su vez permitirá entender mejor el comportamiento bioclimático de edificios educativos diseñados bajos los principios de arquitectura moderna en el Ecuador.La calidad bioclimática de los edificios del arquitecto Gilberto Gatto Sobral es deficiente. La mayoría de espacios estudiados en la muestra sufren de frío y penumbra, necesitando una intervención arquitectónica importante para solucionarlo pasivamente, o el uso de calentadores eléctricos e iluminación artificial. Se recomienda continuar con una serie de investigaciones que amplíen los resultados obtenidos en esta, por un lado, concentrándose en medir el aula tipo o el aula representativa de cada edificio con mayor profundidad, incluyendo la presencia de gente, y por otro, logrando que estas investigaciones arriben a posibles propuestas de diseño que superen la condición actual. También se pueden planificar investigaciones que hagan correlaciones entre la salud y satisfacción de docen-tes y estudiantes con las medidas cuantitativas tomadas en las aulas. Segundo, el clima no jugó un papel significativo durante el diseño de los edificios. Gatto Sobral tuvo comportamientos similares a otros arquitectos del movimiento moderno de su época, usando formas y materiales nuevos sin considerar el clima local, y a pesar de tener cier-tas intenciones de diseño pen-sadas para manipular la luz natural, no tomó en cuenta la geometría solar ni el comportamiento térmico de los materiales generando edificios con un deficiente comportamiento térmico y lumínico.La metodología implicó utilizar data-loggers (dispositivo electrónico que mide y guarda datos en tiempo real) de precisión para recolectar datos reales en el sitio de forma automática, sin la presencia de gente, para compararlos contra estándares de confort y determinar la calidad bioclimática sin realizar propuestas de remodelación o corrección. En lugar de concentrarse solo en el aula, se seleccionó espacios representativos en cada edificio para hacer un primer diagnóstico general. Se utilizaron dataloggers del tipo HOBO® U12-012 para medir la temperatura en grados Celsius °C, la humedad relativa en porcentaje y la luz natural en Luxes. Los datos obtenidos se compararon contra estándares de confort considerando medidas individuales, promedios de todas las temperaturas, promedios de temperaturas por tipos y/o posición de espacios (máxi-mo y mínimo), medidas individuales absolutas (máximo y mínimo) y amplitudes (diferencias entre máximos y mínimos).A nivel internacional hay una creciente literatura sobre el incremento del sobreasoleamiento y sobrecalentamiento en edificios debido al calentamiento global, sobre todo el regiones europeas, asiáticas y norteamericanas. Latinoamérica aún no escribe sobre este tema. También hay un vacío en la literatura sobre la calidad bioclimática de la arquitectura moderna de mediados del siglo XX. Freire Castro (2024)
+
+---
+
+## AVANCES DE LA INTELIGENCIA ARTIFICIAL EN ODONTOPEDIATRÍ
+
+---
+
+<FloatingImage 
+  src="/images/posts/imgInvestiga15Blog03.png" alt="UCE" 
+  style="display:block; margin-inline:auto; max-width: 720px"
+  fit="cover"
+  amplitude={8}
+  duration={1000}
+  hoverScale={1.03}
+  shadow="0 0 0 20px var(--color--primary),
+          0 200px 40px color-mix(in oklab, var(--color--primary) 90%, transparent)"
+/>
+
+La investigación sobre la inteligencia artificial (IA) en odontopedia-tría arrojó resultados significativos. Las redes neuronales demostraron alta precisión en el diagnóstico de caries y otras condiciones dentales en niños, con una sensibilidad del 87% y una precisión del 94%. Además, la IA mostró efica-cia en la interpretación de radiografías, identificando estructuras anatómicas con gran exactitud. Tecnologías como la realidad virtual se destacaron por su capacidad para reducir la ansiedad de los pacientes pediátricos durante las consultas, mejorando su experiencia. La IA también puede personalizar la educación dental para los niños, adaptándose a sus preferencias y habilidades, lo que fomenta mejores hábitos de higiene bucal. En el ámbito de la salud pública, la IA permite desarrollar estrategias preventivas basadas en datos, optimizando el uso de recursos y mejorando la atención dental infantil. En resumen, la integración de la IA en la odontopediatría promete beneficios significativos tanto para los pacientes como para los profesionales de la salud dental, destacando la necesidad de una adopción cuidadosa y segura de estas tecnologías en la práctica clínica.La investigación concluye que la inteligencia artificial (IA) tiene un potencial transformador en la odontopediatría. Su integración en la práctica clínica no solo mejora la precisión y eficiencia de los diagnósticos y tratamientos, sino que también optimiza la experiencia del paciente y la gestión de recursos. Es fundamental que los profesionales de la salud dental se familiaricen con estas tecnologías y adopten un enfoque cuidadoso para su implementación, asegurando que se utilicen de manera segura y efectiva. La IA representa una herramienta valiosa para avanzar en la atención dental infantil y en la formación de futuros odontólogos, promoviendo una atención más personalizada y basada en datos.La sociedad ecuatoriana se beneficiará de esta investigación en varios aspectos: 1. Mejora en Diagnósticos: La IA permitirá diagnósti-cos más precisos y rápidos de caries y otras condiciones dentales en niños, mejorando la salud bucal infantil. 2. Reducción de Ansiedad: Tecnologías como la realidad virtual pueden disminuir la ansiedad de los niños durante las consultas dentales, haciendo las visitas al dentista más agradables. 3. Optimización de Recursos: La IA puede ayudar a optimizar el uso de recursos en clínicas dentales, reduciendo costos y mejorando la eficiencia. 4. Educación: La IA puede ser utilizada para educar a los ni-ños sobre la importancia de la higiene bucal de manera interactiva y personalizada. 5. Políticas de Salud Pública: Los datos generados por la IA pueden ayudar a desarrollar políticas de salud pública más efectivas y personalizadas para la población infantil. Estas aplicaciones pueden implementarse en clínicas dentales, hospitales y programas de salud pública en todo Ecuador.En el ámbito internacional, este estudio fue aprobado por el comité científico del XXII Congreso Latinoamericano de Odontopediatría y presentada en dicho evento.A futuro se planea la implementación de la inteligencia artificial en la atención de la clínica de la Facultad de Odontología. Actualmente, junto con los estudiantes, es-tamos elaborando formularios de consentimiento informado en términos sencillos y accesibles para los pacientes, utilizando la inteligencia artificial para mejorar la clari-dad y comprensión. Revelo et al. (2024)

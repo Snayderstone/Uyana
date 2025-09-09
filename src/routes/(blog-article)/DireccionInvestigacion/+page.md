@@ -1,12 +1,19 @@
 ---
 slug: DireccionInvestigacion
-title: Dirección de Investigación
-date: 2025-08-22T21:55:21.800Z
-excerpt: Universidad Central del Ecuador. Dirección de Investigación tiene por objetivo orientar, promover y coordinar la actividad investigativa en la UCE.
+title: 'Dirección de Investigación UCE: Estructura, Funciones y Desarrollo Científico'
+date: 2024-05-20T10:00:00.000Z
+excerpt: 'Conoce la estructura organizativa, misión y funciones de la Dirección de Investigación de la Universidad Central del Ecuador, sus unidades especializadas, indicadores institucionales y el rol estratégico en el desarrollo científico nacional.'
 coverImage: /images/posts/blogUce01.jpg
 tags:
-  - Dirección
+  - Dirección de Investigación
+  - Universidad Central del Ecuador
+  - Gestión Científica
+  - Investigación Universitaria
+  - Desarrollo Institucional
+  - Política Científica
+  - UCE
 ---
+
 <script>
   import FloatingImage from "$lib/components/atoms/FloatingImage.svelte";
   import MissionVision from "$lib/components/atoms/MissionVision.svelte";
@@ -44,6 +51,7 @@ La Universidad Central del Ecuador [UCE]() es la universidad más antigua del pa
 En este marco, la investigación universitaria constituye una función sustantiva institucional, articulada mediante órganos especializados que orientan, promueven y coordinan la producción de conocimiento científico y su difusión.
 
 ## DIRECCIÓN DE INVESTIGACIÓN
+
 En concordancia con su mandato institucional, la Dirección de investiación tiene por objetivo orientar, promover y coordinar la actividad investigativa en la UCE, canalizando apoyos mediante convocatorias competitivas y la articulación de unidades funcionales dedicadas a la formación, el fomento y la divulgación científica [[1]](https://www.uce.edu.ec/web/di/home).
 
 <FloatingImage 
@@ -72,16 +80,19 @@ Estas unidades son responsables de la gestión administrativa y técnica, la for
 
 ### ORGANIZACIÓN
 
- Estructura Organizativa
+Estructura Organizativa
 <TableChain {columns} {rows} accent="var(--color--primary)" headerBorder="#fff" />
 
 ### INDICADORES.
+
 La Dirección de Investigación de la Universidad Central del Ecuador utiliza indicadores institucionale que son herramientas de medición y evaluación que permiten determinar el grado de cumplimiento de las políticas, planes, procesos y resultados vinculados a la investigación e innovación institucional. Estos indicadores reflejan tanto aspectos cualitativos (como la existencia de normativa, planificación, gestión responsable y acciones de mejora) como cuantitativos (por ejemplo, número de proyectos con financiamiento externo, producción académica, propiedad intelectual o participación en redes). Su objetivo es asegurar que la investigación se organice y ejecute de manera planificada, alineada a la misión, visión y líneas de investigación de la UCE, considerando además el impacto social, cultural y científico de sus resultados. En esencia, sirven como mecanismos para el seguimiento, evaluación y mejora continua de la función sustantiva de investigación, garantizando transparencia, pertinencia y calidad en el quehacer investigativo de la universidad [[1]](https://www.uce.edu.ec/web/di/home).
 
 ### FORMATOS DI-UCE.
+
 La DI cuenta con un conjunto de formatos estandarizados que regulan y facilitan la presentación, evaluación y seguimiento de los proyectos de investigación. Estos incluyen plantillas para el registro inicial, presupuestos, cronogramas, reportes de avance, informes finales, así como declaraciones de aspectos éticos y de difusión de resultados. La existencia de estos formatos asegura uniformidad, transparencia y cumplimiento de las normativas institucionales [[1]](https://www.uce.edu.ec/web/di/home).
 
 ### REVISTA INVESTIGA UCE.
+
 La Revista Investiga UCE es una publicación científica arbitrada editada por la Dirección de Investigación, que difunde los resultados de la producción académica de la comunidad universitaria. Su objetivo es visibilizar investigaciones originales en diversas áreas del conocimiento, contribuyendo a la proyección académica de la UCE y fortaleciendo su presencia en redes de investigación nacionales e internacionales. La revista se ajusta a estándares editoriales internacionales y está orientada a fomentar la comunicación científica y el intercambio de saberes [[1]](https://www.uce.edu.ec/web/di/home).
 
 <FloatingImage 
@@ -96,7 +107,8 @@ La Revista Investiga UCE es una publicación científica arbitrada editada por l
 />
 
 ### INVESTIGADORES.
-A continuación se presentan  algunos de los investigadores activos
+
+A continuación se presentan algunos de los investigadores activos
 
 <TableChain
   columns={columnsInvestigadores}
@@ -106,5 +118,6 @@ A continuación se presentan  algunos de los investigadores activos
 />
 
 ### SITUACIÓN ACTUAL
+
 En la actualidad, el área de investigación de la Universidad Central del Ecuador, a través de la Dirección de Investigación, presenta debilidades significativas en su plataforma web institucional. La sección correspondiente a esta dependencia muestra un contenido desactualizado, poco estructurado y con deficiencias notables en experiencia de usuario. La información disponible resulta confusa, incompleta y, en algunos casos, inexacta, lo que limita la comprensión de los procesos, convocatorias, formatos y logros de la unidad.
 Esta situación afecta la visibilidad y accesibilidad de los servicios y productos generados por la DI, dificultando que docentes, investigadores, estudiantes y actores externos accedan de manera ágil y confiable a la información necesaria para participar en convocatorias, conocer resultados o acceder a herramientas de gestión investigativa.

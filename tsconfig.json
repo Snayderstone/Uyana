@@ -1,29 +1,5 @@
 {
 	"compilerOptions": {
-		// Opciones de .svelte-kit/tsconfig.json
-		"paths": {
-			"$lib": [
-				"./src/lib"
-			],
-			"$lib/*": [
-				"./src/lib/*"
-			]
-		},
-		"rootDirs": [
-			".",
-			"./.svelte-kit/types"
-		],
-		"isolatedModules": true,
-		"lib": [
-			"esnext",
-			"DOM",
-			"DOM.Iterable"
-		],
-		"moduleResolution": "bundler",
-		"module": "esnext",
-		"target": "esnext",
-		
-		// Opciones de jsconfig.json
 		"allowJs": true,
 		"checkJs": true,
 		"esModuleInterop": true,
@@ -32,9 +8,19 @@
 		"skipLibCheck": true,
 		"sourceMap": true,
 		"strict": true,
-		
-		// Nueva opción que reemplaza a importsNotUsedAsValues y preserveValueImports
-		"verbatimModuleSyntax": true
+		"ignoreDeprecations": "6.0",
+		"types": [],
+		"lib": ["esnext", "DOM", "DOM.Iterable"],
+		"moduleResolution": "node",
+		"module": "esnext",
+		"noEmit": true,
+		"target": "esnext",
+		"baseUrl": ".",
+		"paths": {
+			"$lib": ["./src/lib"],
+			"$lib/*": ["./src/lib/*"]
+		},
+		"isolatedModules": true
 	},
 	"include": [
 		"./.svelte-kit/ambient.d.ts",

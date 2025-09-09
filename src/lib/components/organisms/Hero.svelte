@@ -44,25 +44,6 @@
 			text-align: center;
 		}
 
-		.intro {
-			font-weight: 500;
-			font-size: 1.4rem;
-			width: min(100%, 440px);
-			display: flex;
-			flex-direction: column;
-
-			.left {
-				text-align: left;
-			}
-			.right {
-				text-align: right;
-			}
-
-			@include for-phone-only {
-				display: none;
-			}
-		}
-
 		.ctas {
 			display: flex;
 			flex-wrap: wrap;

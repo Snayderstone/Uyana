@@ -9,7 +9,7 @@
 
   // Props
   export let facultad: string;
-  export let tipo: string; // "participacion" o "estados"
+  export const tipo: string = "participacion"; // "participacion" o "estados" - para referencia externa
 
   // Estado interno
   let loading = true;
