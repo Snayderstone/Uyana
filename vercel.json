@@ -3,7 +3,7 @@
   "outputDirectory": ".svelte-kit/output/client",
   "framework": "sveltekit",
   "functions": {
-    "src/routes/api/**.ts": {
+    "src/routes/api/**/+server.ts": {
       "maxDuration": 10
     }
   },
