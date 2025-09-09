@@ -56,13 +56,13 @@
   function getPropsForGrafico(grafico) {
     if (grafico.componente === CircularStatus) {
       return {
-        title: "Proyectos",
+        title: "Proyectos Investigación",
         value: cantidadFacultad,
         total: totalProyectos,
-        unit: "proyectos",
-        status: "primary",
+        unit: "#",
+        status: "success",
         size: "md",
-        opacity: 0.3,
+        opacity: 0.8,
         showValueInside: true,
         showDetailsBelow: true,
       };
@@ -73,12 +73,12 @@
         data: [
           { label: "Ejecución", value: estados.ejecucion, colorVarName: "--color--primary" },
           { label: "Cierre", value: estados.cierre, colorVarName: "--color--secondary" },
-          { label: "Cerrados", value: estados.cerrados, colorVarName: "--color--callout-accent--error" },
+          { label: "Cerrados", value: estados.cerrados, colorVarName: "--color--callout-accent--success" },
         ],
-        unit: "Proyectos",
-        title: "Estados",
-        width: 320,
-        height: 220,
+        unit: "#",
+        title: "Estados de los proyectos",
+        width: 350,
+        height: 420,
         axisYWidth: 0,
         axisXHeight: 40,
         marginTop: 20,
@@ -145,9 +145,9 @@
 
 <style>
   .dashboard-popup {
-    background: var(--color--callout-background, #00bcd4);
-    border: 2px solid var(--color--primary, #00bcd4);
-    box-shadow: 0 0 12px rgba(0, 188, 212, 0.6);
+    background: color-mix(in srgb, var(--color--card-background) 50%, transparent); ;
+    border: 1px solid var(--color--primary, #00bcd4);
+    box-shadow: 0 0 4px var(--color--callout-accent--info, #00bcd4);
     border-radius: 8px;
     color: white;
     padding: 8px;

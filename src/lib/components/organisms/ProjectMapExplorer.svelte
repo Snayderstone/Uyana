@@ -8,6 +8,7 @@
 	import ProjectsChoropleth from '$lib/components/molecules/ProjectsChoropleth.svelte';
 	import ProjectsMapLegend from '$lib/components/molecules/ProjectsMapLegend.svelte';
 	import { obtenerProyectos, type Proyecto } from '$lib/services/proyectosService';
+	import Sparkles from '../atoms/Sparkles.svelte';
 
 	import type { Map, LatLngTuple } from 'leaflet';
 
@@ -566,6 +567,7 @@
 			<div class="map-side-panel" class:visible={showFiltersPanel || showResultsPanel}>
 				<!-- Pestaña de filtros -->
 				{#if activePanelTab === 'filters'}
+					<Sparkles />
 					<div class="panel-header">
 						<h2>Filtros de proyectos</h2>
 						<button
@@ -941,12 +943,13 @@
 		position: absolute;
 		top: 15px;
 		left: 70px;
-		width: 400px;
+		width: 55%;                 // panel ocupa 35% del ancho disponible
 		max-width: calc(100% - 100px);
 		max-height: calc(100% - 30px);
-		background: var(--color--card-background);
-		border-radius: 12px;
-		box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
+		//background: var(--color--card-background);
+		background: color-mix(in srgb, var(--color--card-background) 60%, transparent); 
+		border-radius: 22px;
+		box-shadow: 0 50px 100px var(--color--text-shade);
 		z-index: 600;
 		display: flex;
 		flex-direction: column;
@@ -960,7 +963,7 @@
 
 		@include for-phone-only {
 			left: 15px;
-			width: calc(100% - 30px);
+			width: 90%;                // ocupa casi toda la pantalla en móviles
 			max-width: calc(100% - 30px);
 			top: auto;
 			bottom: 15px;
@@ -1007,7 +1010,6 @@
 				}
 			}
 		}
-
 		.panel-content {
 			overflow-y: auto;
 			padding: 5px;
@@ -1018,6 +1020,7 @@
 				box-shadow: none;
 				border-radius: 0;
 				padding: 15px 10px;
+				background: color-mix(in srgb, var(--color--card-background) 60%, transparent); 
 			}
 
 			&.results-panel {
@@ -1026,6 +1029,7 @@
 					border-radius: 0;
 					margin-top: 0;
 					padding: 10px;
+					background: color-mix(in srgb, var(--color--card-background) 10%, transparent); 
 				}
 			}
 		}

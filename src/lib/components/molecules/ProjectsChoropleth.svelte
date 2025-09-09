@@ -345,11 +345,11 @@
     <div class="popup-side-buttons">
       <button 
         class="side-btn left" 
-        onclick="document.dispatchEvent(new CustomEvent('open-dashboard', { detail: { facultad: '${facultad}', tipo: 'participacion' } }))">+
+        onclick="document.dispatchEvent(new CustomEvent('open-dashboard', { detail: { facultad: '${facultad}', tipo: 'participacion' } }))"><
       </button>
       <button 
         class="side-btn right" 
-        onclick="document.dispatchEvent(new CustomEvent('open-dashboard', { detail: { facultad: '${facultad}', tipo: 'estados' } }))">+
+        onclick="document.dispatchEvent(new CustomEvent('open-dashboard', { detail: { facultad: '${facultad}', tipo: 'estados' } }))">>
       </button>
     </div>
 	<div class="popup-dashboards"></div>
@@ -423,12 +423,17 @@
 		container.appendChild(mountEl);
 
 		// Montar el componente Svelte PopupDashboard directamente
-		new PopupDashboard({
+		const dashboard = new PopupDashboard({
 			target: mountEl,
 			props: {
 				facultad,
 				tipo
 			}
+		});
+
+		// escuchar evento close correctamente
+		dashboard.$on('close', () => {
+			container.innerHTML = ''; // destruye el contenido del dashboard
 		});
 
 		// Añadir clases para posicionarlo a izquierda/derecha
@@ -560,9 +565,12 @@
 <style lang="scss">
 	/* Estilos personalizados para el popup */
 	:global(.faculty-popup) {
+		position: relative; /* clave para posicionar los dashboards */
 		font-family: var(--font-sans);
 		color: var(--color--text);
-		max-width: 280px;
+		max-width: 400px;
+		//background: color-mix(in srgb, var(--color--primary) 10%, transparent);
+		border-radius: 10px;
 		width: max-content;
 		animation: fadeIn 0.3s ease-out;
 
@@ -846,6 +854,8 @@
 		padding: 10px !important;
 		width: auto !important;
 		min-width: 200px !important;
+		//background: transparent !important;
+		background: color-mix(in srgb, var(--color--card-background) 80%, transparent) !important;
 	}
 
 	:global(.leaflet-popup-content) {
@@ -980,30 +990,24 @@
 	:global(.popup-side-buttons .side-btn) {
 		pointer-events: auto;
 		width: 28px;
-		height: 28px;
-		border-radius: 50%;
-		border: 2px solid var(--color--callout-background, #00bcd4);
-		background: var(--color--secondary, #00bcd4);
-		color: white;
+		height: 100%;
+		border-radius: 7px;
+		border: 2px solid var(--color--code-background, #00bcd4);
+		background: var(--color--callout-accent--info, #00bcd4);
+		color: var(--color--code-background);
 		font-weight: bold;
-		box-shadow: 0 0 10px var(--color--secondary, #00bcd4);
+		box-shadow: 0 0 10px var(--color--callout-accent--info, #00bcd4);
 		cursor: pointer;
 	}
 
 	:global(.popup-side-buttons .side-btn.left) {
 		position: relative;
-		left: -40px; /* distancia hacia afuera */
+		left: -50px; /* distancia hacia afuera */
 	}
 
 	:global(.popup-side-buttons .side-btn.right) {
 		position: relative;
-		right: -40px; /* distancia hacia afuera */
-	}
-	:global(.faculty-popup) {
-		position: relative; /* clave para posicionar elementos dentro */
-	}
-	:global(.faculty-popup) {
-		position: relative; /* clave para posicionar los dashboards */
+		right: -50px; /* distancia hacia afuera */
 	}
 
 	:global(.popup-dashboards) {
@@ -1026,9 +1030,8 @@
 	}
 
 	:global(.popup-dashboards .dashboard-content) {
-		background: #000000;
 		border: 2px solid var(--color--primary, #00bcd4);
-		box-shadow: 0 0 12px rgba(0, 188, 212, 0.6);
+		box-shadow: 0 0 10px var(--color--primary, #00bcd4);
 		border-radius: 8px;
 		color: rgb(255, 255, 255);
 		padding: 8px;

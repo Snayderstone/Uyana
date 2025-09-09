@@ -287,10 +287,13 @@
 
 				// Ajustamos el padding según el tamaño para evitar zoom excesivo en facultades pequeñas
 				const paddingSize = areaSize < 0.0001 ? 200 : 50;
-
+				// Factor de ajuste horizontal (positivo = más espacio a la derecha, negativo = más a la izquierda)
+				const horizontalShift = 300; 
 				// Ajustar el mapa a estos límites con animación mejorada
 				map.flyToBounds(bounds, {
-					padding: [paddingSize, paddingSize],
+					paddingTopLeft: [paddingSize + horizontalShift, paddingSize],
+  					paddingBottomRight: [paddingSize - horizontalShift, paddingSize],
+					//padding: [paddingSize, paddingSize],
 					duration: 1.2,
 					easeLinearity: 0.5,
 					animate: true

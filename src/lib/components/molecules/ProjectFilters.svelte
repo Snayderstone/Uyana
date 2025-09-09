@@ -4,6 +4,7 @@
 	import type { Proyecto } from '$lib/services/proyectosService';
 	import { fly, fade } from 'svelte/transition';
 	import ButtonSvelte from '$lib/components/atoms/Button.svelte';
+	import Sparkles from '$lib/components/atoms/Sparkles.svelte';
 
 	export let proyectos: Proyecto[] = [];
 
@@ -45,9 +46,11 @@
 			alcancesTerritorial = [
 				...new Set(proyectos.map((p) => p.alcance_territorial).filter(Boolean))
 			].sort();
+			console.log("Ejemplo de proyectos:", proyectos.slice(0,3)); 
 			fuentesFinanciamiento = [
 				...new Set(proyectos.map((p) => p.fuente_financiamiento).filter(Boolean))
 			].sort();
+			console.log("Fuentes únicas:", fuentesFinanciamiento);
 		}
 	}
 
@@ -217,7 +220,7 @@
 				</button>
 			{/if}
 		</div>
-
+		<Sparkles>
 		<div
 			class="filters-toggle"
 			on:click={toggleFilters}
@@ -261,6 +264,7 @@
 				<polyline points="6 9 12 15 18 9" />
 			</svg>
 		</div>
+		</Sparkles>
 	</div>
 
 	<!-- Mostrar chips para filtros activos -->
@@ -292,7 +296,7 @@
 					</button>
 				</div>
 			{/each}
-
+			<Sparkles>
 			<button
 				class="clear-all-chip"
 				on:click={limpiarFiltros}
@@ -300,6 +304,7 @@
 			>
 				Limpiar todo
 			</button>
+			</Sparkles>
 		</div>
 	{/if}
 
@@ -460,6 +465,7 @@
 						Fuente Financiamiento
 					</label>
 					<select id="financiamiento" bind:value={filtroFuenteFinanciamiento}>
+
 						<option value="">Todas las fuentes</option>
 						{#each fuentesFinanciamiento as fuente}
 							<option value={fuente}>
@@ -496,7 +502,9 @@
 					</svg>
 					Limpiar filtros
 				</button>
+				<Sparkles>
 				<ButtonSvelte on:click={aplicarFiltros} color="secondary"> Aplicar </ButtonSvelte>
+				</Sparkles>
 				<div class="filter-stats">
 					<span class="results-count">
 						<strong>{filteredProyectos.length}</strong> de {proyectos.length} proyectos
@@ -807,7 +815,8 @@
 			}
 
 			&:hover:not(:focus) {
-				border-color: color-mix(in srgb, var(--color--primary) 40%, transparent);
+				border-color: color-mix(in srgb, var(--color--primary) 90%, transparent);
+				background: color-mix(in srgb, var(--color--primary) 30%, transparent);
 			}
 		}
 	}
