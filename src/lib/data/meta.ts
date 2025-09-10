@@ -2,20 +2,13 @@
 // So they can be added as suffixes on different pages
 // Via <svelte:head>
 
-export const siteBaseUrl = 'https://sveltekit-static-blog-template.vercel.app/';
+export const siteBaseUrl = 'https://uyana-project.vercel.app/';
 
-export const keywords = [
-	'Svelte',
-	'SvelteKit',
-	'Template',
-	'Blog',
-	'Starter',
-	'Static Site'
-];
+export const keywords = ['Uyana', 'Research', 'University', 'UCE', 'Academic', 'Investigation'];
 
 export const description =
-	"A light, neat, and easy-to-use SvelteKit template for your next website.";
+	'Plataforma de investigación y desarrollo académico de la Universidad Central del Ecuador.';
 
-export const title = 'SvelteKit Static Blog Template';
+export const title = 'Uyana - Investigación UCE';
 
 export const image = `${siteBaseUrl}/images/site-preview.png`;

@@ -7,8 +7,9 @@
 </script>
 
 <section id="hero">
-	<h1 class="hello">REPRESENTACIÓN <SparklingHighlight color="primary">GEOESPACIAL</SparklingHighlight>
-		 DE LA ACTIVIDAD INVESTIGATIVA!
+	<h1 class="hello">
+		REPRESENTACIÓN <SparklingHighlight color="primary">GEOESPACIAL</SparklingHighlight>
+		DE LA ACTIVIDAD INVESTIGATIVA!
 	</h1>
 	<div class="ctas">
 		<Sparkles>
@@ -17,7 +18,7 @@
 				Source Code
 			</Button>
 		</Sparkles>
-		<Button color="primary" href="https://histoire-sveltekit-static-blog-template.vercel.app/">
+		<Button color="primary" href="https://histoire-uyana-project.vercel.app/">
 			<FeaturesIcon slot="icon" />
 			Components
 		</Button>

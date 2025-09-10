@@ -728,24 +728,16 @@
 		}
 	}
 	/* --- Responsive --- */
-			@media (max-width: 600px) {
-				.map-legend-container {
-					top: auto; /* desactivamos top */
-					bottom: 0px !important; /* la bajamos 50px desde abajo */
-					left: 50%; /* centrada */
-					transform: translateX(-50%);
-					width: 80%; /* ancho del contenedor (80% de la pantalla) */
-					height: 90px; /* altura automática (ajusta al contenido) */
-				}
-
-				.map-legend {
-					min-width: auto;
-					width: 100%; /* ocupa todo el ancho del contenedor */
-					height: 90px; /* altura fija si quieres controlarlo */
-					font-size: 0.85rem; /* más compacta */
-					overflow-y: auto; /* scroll si el contenido es muy grande */
-				}
-			}
+	@media (max-width: 600px) {
+		.map-legend-container {
+			top: auto; /* desactivamos top */
+			bottom: 0px !important; /* la bajamos 50px desde abajo */
+			left: 50%; /* centrada */
+			transform: translateX(-50%);
+			width: 80%; /* ancho del contenedor (80% de la pantalla) */
+			height: 90px; /* altura automática (ajusta al contenido) */
+		}
+	}
 
 	.loading-overlay {
 		position: absolute;

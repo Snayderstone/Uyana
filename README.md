@@ -1,6 +1,6 @@
-# SvelteKit Static Blog Template
+# Uyana Project
 
-A lightweight and customizable template for blogs and portfolio websites, built with SvelteKit.
+Plataforma de investigación y desarrollo académico de la Universidad Central del Ecuador, construida con SvelteKit.
 
 <p align="center">
     <img src="static/images/site-screenshot.png" alt="Screenshot" />
@@ -17,7 +17,7 @@ I achieved this with the help of SvelteKit. There is almost no JavaScript runnin
 
 # Demo site
 
-You can see the template live [on the demo site](https://sveltekit-static-blog-template.vercel.app/). Additionally, you can check all components in isolation [on Histoire](https://histoire-sveltekit-static-blog-template.vercel.app/).
+You can see the project live [on the demo site](https://uyana-project.vercel.app/). Additionally, you can check all components in isolation [on Histoire](https://histoire-uyana-project.vercel.app/).
 
 # Building & Running Locally
 
