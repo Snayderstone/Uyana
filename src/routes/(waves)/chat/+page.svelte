@@ -6,9 +6,6 @@
 	let isReady = false;
 
 	onMount(() => {
-		// Forzar modo claro
-		document.documentElement.setAttribute('data-theme', 'light');
-
 		// Pequeño retraso para asegurar que todo esté listo
 		setTimeout(() => {
 			isReady = true;

@@ -14,7 +14,11 @@
 					Explora nuestra misión, visión y valores
 					<SparklingHighlight color="primary">UYANA!</SparklingHighlight>
 				</h2>
-				<p>UYANA es la plataforma digital de la Universidad Central del Ecuador, desarrollada junto con la Dirección de Investigación, que conecta y visibiliza la actividad científica mediante mapas interactivos, dashboards y el asistente inteligente Chasky</p>
+				<p>
+					Uyana es la plataforma digital de la Universidad Central del Ecuador, desarrollada en
+					conjunto con la Dirección de Investigación, cuyo propósito es impulsar, fortalecer y
+					difundir la producción científica generada dentro de la institución.
+				</p>
 			</div>
 			<AboutUs />
 		</div>

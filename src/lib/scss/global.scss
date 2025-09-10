@@ -47,3 +47,96 @@ html {
 	height: 100%;
 	position: relative;
 }
+
+/* Estilos globales para el chat widget */
+.chat-widget {
+	/* Asegurar que el widget esté siempre visible y accesible */
+	pointer-events: all !important;
+	
+	/* Evitar que otros elementos interfieran */
+	isolation: isolate;
+	
+	/* Transiciones suaves para la aparición/desaparición */
+	transition: opacity 0.3s ease, transform 0.3s ease;
+	
+	&[aria-hidden="true"] {
+		opacity: 0;
+		pointer-events: none;
+		transform: scale(0.8);
+	}
+}
+
+/* Asegurar que el backdrop del chat no interfiera con la navegación */
+.chat-expanded {
+	/* Sombra más prominente para asegurar visibilidad */
+	box-shadow: 
+		0 25px 70px rgba(0, 0, 0, 0.2),
+		0 10px 30px rgba(0, 0, 0, 0.15),
+		0 0 0 1px rgba(var(--color--border-rgb), 0.1) !important;
+	
+	/* Asegurar que esté por encima de otros elementos flotantes */
+	position: relative;
+	z-index: 10000;
+}
+
+/* Prevenir interferencia con otros elementos flotantes */
+.chat-bubble {
+	/* Evitar conflictos con otros botones flotantes */
+	position: relative;
+	z-index: 10001;
+	
+	/* Asegurar que sea accesible en todas las páginas */
+	backdrop-filter: blur(10px) !important;
+	
+	/* Animación más suave para hover en móviles */
+	@media (hover: none) {
+		&:hover {
+			transform: none;
+		}
+		
+		&:active {
+			transform: scale(0.95);
+		}
+	}
+}
+
+/* Responsive: asegurar que no interfiera con navegación móvil */
+@media (max-width: 768px) {
+	.chat-widget {
+		/* Ajustar posición para evitar conflicto con navegación */
+		&--bottom-right {
+			bottom: max(1rem, env(safe-area-inset-bottom, 1rem)) !important;
+			right: max(1rem, env(safe-area-inset-right, 1rem)) !important;
+		}
+		
+		&--bottom-left {
+			bottom: max(1rem, env(safe-area-inset-bottom, 1rem)) !important;
+			left: max(1rem, env(safe-area-inset-left, 1rem)) !important;
+		}
+	}
+	
+	.chat-expanded {
+		/* En móviles, ocupar más espacio de pantalla */
+		width: calc(100vw - 2rem) !important;
+		max-width: none !important;
+		height: calc(100vh - 120px) !important;
+		max-height: none !important;
+	}
+}
+
+/* Prevenir scroll en body cuando el chat está abierto en móviles */
+@media (max-width: 480px) {
+	body:has(.chat-widget--open .chat-expanded) {
+		overflow: hidden;
+	}
+}
+
+/* Asegurar que las animaciones sean suaves incluso con reduced motion */
+@media (prefers-reduced-motion: reduce) {
+	.chat-widget,
+	.chat-expanded,
+	.chat-bubble {
+		transition: none !important;
+		animation: none !important;
+	}
+}

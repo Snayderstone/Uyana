@@ -24,8 +24,8 @@
 
 <button
 	class="theme-toggle"
-	title="Toggle between light and dark theme"
-	aria-label="Change theme setting to {$theme === 'auto'
+	title="Alternar entre tema claro y oscuro"
+	aria-label="Cambiar la configuración del tema a {$theme === 'auto'
 		? 'light'
 		: $theme === 'light'
 		? 'dark'

@@ -16,7 +16,7 @@
 			title: 'Nuestra Visión',
 			icon: '🔭',
 			description:
-				'Ser la plataforma de referencia en Ecuador y la región andina para la divulgación y representación geoespacial de la investigación universitaria.'
+				'Ser la plataforma de referencia en Ecuador y la región andina para la divulgación y representación de la investigación universitaria.'
 		}
 	];
 </script>

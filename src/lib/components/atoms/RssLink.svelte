@@ -2,7 +2,7 @@
   import RssIcon from '$lib/icons/rss.svelte';
 </script>
 
-<a href="/rss.xml" target="_blank" rel="noopener noreferrer" title="Subscribe to my RSS Feed">
+<a href="/rss.xml" target="_blank" rel="noopener noreferrer" title="Suscríbete a mi feed RSS">
   <RssIcon />
 </a>
 

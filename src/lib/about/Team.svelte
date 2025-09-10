@@ -23,7 +23,7 @@
 		},
 		{
 			name: 'Luis Gaona',
-			role: 'Desarrollador UYANA',
+			role: 'Desarrollador',
 			email: 'lagaona@uce.edu.ec',
 			avatar: '👨‍💻',
 			skills: ['Frontend', 'UI/UX', 'Gestión de Proyecto'],
@@ -34,7 +34,7 @@
 		},
 		{
 			name: 'Roberth Loaiza',
-			role: 'Desarrollador UYANA',
+			role: 'Desarrollador',
 			email: 'reloaiza@uce.edu.ec',
 			avatar: '👨‍💻',
 			skills: ['Backend', 'API', 'Arquitectura'],
