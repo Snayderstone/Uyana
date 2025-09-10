@@ -717,8 +717,8 @@
 			}
 
 			.map-legend-container {
-				bottom: 30px !important;
-				right: 30px !important;
+				bottom: 10px;
+				right: 30px;
 			}
 
 			.map-side-panel {
@@ -727,6 +727,25 @@
 			}
 		}
 	}
+	/* --- Responsive --- */
+			@media (max-width: 600px) {
+				.map-legend-container {
+					top: auto; /* desactivamos top */
+					bottom: 0px !important; /* la bajamos 50px desde abajo */
+					left: 50%; /* centrada */
+					transform: translateX(-50%);
+					width: 80%; /* ancho del contenedor (80% de la pantalla) */
+					height: 90px; /* altura automática (ajusta al contenido) */
+				}
+
+				.map-legend {
+					min-width: auto;
+					width: 100%; /* ocupa todo el ancho del contenedor */
+					height: 90px; /* altura fija si quieres controlarlo */
+					font-size: 0.85rem; /* más compacta */
+					overflow-y: auto; /* scroll si el contenido es muy grande */
+				}
+			}
 
 	.loading-overlay {
 		position: absolute;
@@ -943,11 +962,11 @@
 		position: absolute;
 		top: 15px;
 		left: 70px;
-		width: 55%;                 // panel ocupa 35% del ancho disponible
+		width: 55%; // panel ocupa 35% del ancho disponible
 		max-width: calc(100% - 100px);
 		max-height: calc(100% - 30px);
 		//background: var(--color--card-background);
-		background: color-mix(in srgb, var(--color--card-background) 60%, transparent); 
+		background: color-mix(in srgb, var(--color--card-background) 60%, transparent);
 		border-radius: 22px;
 		box-shadow: 0 50px 100px var(--color--text-shade);
 		z-index: 600;
@@ -963,7 +982,7 @@
 
 		@include for-phone-only {
 			left: 15px;
-			width: 90%;                // ocupa casi toda la pantalla en móviles
+			width: 90%; // ocupa casi toda la pantalla en móviles
 			max-width: calc(100% - 30px);
 			top: auto;
 			bottom: 15px;
@@ -1020,7 +1039,7 @@
 				box-shadow: none;
 				border-radius: 0;
 				padding: 15px 10px;
-				background: color-mix(in srgb, var(--color--card-background) 60%, transparent); 
+				background: color-mix(in srgb, var(--color--card-background) 60%, transparent);
 			}
 
 			&.results-panel {
@@ -1029,7 +1048,7 @@
 					border-radius: 0;
 					margin-top: 0;
 					padding: 10px;
-					background: color-mix(in srgb, var(--color--card-background) 10%, transparent); 
+					background: color-mix(in srgb, var(--color--card-background) 10%, transparent);
 				}
 			}
 		}
