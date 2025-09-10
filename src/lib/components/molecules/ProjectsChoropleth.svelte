@@ -1,10 +1,11 @@
 <!-- src/lib/components/molecules/ProjectsChoropleth.svelte -->
 <script lang="ts">
 	import { onMount, onDestroy, createEventDispatcher } from 'svelte';
-	import type { Map } from 'leaflet';
+	import type { Map, LatLng } from 'leaflet';
 	import GeoJsonChoropleth from '$lib/components/atoms/GeoJsonChoropleth.svelte';
 	import { obtenerProyectosPorFacultad, type Proyecto } from '$lib/services/proyectosService';
 	import PopupDashboard from '$lib/components/atoms/PopupDashboard.svelte';
+	import FacultadRankingLayer from '$lib/components/atoms/FacultadRankingLayer.svelte';
 
 	const dispatch = createEventDispatcher();
 
@@ -13,6 +14,8 @@
 	export const proyectos: Proyecto[] = [];
 	export let filteredProyectos: Proyecto[] = [];
 	export let highlightedFacultad: string | null = null; // Facultad que debe ser destacada
+	let centroides: Record<string, [number, number]> = {};
+	let rankingData: { facultad: string; cantidad: number; center: [number, number] }[] = [];
 
 	// Referencia al componente GeoJsonChoropleth para acceder a sus métodos
 	let geoJsonInstance: any;
@@ -27,6 +30,14 @@
 		key: '',
 		data: {} as Record<string, number>
 	};
+	$: {
+		// Cada vez que cambie valueById, recalculamos rankingData
+		rankingData = Object.entries(valueById).map(([facultad, cantidad]) => ({
+			facultad,
+			cantidad,
+			center: centroides[facultad] || [0, 0]
+		}));
+	}
 
 	// Cargamos los datos al iniciar
 	onMount(async () => {
@@ -553,7 +564,15 @@
 				className: 'highlighted-feature' // Clase CSS para el resaltado (sin animaciones)
 			}}
 			bind:this={geoJsonInstance}
+			onEachFeature={(feature, layer) => {
+				if (feature?.properties?.facultad_o_entidad_o_area_responsable) {
+					const facultad = feature.properties.facultad_o_entidad_o_area_responsable;
+					const center = layer.getBounds().getCenter();
+					centroides[facultad] = [center.lat, center.lng];
+				}
+			}}
 		/>
+		<FacultadRankingLayer {map} data={rankingData} />
 		{#each dashboards as dash}
 			<div class="popup-dashboard-container {dash.side}">
 				<PopupDashboard facultad={dash.facultad} tipo={dash.tipo} />

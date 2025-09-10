@@ -433,6 +433,7 @@
 				</button>
 
 				<!-- Botón para filtros -->
+				 <Sparkles>	
 				<button
 					class="map-control-btn"
 					class:active={activePanelTab === 'filters' && showFiltersPanel}
@@ -457,7 +458,7 @@
 						<span class="control-badge">{proyectos.length - filteredProyectos.length}</span>
 					{/if}
 				</button>
-
+				</Sparkles>
 				<!-- Botón para resultados -->
 				<button
 					class="map-control-btn"

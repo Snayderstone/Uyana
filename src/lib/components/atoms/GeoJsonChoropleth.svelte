@@ -27,6 +27,11 @@
 	export let hoverEnabled = true;
 	export let hoverLineColor = 'var(--color--primary, #6E29E7)';
 
+	// Guardar los centroides calculados por facultad
+	let centroides: Record<string, [number, number]> = {};
+	// Callback opcional para manejar cada feature
+	export let onEachFeature: ((feature: any, layer: any) => void) | null = null;
+
 	// Popup
 	export let popupEnabled = true;
 	// Función para renderizar el cuerpo del popup (HTML string)
@@ -207,19 +212,39 @@
 
 		geoLayer = L!.geoJSON(loadedData, {
 			style: styleForFeature,
-			onEachFeature: bindEvents
+			onEachFeature: (feature, layer) => {
+				bindEvents(feature, layer);
+
+				const id = feature?.properties?.[idProperty];
+				if (id && (layer as any).getBounds) {
+					const center = (layer as L.Polygon).getBounds().getCenter();
+					centroides[id] = [center.lat, center.lng];
+				}
+
+				// 👇 si el padre pasó un callback extra
+				if (onEachFeature) {
+					onEachFeature(feature, layer);
+				}
+			}
 		});
+
 		geoLayer.addTo(map);
 	}
 
 	function restyleLayer() {
 		if (!geoLayer) return;
+		geoLayer.eachLayer((layer: any) => {
+  geoLayer.resetStyle(layer); // resetea al estilo base antes de aplicar el nuevo
+});
 		geoLayer.setStyle(styleForFeature);
 
 		// Si hay una facultad destacada, aplicar estilo especial
 		if (highlightedFacultad) {
 			highlightFeatureById(highlightedFacultad);
 		}
+	}
+	$: if (geoLayer && valueById) {
+		restyleLayer();
 	}
 
 	function destroyLayer() {
@@ -288,11 +313,11 @@
 				// Ajustamos el padding según el tamaño para evitar zoom excesivo en facultades pequeñas
 				const paddingSize = areaSize < 0.0001 ? 200 : 50;
 				// Factor de ajuste horizontal (positivo = más espacio a la derecha, negativo = más a la izquierda)
-				const horizontalShift = 300; 
+				const horizontalShift = 300;
 				// Ajustar el mapa a estos límites con animación mejorada
 				map.flyToBounds(bounds, {
 					paddingTopLeft: [paddingSize + horizontalShift, paddingSize],
-  					paddingBottomRight: [paddingSize - horizontalShift, paddingSize],
+					paddingBottomRight: [paddingSize - horizontalShift, paddingSize],
 					//padding: [paddingSize, paddingSize],
 					duration: 1.2,
 					easeLinearity: 0.5,
@@ -391,6 +416,7 @@
 			clearHighlights();
 		}
 	}
+	export { centroides };
 </script>
 
 <div class="geo-json-choropleth-wrapper">
@@ -432,4 +458,18 @@
 		font-weight: 600 !important;
 		pointer-events: none !important; /* no bloquear interacciones */
 	}
+	:global(.faculty-rank-icon div) {
+		background: var(--color--secondary);
+		color: white;
+		font-weight: bold;
+		border-radius: 50%;
+		width: 26px;
+		height: 26px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-size: 14px;
+		box-shadow: 0 0 6px rgba(0, 0, 0, 0.3);
+	}
 </style>
+export { centroides };
