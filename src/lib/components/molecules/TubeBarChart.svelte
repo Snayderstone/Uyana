@@ -13,7 +13,7 @@
 
   export let marginTop = 24;
   export let marginRight = 16;
-  export let marginBottom = 56;
+  export let marginBottom = 100;
   export let marginLeft = 56;
 
   export let axisYWidth = 56;
@@ -40,9 +40,12 @@
 
   // Perf forwarding
   export let performanceMode: 'high' | 'balanced' | 'low' = 'balanced';
+    //===================== Cálculos reactivos para el tooltip ==========
+  let tooltip = { show: false, x: 0, y: 0, text: '' };
+  let chartEl: HTMLDivElement; // referencia al contenedor
 
   $: W = Math.max(200, width);
-  $: H = Math.max(180, height);
+$: H = Math.max(180, height + axisXHeight);
 
   $: mlEff = Math.max(marginLeft, axisYWidth);
   $: mbEff = Math.max(marginBottom, axisXHeight);
@@ -68,6 +71,7 @@
 
 <div
   class="tube-chart"
+  bind:this={chartEl}
   style="
     --bg: var(--color--card-background, #ffffff);
     --text: var(--color--text, #1c1e26);
@@ -146,7 +150,26 @@
 
     <!-- Tubos -->
     {#each data as d, i}
-      <g transform={`translate(${xPos(i)}, ${mtEff})`}>
+      <g transform={`translate(${xPos(i)}, ${mtEff})`}
+      on:mouseenter={(e) => {
+    const rect = chartEl.getBoundingClientRect();
+    tooltip = {
+      show: true,
+      x: e.clientX - rect.left + 10, // relativo al chart
+      y: e.clientY - rect.top - 20, // relativo al chart
+      text: `${d.label}: ${d.value} ${unit}`
+    };
+  }}
+  on:mousemove={(e) => {
+    const rect = chartEl.getBoundingClientRect();
+    tooltip = {
+      ...tooltip,
+      x: e.clientX - rect.left - 150,
+      y: e.clientY - rect.top - 40
+    };
+  }}
+  on:mouseleave={() => (tooltip.show = false)}
+      >
         <TestTubeBar
           width={tubeW}
           height={innerH}
@@ -171,6 +194,14 @@
       </g>
     {/each}
   </svg>
+  {#if tooltip.show}
+  <div
+    class="chart-tooltip"
+    style="top:{tooltip.y}px; left:{tooltip.x}px;"
+  >
+    {tooltip.text}
+  </div>
+{/if}
 </div>
 
 <style>
@@ -180,6 +211,8 @@
     padding: var(--padding);
     box-shadow: var(--shadow);
     color: var(--text);
+    position: relative; /* asegura stacking context */
+  overflow: visible;  /* deja salir el tooltip */
   }
   .tube-chart__title {
     margin: 0 0 0.75rem 0;
@@ -193,4 +226,17 @@
     height: auto;
     display: block;
   }
+  .chart-tooltip {
+  position: absolute;
+  background: var(--color--card-background);
+  border: 1px solid var(--color--text-shade);
+  padding: 6px 10px;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  pointer-events: none;
+  font-size: 0.85rem;
+  font-weight: 500;
+  z-index: 2000;
+}
+
 </style>

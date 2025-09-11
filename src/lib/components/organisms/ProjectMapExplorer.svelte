@@ -9,6 +9,8 @@
 	import ProjectsMapLegend from '$lib/components/molecules/ProjectsMapLegend.svelte';
 	import { obtenerProyectos, type Proyecto } from '$lib/services/proyectosService';
 	import Sparkles from '../atoms/Sparkles.svelte';
+	import ProjectsDashboard from '$lib/components/molecules/ProjectsDashboard.svelte';
+	let showDashboard = false;
 
 	import type { Map, LatLngTuple } from 'leaflet';
 
@@ -433,31 +435,31 @@
 				</button>
 
 				<!-- Botón para filtros -->
-				 <Sparkles>	
-				<button
-					class="map-control-btn"
-					class:active={activePanelTab === 'filters' && showFiltersPanel}
-					on:click={toggleFiltersPanel}
-					aria-label="Mostrar filtros"
-					title="Mostrar filtros"
-				>
-					<svg
-						xmlns="http://www.w3.org/2000/svg"
-						width="20"
-						height="20"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="2"
-						stroke-linecap="round"
-						stroke-linejoin="round"
+				<Sparkles>
+					<button
+						class="map-control-btn"
+						class:active={activePanelTab === 'filters' && showFiltersPanel}
+						on:click={toggleFiltersPanel}
+						aria-label="Mostrar filtros"
+						title="Mostrar filtros"
 					>
-						<polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
-					</svg>
-					{#if filteredProyectos.length < proyectos.length}
-						<span class="control-badge">{proyectos.length - filteredProyectos.length}</span>
-					{/if}
-				</button>
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							width="20"
+							height="20"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						>
+							<polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+						</svg>
+						{#if filteredProyectos.length < proyectos.length}
+							<span class="control-badge">{proyectos.length - filteredProyectos.length}</span>
+						{/if}
+					</button>
 				</Sparkles>
 				<!-- Botón para resultados -->
 				<button
@@ -651,8 +653,21 @@
 							</svg>
 						</button>
 					</div>
+					<!-- 🔹 Aquí va el botón fijo -->
+					<Sparkles>
+						<div class="panel-toggle">
+							<button on:click={() => (showDashboard = !showDashboard)}>
+								{showDashboard ? 'Ver Proyectos en Lista' : 'Ver Proyectos en Gráfico'}
+							</button>
+						</div>
+					</Sparkles>
+					<!-- 🔹 Aquí va el contenido que se desliza -->
 					<div class="panel-content results-panel">
-						<ProjectsDetail proyectos={filteredProyectos} isVisible={true} {selectedFacultad} />
+						{#if showDashboard}
+							<ProjectsDashboard proyectos={filteredProyectos} />
+						{:else}
+							<ProjectsDetail proyectos={filteredProyectos} isVisible={true} {selectedFacultad} />
+						{/if}
 					</div>
 				{/if}
 			</div>
@@ -1152,5 +1167,52 @@
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
+	}
+	.map-side-panel {
+		display: flex;
+		flex-direction: column;
+		height: 100%;
+	}
+
+	/* Encabezado fijo */
+	.panel-header {
+		flex-shrink: 0;
+		padding: 10px;
+		border-color: color-mix(in srgb, var(--color--card-background) 30%, transparent);
+		border-bottom: 1px solid #ccc;
+	}
+
+	/* Botón fijo */
+	.panel-toggle {
+		flex-shrink: 0;
+		padding: 10px;
+		border-color: color-mix(in srgb, var(--color--card-background) 30%, transparent);
+		border-bottom: 1px solid #ccc;
+		position: sticky; /* este truco hace que quede pegado */
+		top: 0; /* lo fija arriba dentro del panel */
+		z-index: 10;
+
+		button {
+			width: 100%;
+			padding: 8px 12px;
+			border: none;
+			border-radius: 8px;
+			background: color-mix(in srgb, var(--color--primary) 50%, transparent);
+			color: var(--color--text);
+			font-weight: 600;
+			cursor: pointer;
+
+			&:hover {
+				filter: brightness(1.1);
+				background: color-mix(in srgb, var(--color--secondary) 80%, transparent);
+			}
+		}
+	}
+
+	/* Contenido que se puede deslizar */
+	.panel-content {
+		flex: 1; /* ocupa todo el espacio restante */
+		overflow-y: auto; /* aquí está el scroll */
+		padding: 10px;
 	}
 </style>

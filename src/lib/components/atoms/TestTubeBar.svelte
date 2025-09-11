@@ -131,7 +131,7 @@
   </defs>
 
   <!-- Vidrio -->
-  <g filter="url(#{uid}-glass)" pointer-events="none" aria-hidden="true">
+  <g filter="url(#{uid}-glass)" aria-hidden="true">
     <rect
       x="0" y="0"
       width={W} height={H}
@@ -145,7 +145,7 @@
   </g>
 
   <!-- Líquido (estático) + burbujas -->
-  <g clip-path="url(#{uid}-clip)" pointer-events="none">
+  <g clip-path="url(#{uid}-clip)">
     <rect x="0" y={H - fillH} width={W} height={fillH} fill="url(#{uid}-liquid)" />
 
     <!-- CÓDIGO NUEVO: olas eliminadas por defecto -->
