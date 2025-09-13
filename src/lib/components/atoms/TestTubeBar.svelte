@@ -23,7 +23,7 @@
   export let wavePeriods = 8;
 
   // Burbujas
-  export let bubbles = 8;
+  export let bubbles = 2;
   export let bubbleSpeedMin = 2;
   export let bubbleSpeedMax = 5;
   export let bubbleSizeMin = 2;

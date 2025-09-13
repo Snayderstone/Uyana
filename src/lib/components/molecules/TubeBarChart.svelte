@@ -9,20 +9,20 @@
   export let title = '';
 
   export let width = 640;
-  export let height = 360;
+  export let height = 160;
 
   export let marginTop = 24;
   export let marginRight = 16;
   export let marginBottom = 100;
   export let marginLeft = 56;
 
-  export let axisYWidth = 56;
-  export let axisXHeight = 56;
+  export let axisYWidth = 100;
+  export let axisXHeight = 200;
 
   export let yMin = 0;
   export let yMax: number | null = null;
   export let yTickCount = 5;
-  export let xRotate = 0;
+  export let xRotate = -45;
   export let xLabel = '';
   export let yLabel = '';
   export let showGrid = true;
@@ -34,7 +34,7 @@
 
   export let waveHeight = 8;
   export let waveSpeed = 3.5;
-  export let bubbles = 8;
+  export let bubbles = 1;
 
   export let tubeLabelSpace = 28;
 
@@ -53,7 +53,7 @@ $: H = Math.max(180, height + axisXHeight);
   $: mrEff = Math.max(0, marginRight);
 
   $: innerW = Math.max(1, W - mlEff - mrEff);
-  $: innerH = Math.max(1, H - mtEff - mbEff);
+  $: innerH = Math.max(1, H - mtEff );
 
   $: categories = data.map(d => d.label);
 
@@ -72,14 +72,6 @@ $: H = Math.max(180, height + axisXHeight);
 <div
   class="tube-chart"
   bind:this={chartEl}
-  style="
-    --bg: var(--color--card-background, #ffffff);
-    --text: var(--color--text, #1c1e26);
-    --text-shade: var(--color--text-shade, #5d5f65);
-    --shadow: var(--card-shadow, 0 4px 6px -1px rgba(0,0,0,.1), 0 2px 4px -1px rgba(0,0,0,.06));
-    --radius: var(--surface-radius, 0.75rem);
-    --padding: var(--surface-padding, 1rem);
-  "
 >
   {#if title}
     <h3 class="tube-chart__title">{title}</h3>
@@ -93,7 +85,7 @@ $: H = Math.max(180, height + axisXHeight);
       width={innerW}
       height={innerH}
       rx="8" ry="8"
-      fill="color-mix(in srgb, var(--bg) 95%, transparent)"
+      fill="color-mix(in srgb, var(--bg) 70%, transparent)"
       stroke="color-mix(in srgb, var(--text) 10%, transparent)"
       stroke-width="1"
       vector-effect="non-scaling-stroke"
@@ -127,9 +119,9 @@ $: H = Math.max(180, height + axisXHeight);
         transform={`rotate(-90, ${mlEff - Math.max(12, axisYWidth * 0.5)}, ${mtEff + innerH / 2})`}
         text-anchor="middle"
         fill="var(--axis-title, var(--text, #1c1e26))"
-        font-size="var(--axis-title-size, 0.8rem)"
+        font-size="var(--axis-title-size, 1.8rem)"
         font-weight="700"
-        style="letter-spacing:0.05em; text-transform:uppercase;"
+        style="letter-spacing:0.95em; text-transform:uppercase;"
       >
         {yLabel}{unit ? ` (${unit})` : ''}
       </text>
@@ -147,6 +139,20 @@ $: H = Math.max(180, height + axisXHeight);
       x={mlEff}
       y={mtEff + innerH}
     />
+    {#if xLabel || unit}
+      <text
+        x={mlEff - Math.max(12, axisYWidth * 0.5)}
+        y={mtEff + innerH / 2}
+        transform={`rotate(-90, ${mlEff - Math.max(12, axisYWidth * 0.5)}, ${mtEff + innerH / 2})`}
+        text-anchor="middle"
+        fill="var(--axis-title, var(--text, #1c1e26))"
+        font-size="var(--axis-title-size, 0.8rem)"
+        font-weight="7"
+        style="letter-spacing:0.05em; text-transform:uppercase;"
+      >
+        {xLabel}{unit ? ` (${unit})` : ''}
+      </text>
+    {/if}
 
     <!-- Tubos -->
     {#each data as d, i}
@@ -206,13 +212,22 @@ $: H = Math.max(180, height + axisXHeight);
 
 <style>
   .tube-chart {
-    background: color-mix(in srgb, var(--bg), transparent 0%);
+    /* background: color-mix(in srgb, var(--bg), transparent 0%); */
+    background: color-mix(in srgb, var(--color--card-background) 60%, transparent);
     border-radius: var(--radius);
     padding: var(--padding);
     box-shadow: var(--shadow);
     color: var(--text);
     position: relative; /* asegura stacking context */
-  overflow: visible;  /* deja salir el tooltip */
+    overflow: visible;  /* deja salir el tooltip */
+    height: 100%;
+    border: 3px solid color-mix(in srgb, var(--color--primary) 30%, transparent);
+    --bg: var(--color--card-background);
+    --text: var(--color--text, #1c1e26);
+    --text-shade: var(--color--text-shade, #5d5f65);
+    --shadow: var(--card-shadow, 0 4px 6px -1px rgba(0,0,0,.1), 0 2px 4px -1px rgba(0,0,0,.06));
+    --radius: var(--surface-radius, 0.75rem);
+    --padding: var(--surface-padding, 1rem);
   }
   .tube-chart__title {
     margin: 0 0 0.75rem 0;
@@ -223,20 +238,22 @@ $: H = Math.max(180, height + axisXHeight);
   }
   .tube-chart__svg {
     width: 100%;
-    height: auto;
-    display: block;
+    height: 90%;
+    /*display: block;*/
+    border: 2px solid red;
   }
   .chart-tooltip {
   position: absolute;
-  background: var(--color--card-background);
+  /* background: var(--color--card-background); */
   border: 1px solid var(--color--text-shade);
   padding: 6px 10px;
   border-radius: 6px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  box-shadow: 0 4px 70px var(--color--secondary);
   pointer-events: none;
   font-size: 0.85rem;
   font-weight: 500;
   z-index: 2000;
+  background: color-mix(in srgb, var(--color--card-background) 80%, transparent);
 }
 
 </style>
