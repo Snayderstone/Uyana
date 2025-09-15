@@ -240,7 +240,6 @@ $: H = Math.max(180, height + axisXHeight);
     width: 100%;
     height: 90%;
     /*display: block;*/
-    border: 2px solid red;
   }
   .chart-tooltip {
   position: absolute;
