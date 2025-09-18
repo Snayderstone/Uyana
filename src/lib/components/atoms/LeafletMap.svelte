@@ -102,7 +102,7 @@
 					window.matchMedia('(prefers-color-scheme: dark)').matches);
 
 			const tileUrl = isDarkMode
-				? 'https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}@2x.png'// Modo oscuro
+				? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png  :contentReference[oaicite:0]{index=0}'// Modo oscuro
 				: 'http://services.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}'; // Modo claro
 
 			currentTileLayer = L.tileLayer(tileUrl, {
@@ -121,7 +121,7 @@
 						window.matchMedia('(prefers-color-scheme: dark)').matches);
 
 				const newTileUrl = isDark
-					? 'https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}@2x.png'
+					? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png  :contentReference[oaicite:0]{index=0}'
 					: 'http://services.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}';
 
 				// Remover capa actual y agregar nueva
