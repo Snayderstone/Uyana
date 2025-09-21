@@ -2,6 +2,9 @@
 	import Logo from '$lib/components/atoms/Logo.svelte';
 	import ThemeToggle from '$lib/components/molecules/ThemeToggle.svelte';
 	import RssLink from '$lib/components/atoms/RssLink.svelte';
+	import Button from '../atoms/Button.svelte';
+	import { isLoggedIn, authStore } from '$lib/auth/stores/authStore';
+	import { authService } from '$lib/auth/services/authService';
 
 	export let showBackground = false;
 </script>
@@ -37,6 +40,16 @@
 
 			<RssLink />
 			<ThemeToggle />
+		</div>
+		<div class="links">
+			{#if $isLoggedIn}
+				<span>Hola, {$authStore.user?.full_name ?? $authStore.user?.email}</span>
+				<Button on:click={() => authService.logout()} variant="secondary" size="small"
+					>Logout</Button
+				>
+			{:else}
+				<Button href="/auth" variant="secondary" size="small">Login</Button>
+			{/if}
 		</div>
 	</nav>
 </header>
