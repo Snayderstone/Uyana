@@ -10,6 +10,10 @@ import {
 	obtenerProyectosPorFinanciamiento,
 	obtenerProyectosPorTipo,
 	obtenerEstadisticasGenerales,
+	obtenerEstadisticasPorFacultad,
+	obtenerRankingInvestigadores,
+	obtenerEstadisticasInvestigador,
+	buscarInvestigadores,
 	type Proyecto
 } from '$lib/services/proyectosService';
 
@@ -33,6 +37,98 @@ const proyectosToolSchema = z.object({
 type ProyectosToolArgs = z.infer<typeof proyectosToolSchema>;
 
 /**
+ * Normaliza el nombre de facultad o entidad para buscar coincidencias
+ */
+function normalizarNombreFacultad(nombre: string): string {
+	// Remover acentos y convertir a minúsculas
+	return nombre
+		.toLowerCase()
+		.normalize('NFD')
+		.replace(/[\u0300-\u036f]/g, '')
+		.trim();
+}
+
+/**
+ * Busca facultades o entidades que coincidan con el término de búsqueda
+ */
+async function buscarFacultadOEntidad(
+	termino: string
+): Promise<{ facultad: string; cantidad: number }[]> {
+	const facultades = await obtenerProyectosPorFacultad();
+	const terminoNormalizado = normalizarNombreFacultad(termino);
+
+	return facultades.filter((f) => {
+		const facultadNormalizada = normalizarNombreFacultad(f.facultad);
+		return (
+			facultadNormalizada.includes(terminoNormalizado) ||
+			terminoNormalizado.includes(facultadNormalizada)
+		);
+	});
+}
+
+/**
+ * Extrae el nombre de facultad o entidad de la consulta
+ */
+function extraerNombreFacultad(consulta: string): string | null {
+	const consultaNormalizada = consulta.toLowerCase();
+
+	// Patrones comunes para identificar facultades
+	const patrones = [
+		/facultad de ([^?]+)/,
+		/facultad\s+([^?]+)/,
+		/de la facultad de ([^?]+)/,
+		/universidad de ([^?]+)/,
+		/universidad\s+([^?]+)/,
+		/de la universidad de ([^?]+)/,
+		/entidad de ([^?]+)/,
+		/área de ([^?]+)/,
+		/area de ([^?]+)/
+	];
+
+	for (const patron of patrones) {
+		const match = consultaNormalizada.match(patron);
+		if (match && match[1]) {
+			return match[1].trim();
+		}
+	}
+
+	// Buscar palabras clave específicas conocidas
+	const palabrasClave = [
+		'ingeniería',
+		'ingenieria',
+		'medicina',
+		'ciencias sociales',
+		'humanas',
+		'economía',
+		'economia',
+		'derecho',
+		'arquitectura',
+		'filosofía',
+		'filosofia',
+		'ciencias aplicadas',
+		'ciencias químicas',
+		'ciencias quimicas',
+		'ciencias agrícolas',
+		'ciencias agricolas',
+		'veterinaria',
+		'odontología',
+		'odontologia',
+		'loja',
+		'cuenca',
+		'guayaquil',
+		'quito'
+	];
+
+	for (const palabra of palabrasClave) {
+		if (consultaNormalizada.includes(palabra)) {
+			return palabra;
+		}
+	}
+
+	return null;
+}
+
+/**
  * Procesa consultas específicas sobre proyectos
  */
 async function procesarConsulta(
@@ -46,6 +142,80 @@ async function procesarConsulta(
 	const consultaNormalizada = consulta.toLowerCase().trim();
 
 	try {
+		// Consultas específicas sobre facultades o entidades
+		if (
+			(consultaNormalizada.includes('cuántos proyectos') ||
+				consultaNormalizada.includes('cuantos proyectos') ||
+				consultaNormalizada.includes('número de proyectos') ||
+				consultaNormalizada.includes('numero de proyectos')) &&
+			(consultaNormalizada.includes('facultad') ||
+				consultaNormalizada.includes('universidad') ||
+				consultaNormalizada.includes('entidad') ||
+				consultaNormalizada.includes('área') ||
+				consultaNormalizada.includes('area'))
+		) {
+			const nombreFacultad = extraerNombreFacultad(consulta);
+
+			if (nombreFacultad) {
+				const facultadesEncontradas = await buscarFacultadOEntidad(nombreFacultad);
+
+				if (facultadesEncontradas.length > 0) {
+					if (facultadesEncontradas.length === 1) {
+						const facultad = facultadesEncontradas[0];
+						const estadisticasFacultad = await obtenerEstadisticasPorFacultad(facultad.facultad);
+
+						return {
+							respuesta: `La **${facultad.facultad}** tiene **${
+								facultad.cantidad
+							} proyectos** registrados.\n\n**Detalle por estado:**\n- En ejecución: ${
+								estadisticasFacultad.estados.ejecucion
+							}\n- En cierre: ${estadisticasFacultad.estados.cierre}\n- Cerrados/Finalizados: ${
+								estadisticasFacultad.estados.cerrados
+							}\n\nEsto representa el **${(
+								(facultad.cantidad / estadisticasFacultad.totalProyectos) *
+								100
+							).toFixed(1)}%** del total de proyectos registrados.`,
+							datos: {
+								facultad: facultad.facultad,
+								cantidad: facultad.cantidad,
+								estadisticas: estadisticasFacultad,
+								porcentaje: (
+									(facultad.cantidad / estadisticasFacultad.totalProyectos) *
+									100
+								).toFixed(1)
+							}
+						};
+					} else {
+						// Múltiples coincidencias
+						return {
+							respuesta: `Encontré **${
+								facultadesEncontradas.length
+							} facultades/entidades** que coinciden con tu búsqueda:\n\n${facultadesEncontradas
+								.map((f, i) => `${i + 1}. **${f.facultad}**: ${f.cantidad} proyectos`)
+								.join('\n')}\n\n¿Podrías ser más específico sobre cuál te interesa?`,
+							datos: {
+								facultadesEncontradas,
+								multipleMatches: true
+							}
+						};
+					}
+				} else {
+					// No se encontró la facultad
+					const todasFacultades = await obtenerProyectosPorFacultad();
+					return {
+						respuesta: `No encontré una facultad o entidad que coincida con "${nombreFacultad}". Las facultades/entidades disponibles son:\n\n${todasFacultades
+							.slice(0, 10)
+							.map((f, i) => `${i + 1}. **${f.facultad}**: ${f.cantidad} proyectos`)
+							.join('\n')}${todasFacultades.length > 10 ? '\n\n... y más.' : ''}`,
+						datos: {
+							facultadesDisponibles: todasFacultades,
+							busquedaFallida: nombreFacultad
+						}
+					};
+				}
+			}
+		}
+
 		// Consultas sobre estadísticas generales
 		if (
 			consultaNormalizada.includes('cuántos proyectos') ||
@@ -62,7 +232,220 @@ async function procesarConsulta(
 			};
 		}
 
-		// Consultas sobre proyectos activos
+		// Consultas comparativas entre facultades/entidades
+		if (
+			consultaNormalizada.includes('comparar') ||
+			consultaNormalizada.includes('diferencia') ||
+			consultaNormalizada.includes('versus') ||
+			consultaNormalizada.includes('vs') ||
+			(consultaNormalizada.includes('entre') && consultaNormalizada.includes('facultad'))
+		) {
+			const facultades = await obtenerProyectosPorFacultad();
+
+			return {
+				respuesta: `**Comparación entre las principales facultades/entidades:**\n\n${facultades
+					.slice(0, 5)
+					.map((f, i) => {
+						const porcentaje = (
+							(f.cantidad / facultades.reduce((sum, fac) => sum + fac.cantidad, 0)) *
+							100
+						).toFixed(1);
+						return `${i + 1}. **${f.facultad}**: ${f.cantidad} proyectos (${porcentaje}%)`;
+					})
+					.join('\n')}\n\nLa facultad líder tiene **${
+					facultades[0].cantidad - facultades[1].cantidad
+				} proyectos más** que la segunda.`,
+				datos: {
+					comparacion: facultades.slice(0, 5),
+					diferencia: facultades[0].cantidad - facultades[1].cantidad
+				}
+			};
+		}
+
+		// Consultas sobre tendencias o crecimiento
+		if (
+			consultaNormalizada.includes('tendencia') ||
+			consultaNormalizada.includes('crecimiento') ||
+			consultaNormalizada.includes('evolución') ||
+			consultaNormalizada.includes('evolucion') ||
+			consultaNormalizada.includes('desarrollo')
+		) {
+			const estadisticas = await obtenerEstadisticasGenerales();
+			const facultades = await obtenerProyectosPorFacultad();
+			const tipos = await obtenerProyectosPorTipo();
+
+			return {
+				respuesta: `**Análisis de tendencias en investigación:**\n\n🏆 **Facultad líder:** ${facultades[0].facultad} (${facultades[0].cantidad} proyectos)\n\n📊 **Tipo principal:** ${tipos[0].tipo} (${tipos[0].cantidad} proyectos)\n\n📈 **Proyectos activos:** ${estadisticas.proyectosActivos} de ${estadisticas.totalProyectos} total\n\n🎓 **Con acreditación SENESCYT:** ${estadisticas.investigadoresAcreditados} proyectos\n\nLas Ciencias Sociales y Humanas, junto con las áreas de Ingeniería, lideran la investigación institucional.`,
+				datos: {
+					liderFacultad: facultades[0],
+					tipoPrincipal: tipos[0],
+					estadisticas
+				}
+			};
+		}
+
+		// Consultas sobre investigadores o personal
+		if (
+			consultaNormalizada.includes('investigador') ||
+			consultaNormalizada.includes('coordinador') ||
+			consultaNormalizada.includes('director') ||
+			consultaNormalizada.includes('personal') ||
+			consultaNormalizada.includes('equipo')
+		) {
+			// Consultas sobre el investigador que más proyectos tiene/ha dirigido
+			if (
+				consultaNormalizada.includes('más proyectos') ||
+				consultaNormalizada.includes('mas proyectos') ||
+				consultaNormalizada.includes('mayor cantidad') ||
+				consultaNormalizada.includes('mayor número') ||
+				consultaNormalizada.includes('que más') ||
+				consultaNormalizada.includes('que mas') ||
+				consultaNormalizada.includes('líder') ||
+				consultaNormalizada.includes('lider') ||
+				consultaNormalizada.includes('top') ||
+				consultaNormalizada.includes('ranking') ||
+				consultaNormalizada.includes('dirigido')
+			) {
+				const ranking = await obtenerRankingInvestigadores();
+
+				if (ranking.length === 0) {
+					return {
+						respuesta: 'No se encontraron investigadores con proyectos registrados.',
+						datos: { ranking: [] }
+					};
+				}
+
+				// Determinar cuántos investigadores mostrar
+				let topN = 5;
+				const numMatch = consultaNormalizada.match(/top\s+(\d+)|(\d+)\s+investigadores?/);
+				if (numMatch) {
+					const num = numMatch.slice(1).find((n) => n !== undefined);
+					if (num) {
+						topN = parseInt(num);
+					}
+				}
+
+				const topInvestigadores = ranking.slice(0, topN);
+				const lider = topInvestigadores[0];
+
+				return {
+					respuesta: `**🏆 Investigador/Coordinador que más proyectos ha dirigido:**\n\n**${
+						lider.investigador
+					}** - **${
+						lider.total_proyectos
+					} proyectos**\n\n**📊 Top ${topN} investigadores:**\n\n${topInvestigadores
+						.map((inv, i) => {
+							const estadosActivos = inv.detalles_proyectos.filter(
+								(p) => p.estado === 'En ejecución' || p.estado === 'En cierre'
+							).length;
+							return `${i + 1}. **${inv.investigador}**\n   📁 ${
+								inv.total_proyectos
+							} proyectos (${estadosActivos} activos)`;
+						})
+						.join('\n\n')}\n\n💡 *El líder tiene **${
+						lider.total_proyectos - (topInvestigadores[1]?.total_proyectos || 0)
+					} proyectos más** que el segundo lugar.*`,
+					datos: {
+						lider,
+						topInvestigadores,
+						totalInvestigadores: ranking.length
+					}
+				};
+			}
+
+			// Consulta sobre un investigador específico
+			const nombresBuscar = consultaNormalizada.match(
+				/investigador\s+([^?]+)|coordinador\s+([^?]+)|director\s+([^?]+)/
+			);
+			if (nombresBuscar) {
+				const nombre = nombresBuscar
+					.slice(1)
+					.find((n) => n !== undefined)
+					?.trim();
+				if (nombre && nombre.length > 2) {
+					const investigadoresEncontrados = await buscarInvestigadores(nombre);
+
+					if (investigadoresEncontrados.length > 0) {
+						if (investigadoresEncontrados.length === 1) {
+							const inv = investigadoresEncontrados[0];
+							const estadisticas = await obtenerEstadisticasInvestigador(inv.investigador);
+
+							return {
+								respuesta: `**👨‍🔬 Información sobre ${
+									estadisticas.investigador
+								}:**\n\n📊 **Total de proyectos dirigidos:** ${
+									estadisticas.total_proyectos
+								}\n\n**📈 Por estado:**\n${Object.entries(estadisticas.proyectos_por_estado)
+									.map(([estado, cantidad]) => `- ${estado}: ${cantidad} proyectos`)
+									.join('\n')}\n\n**🏛️ Por facultad:**\n${Object.entries(
+									estadisticas.proyectos_por_facultad
+								)
+									.map(([facultad, cantidad]) => `- ${facultad}: ${cantidad} proyectos`)
+									.join('\n')}\n\n**📋 Proyectos dirigidos:** ${estadisticas.total_proyectos}`,
+								datos: {
+									investigador: estadisticas,
+									detalleProyectos: estadisticas.detalles_proyectos.slice(0, 5)
+								}
+							};
+						} else {
+							return {
+								respuesta: `Encontré **${
+									investigadoresEncontrados.length
+								} investigadores** que coinciden con "${nombre}":\n\n${investigadoresEncontrados
+									.slice(0, 10)
+									.map(
+										(inv, i) =>
+											`${i + 1}. **${inv.investigador}**: ${inv.total_proyectos} proyectos`
+									)
+									.join('\n')}\n\n¿Podrías ser más específico sobre cuál te interesa?`,
+								datos: {
+									investigadoresEncontrados
+								}
+							};
+						}
+					} else {
+						return {
+							respuesta: `No encontré investigadores que coincidan con "${nombre}". Intenta con un nombre diferente o consulta el ranking general de investigadores.`,
+							datos: { busquedaFallida: nombre }
+						};
+					}
+				}
+			}
+
+			// Estadísticas generales sobre investigadores
+			const proyectos = await obtenerProyectos();
+			const estadisticas = await obtenerEstadisticasGenerales();
+			const ranking = await obtenerRankingInvestigadores();
+
+			// Contar coordinadores únicos
+			const coordinadoresUnicos = ranking.length;
+
+			return {
+				respuesta: `**👥 Información sobre el equipo investigador:**\n\n**🔬 Coordinadores/Directores únicos:** ${coordinadoresUnicos}\n\n**✅ Proyectos con investigadores acreditados SENESCYT:** ${
+					estadisticas.investigadoresAcreditados
+				} de ${estadisticas.totalProyectos} (${(
+					(estadisticas.investigadoresAcreditados / estadisticas.totalProyectos) *
+					100
+				).toFixed(1)}%)\n\n**📧 Proyectos con contacto disponible:** ${
+					proyectos.filter(
+						(p) =>
+							p.correo_electronico_coordinador && p.correo_electronico_coordinador.includes('@')
+					).length
+				}\n\n**🏆 Investigador más productivo:** ${ranking[0]?.investigador || 'No disponible'} (${
+					ranking[0]?.total_proyectos || 0
+				} proyectos)\n\n💡 *Pregunta "¿quién es el investigador que más proyectos ha dirigido?" para más detalles.*`,
+				datos: {
+					coordinadoresUnicos,
+					conAcreditacion: estadisticas.investigadoresAcreditados,
+					conContacto: proyectos.filter(
+						(p) =>
+							p.correo_electronico_coordinador && p.correo_electronico_coordinador.includes('@')
+					).length,
+					total: estadisticas.totalProyectos,
+					topInvestigador: ranking[0] || null
+				}
+			};
+		}
 		if (
 			consultaNormalizada.includes('proyectos activos') ||
 			consultaNormalizada.includes('en ejecución') ||
@@ -475,12 +858,36 @@ export const proyectosTool: McpTool = {
 				descripcion: 'Obtiene el número total de proyectos'
 			},
 			{
+				consulta: '¿Cuántos proyectos tiene la Facultad de Ingeniería en Ciencias Aplicadas?',
+				descripcion: 'Consulta específica sobre una facultad'
+			},
+			{
+				consulta: '¿Cuántos proyectos tiene la Universidad de Loja?',
+				descripcion: 'Consulta sobre una entidad externa específica'
+			},
+			{
+				consulta: '¿Cuál es el investigador que más proyectos ha dirigido?',
+				descripcion: 'Encuentra el investigador más productivo'
+			},
+			{
+				consulta: '¿Quién es el coordinador que más proyectos tiene?',
+				descripcion: 'Ranking de coordinadores por productividad'
+			},
+			{
+				consulta: 'Top 10 investigadores con más proyectos',
+				descripcion: 'Ranking de los mejores investigadores'
+			},
+			{
 				consulta: '¿Cuáles son las facultades con más proyectos?',
 				descripcion: 'Lista las facultades ordenadas por número de proyectos'
 			},
 			{
 				consulta: 'Muestra el top 5 de facultades',
 				descripcion: 'Muestra un ranking de las 5 facultades con más proyectos'
+			},
+			{
+				consulta: 'Comparar entre facultades',
+				descripcion: 'Análisis comparativo entre las principales facultades'
 			},
 			{
 				consulta: '¿Cuántos proyectos están en ejecución?',
@@ -493,6 +900,14 @@ export const proyectosTool: McpTool = {
 			{
 				consulta: 'Proyectos sobre desarrollo sostenible',
 				descripcion: 'Busca proyectos relacionados con un tema específico'
+			},
+			{
+				consulta: '¿Cuál es la tendencia en investigación?',
+				descripcion: 'Análisis de tendencias y estadísticas generales'
+			},
+			{
+				consulta: '¿Cuántos investigadores hay?',
+				descripcion: 'Información sobre el equipo investigador'
 			}
 		],
 		limitations: [
@@ -512,17 +927,30 @@ export const proyectosTool: McpTool = {
 			],
 			suggestedQuestions: [
 				'¿Cuántos proyectos de investigación hay registrados en total?',
+				'¿Cuántos proyectos tiene la Facultad de Ingeniería Y Ciencias Aplicadas?',
+				'¿Cuántos proyectos tiene la Universidad de Loja?',
+				'¿Cuál es el investigador que más proyectos ha dirigido?',
+				'¿Quién es el coordinador que más proyectos tiene?',
+				'Top 10 investigadores con más proyectos',
 				'¿Cuál es la facultad que más proyectos tiene?',
 				'Muéstrame el ranking de las 5 facultades con más proyectos',
+				'Comparar entre las principales facultades',
 				'¿Hay proyectos sobre desarrollo sostenible?',
 				'¿Cuáles son los diferentes tipos de proyectos?',
 				'¿Qué campos de conocimiento tienen más investigaciones?',
-				'¿Cuántos proyectos tienen alcance internacional?'
+				'¿Cuántos proyectos tienen alcance internacional?',
+				'¿Cuál es la tendencia en investigación de la UCE?',
+				'¿Cuántos investigadores acreditados hay?'
 			],
 			tips: [
 				'📊 Para consultar rankings, puedes especificar "top 3" o "top 10" en tu pregunta',
 				'🔎 Para buscar proyectos sobre un tema específico, usa "proyectos sobre [tema]"',
-				'📋 Si necesitas filtrar por facultad, menciona el nombre de la facultad en tu consulta'
+				'📋 Para consultar una facultad específica, menciona "¿Cuántos proyectos tiene la Facultad de [nombre]?"',
+				'🏛️ Puedes consultar sobre cualquier entidad responsable, incluyendo universidades externas',
+				'📈 Pregunta sobre "tendencias" para obtener análisis comparativos y estadísticas avanzadas',
+				'👥 Consulta sobre "investigadores" para información del equipo de investigación',
+				'🏆 Pregunta "¿quién es el investigador que más proyectos ha dirigido?" para ver el ranking de productividad',
+				'🔍 Puedes buscar información específica de un investigador mencionando su nombre'
 			]
 		}
 	}

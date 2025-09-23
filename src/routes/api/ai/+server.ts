@@ -5,6 +5,104 @@ import type { AIMessage } from '$lib/ai/aiManager';
 import { env } from '$env/dynamic/private';
 
 /**
+ * Función para detectar si una consulta necesita herramientas MCP
+ */
+function necesitaHerramientasMCP(mensaje: string): string | null {
+	const msgLower = mensaje.toLowerCase().trim();
+
+	// Patrones para proyectos de investigación UCE
+	const patronesProyectos = [
+		/cuántos?\s+proyectos?/,
+		/cuánt[oa]s?\s+proyectos?/,
+		/proyectos?\s+de\s+investigación/,
+		/proyectos?\s+tiene/,
+		/facultad/,
+		/universidad\s+central/,
+		/uce/,
+		/investigador/,
+		/coordinador/,
+		/director/,
+		/ranking\s+de\s+investigadores?/,
+		/top\s+\d+\s+investigadores?/,
+		/quién?\s+es\s+el\s+investigador/,
+		/cuál\s+es\s+el\s+investigador/,
+		/investigador\s+que\s+más/,
+		/coordinador\s+que\s+más/,
+		/director\s+que\s+más/,
+		/más\s+proyectos?\s+ha\s+dirigido/,
+		/estadísticas?\s+de\s+investigadores?/,
+		/productividad\s+de\s+investigadores?/
+	];
+
+	for (const patron of patronesProyectos) {
+		if (patron.test(msgLower)) {
+			return 'proyectos-uce';
+		}
+	}
+
+	return null;
+}
+
+/**
+ * Función para invocar herramientas MCP
+ */
+async function invocarHerramientaMCP(
+	herramienta: string,
+	consulta: string
+): Promise<string | null> {
+	try {
+		const mcpRequest = {
+			jsonrpc: '2.0',
+			id: `ai-req-${Date.now()}`,
+			method: 'callTool',
+			params: {
+				name: herramienta,
+				arguments: {
+					consulta: consulta,
+					limite: 10
+				}
+			}
+		};
+
+		const response = await fetch('http://localhost:5173/api/mcp', {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json'
+			},
+			body: JSON.stringify(mcpRequest)
+		});
+
+		if (!response.ok) {
+			console.error('Error al llamar herramienta MCP:', response.status, response.statusText);
+			return null;
+		}
+
+		const data = await response.json();
+
+		if (data.error) {
+			console.error('Error en respuesta MCP:', data.error);
+			return null;
+		}
+
+		// Extraer el contenido de la respuesta MCP
+		if (data.result && data.result.content) {
+			if (Array.isArray(data.result.content)) {
+				return data.result.content.map((c) => c.text || c.content || c).join('\n');
+			} else if (typeof data.result.content === 'string') {
+				return data.result.content;
+			} else if (data.result.content.text) {
+				return data.result.content.text;
+			}
+		}
+
+		return null;
+	} catch (error) {
+		console.error('Error al invocar herramienta MCP:', error);
+		return null;
+	}
+}
+
+/**
  * Manejador para consultas de IA usando DeepSeek
  */
 export const POST: RequestHandler = async ({ request }) => {
@@ -40,15 +138,62 @@ export const POST: RequestHandler = async ({ request }) => {
 			return json({ error: 'Configuración de IA no disponible' }, { status: 500 });
 		}
 
+		// Buscar el último mensaje del usuario para detectar si necesita herramientas MCP
+		const ultimoMensajeUsuario = messages.filter((m) => m.role === 'user').pop();
+
+		let mensajesFinales = [...messages];
+		let usedMCPTool = false;
+
+		if (ultimoMensajeUsuario) {
+			const herramientaNecesaria = necesitaHerramientasMCP(ultimoMensajeUsuario.content);
+
+			if (herramientaNecesaria) {
+				console.log('Detectada necesidad de herramienta MCP:', herramientaNecesaria);
+
+				// Invocar la herramienta MCP
+				const resultadoMCP = await invocarHerramientaMCP(
+					herramientaNecesaria,
+					ultimoMensajeUsuario.content
+				);
+
+				if (resultadoMCP) {
+					// Agregar el resultado de la herramienta MCP como contexto
+					mensajesFinales.push({
+						role: 'assistant',
+						content: `[Información obtenida de la base de datos de proyectos UCE]:\n\n${resultadoMCP}`
+					});
+
+					// Agregar instrucción para usar esta información
+					mensajesFinales.push({
+						role: 'user',
+						content: `Basándote en la información anterior sobre proyectos de investigación de la UCE, responde a mi consulta original: "${ultimoMensajeUsuario.content}"`
+					});
+
+					usedMCPTool = true;
+					console.log('Herramienta MCP ejecutada exitosamente');
+				} else {
+					console.log(
+						'No se pudo obtener resultado de herramienta MCP, continuando sin herramientas'
+					);
+				}
+			}
+		}
+
 		// Crear el proveedor DeepSeek
 		const deepseekProvider = createDeepSeekProvider(env.DEEPSEEK_API_KEY);
 
 		// Generar respuesta
-		const response = await deepseekProvider.generateResponse(messages as AIMessage[], options);
+		const response = await deepseekProvider.generateResponse(
+			mensajesFinales as AIMessage[],
+			options
+		);
 
 		return json({
 			success: true,
-			data: response
+			data: {
+				...response,
+				mcpToolUsed: usedMCPTool
+			}
 		});
 	} catch (error) {
 		console.error('Error en consulta de IA:', error);

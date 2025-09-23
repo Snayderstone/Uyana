@@ -221,26 +221,226 @@ export async function obtenerEstadisticasGenerales(): Promise<{
 }
 
 export async function obtenerEstadisticasPorFacultad(nombreFacultad: string) {
-  const proyectos = await obtenerProyectos();
+	const proyectos = await obtenerProyectos();
 
-  const proyectosFacultad = proyectos.filter(
-    (p) => p.facultad_o_entidad_o_area_responsable === nombreFacultad
-  );
+	const proyectosFacultad = proyectos.filter(
+		(p) => p.facultad_o_entidad_o_area_responsable === nombreFacultad
+	);
 
-  const totalProyectos = proyectos.length;
-  const cantidadFacultad = proyectosFacultad.length;
+	const totalProyectos = proyectos.length;
+	const cantidadFacultad = proyectosFacultad.length;
 
-  const estados = {
-    ejecucion: proyectosFacultad.filter((p) => p.estado === 'En ejecución').length,
-    cierre: proyectosFacultad.filter((p) => p.estado === 'En cierre').length,
-    cerrados: proyectosFacultad.filter(
-      (p) => p.estado === 'Cerrado' || p.estado === 'Finalizado'
-    ).length,
-  };
+	const estados = {
+		ejecucion: proyectosFacultad.filter((p) => p.estado === 'En ejecución').length,
+		cierre: proyectosFacultad.filter((p) => p.estado === 'En cierre').length,
+		cerrados: proyectosFacultad.filter((p) => p.estado === 'Cerrado' || p.estado === 'Finalizado')
+			.length
+	};
 
-  return {
-    totalProyectos,
-    cantidadFacultad,
-    estados,
-  };
+	return {
+		totalProyectos,
+		cantidadFacultad,
+		estados
+	};
+}
+
+/**
+ * Obtiene el ranking de investigadores por número de proyectos dirigidos
+ */
+export async function obtenerRankingInvestigadores(limite: number = 10): Promise<
+	Array<{
+		investigador: string;
+		total_proyectos: number;
+		proyectos_activos: number;
+		proyectos_completados: number;
+		detalles_proyectos: Array<{
+			codigo: string;
+			titulo: string;
+			estado: string;
+			facultad: string;
+		}>;
+	}>
+> {
+	try {
+		const { data, error } = await supabase
+			.from('proyectos_siies_uce')
+			.select('coordinador_director, codigo, titulo, estado, facultad_o_entidad_o_area_responsable')
+			.not('coordinador_director', 'is', null)
+			.neq('coordinador_director', '');
+
+		if (error) throw error;
+
+		// Agrupar proyectos por coordinador/director
+		const agrupacionInvestigadores = new Map<
+			string,
+			{
+				total: number;
+				activos: number;
+				completados: number;
+				proyectos: Array<{
+					codigo: string;
+					titulo: string;
+					estado: string;
+					facultad: string;
+				}>;
+			}
+		>();
+
+		data?.forEach((proyecto) => {
+			const investigador = proyecto.coordinador_director?.trim();
+			if (investigador) {
+				if (!agrupacionInvestigadores.has(investigador)) {
+					agrupacionInvestigadores.set(investigador, {
+						total: 0,
+						activos: 0,
+						completados: 0,
+						proyectos: []
+					});
+				}
+
+				const stats = agrupacionInvestigadores.get(investigador)!;
+				stats.total++;
+
+				const estado = proyecto.estado?.toLowerCase() || '';
+				if (estado.includes('ejecución') || estado.includes('activo')) {
+					stats.activos++;
+				} else if (
+					estado.includes('finalizado') ||
+					estado.includes('completado') ||
+					estado.includes('cierre')
+				) {
+					stats.completados++;
+				}
+
+				stats.proyectos.push({
+					codigo: proyecto.codigo || '',
+					titulo: proyecto.titulo || '',
+					estado: proyecto.estado || '',
+					facultad: proyecto.facultad_o_entidad_o_area_responsable || ''
+				});
+			}
+		});
+
+		// Convertir a array y ordenar por total de proyectos
+		const ranking = Array.from(agrupacionInvestigadores.entries())
+			.map(([investigador, stats]) => ({
+				investigador,
+				total_proyectos: stats.total,
+				proyectos_activos: stats.activos,
+				proyectos_completados: stats.completados,
+				detalles_proyectos: stats.proyectos
+			}))
+			.sort((a, b) => b.total_proyectos - a.total_proyectos)
+			.slice(0, limite);
+
+		return ranking;
+	} catch (error) {
+		console.error('Error al obtener ranking de investigadores:', error);
+		throw new Error('Error al obtener el ranking de investigadores');
+	}
+}
+
+/**
+ * Obtiene estadísticas detalladas de un investigador específico
+ */
+export async function obtenerEstadisticasInvestigador(nombreInvestigador: string): Promise<{
+	investigador: string;
+	total_proyectos: number;
+	proyectos_por_estado: Record<string, number>;
+	proyectos_por_facultad: Record<string, number>;
+	proyectos_por_año: Record<string, number>;
+	detalles_proyectos: Array<{
+		codigo: string;
+		titulo: string;
+		estado: string;
+		facultad: string;
+		fecha_inicio: string;
+		fecha_fin: string;
+	}>;
+} | null> {
+	try {
+		const { data, error } = await supabase
+			.from('proyectos_siies_uce')
+			.select('*')
+			.ilike('coordinador_director', `%${nombreInvestigador}%`);
+
+		if (error) throw error;
+
+		if (!data || data.length === 0) {
+			return null;
+		}
+
+		const proyectosPorEstado: Record<string, number> = {};
+		const proyectosPorFacultad: Record<string, number> = {};
+		const proyectosPorAño: Record<string, number> = {};
+		const detallesProyectos: Array<{
+			codigo: string;
+			titulo: string;
+			estado: string;
+			facultad: string;
+			fecha_inicio: string;
+			fecha_fin: string;
+		}> = [];
+
+		data.forEach((proyecto) => {
+			// Estadísticas por estado
+			const estado = proyecto.estado || 'Sin estado';
+			proyectosPorEstado[estado] = (proyectosPorEstado[estado] || 0) + 1;
+
+			// Estadísticas por facultad
+			const facultad = proyecto.facultad_o_entidad_o_area_responsable || 'Sin facultad';
+			proyectosPorFacultad[facultad] = (proyectosPorFacultad[facultad] || 0) + 1;
+
+			// Estadísticas por año
+			const fechaInicio = proyecto.fecha_inicio;
+			if (fechaInicio) {
+				const año = fechaInicio.split('/')[2] || 'Sin año';
+				proyectosPorAño[año] = (proyectosPorAño[año] || 0) + 1;
+			}
+
+			// Detalles del proyecto
+			detallesProyectos.push({
+				codigo: proyecto.codigo || '',
+				titulo: proyecto.titulo || '',
+				estado: proyecto.estado || '',
+				facultad: proyecto.facultad_o_entidad_o_area_responsable || '',
+				fecha_inicio: proyecto.fecha_inicio || '',
+				fecha_fin: proyecto.fecha_fin_planeado || ''
+			});
+		});
+
+		return {
+			investigador: nombreInvestigador,
+			total_proyectos: data.length,
+			proyectos_por_estado: proyectosPorEstado,
+			proyectos_por_facultad: proyectosPorFacultad,
+			proyectos_por_año: proyectosPorAño,
+			detalles_proyectos: detallesProyectos
+		};
+	} catch (error) {
+		console.error('Error al obtener estadísticas de investigador:', error);
+		throw new Error('Error al obtener las estadísticas del investigador');
+	}
+}
+
+/**
+ * Busca investigadores por término de búsqueda
+ */
+export async function buscarInvestigadores(
+	termino: string
+): Promise<Array<{ investigador: string; total_proyectos: number }>> {
+	try {
+		const ranking = await obtenerRankingInvestigadores(50); // Obtener más resultados para filtrar
+		const terminoNormalizado = termino.toLowerCase().trim();
+
+		return ranking
+			.filter((inv) => inv.investigador.toLowerCase().includes(terminoNormalizado))
+			.map((inv) => ({
+				investigador: inv.investigador,
+				total_proyectos: inv.total_proyectos
+			}));
+	} catch (error) {
+		console.error('Error al buscar investigadores:', error);
+		throw new Error('Error al buscar investigadores');
+	}
 }

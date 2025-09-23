@@ -9,6 +9,8 @@
 	let searchQuery = '';
 	let sortField = 'titulo';
 	let sortDirection: 'asc' | 'desc' = 'asc';
+	let selectedProject: Proyecto | null = null;
+	let showDetailModal = false;
 
 	// Filtrado y paginación
 	$: filteredProjects = projects.filter((project) => {
@@ -71,14 +73,33 @@
 		return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
 	}
 
+	// Funciones para el modal de detalle
+	function openProjectDetail(project: Proyecto) {
+		selectedProject = project;
+		showDetailModal = true;
+	}
+
+	function closeProjectDetail() {
+		selectedProject = null;
+		showDetailModal = false;
+	}
+
+	// Cerrar modal con tecla Escape
+	function handleKeydown(event: KeyboardEvent) {
+		if (event.key === 'Escape' && showDetailModal) {
+			closeProjectDetail();
+		}
+	}
+
 	// Opciones de columnas
 	const columns = [
-		{ field: 'codigo', label: 'Código', width: '12%' },
-		{ field: 'titulo', label: 'Título', width: '30%' },
-		{ field: 'facultad_o_entidad_o_area_responsable', label: 'Facultad', width: '20%' },
-		{ field: 'coordinador_director', label: 'Coordinador', width: '18%' },
+		{ field: 'codigo', label: 'Código', width: '10%' },
+		{ field: 'titulo', label: 'Título', width: '28%' },
+		{ field: 'facultad_o_entidad_o_area_responsable', label: 'Facultad', width: '18%' },
+		{ field: 'coordinador_director', label: 'Coordinador', width: '16%' },
 		{ field: 'estado', label: 'Estado', width: '10%' },
-		{ field: 'fecha_inicio', label: 'Inicio', width: '10%' }
+		{ field: 'fecha_inicio', label: 'Inicio', width: '8%' },
+		{ field: 'actions', label: 'Acciones', width: '10%' }
 	];
 </script>
 
@@ -108,9 +129,13 @@
 			<thead>
 				<tr>
 					{#each columns as column}
-						<th style="width: {column.width}" on:click={() => toggleSort(column.field)}>
+						<th
+							style="width: {column.width}"
+							on:click={() => column.field !== 'actions' && toggleSort(column.field)}
+							class:sortable={column.field !== 'actions'}
+						>
 							{column.label}
-							{#if sortField === column.field}
+							{#if sortField === column.field && column.field !== 'actions'}
 								<span class="sort-icon">
 									{sortDirection === 'asc' ? '↑' : '↓'}
 								</span>
@@ -151,6 +176,21 @@
 								</span>
 							</td>
 							<td>{project.fecha_inicio || 'N/A'}</td>
+							<td>
+								<button
+									class="detail-btn"
+									on:click={() => openProjectDetail(project)}
+									title="Ver detalles completos del proyecto"
+								>
+									<svg viewBox="0 0 24 24" width="16" height="16">
+										<path
+											fill="currentColor"
+											d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"
+										/>
+									</svg>
+									<span class="detail-btn-text">Ver</span>
+								</button>
+							</td>
 						</tr>
 					{/each}
 				{/if}
@@ -203,8 +243,162 @@
 	{/if}
 </div>
 
+<!-- Modal de detalle del proyecto -->
+{#if showDetailModal && selectedProject}
+	<!-- svelte-ignore a11y-click-events-have-key-events -->
+	<!-- svelte-ignore a11y-no-static-element-interactions -->
+	<div class="modal-overlay" on:click={closeProjectDetail} on:keydown={handleKeydown}>
+		<!-- svelte-ignore a11y-click-events-have-key-events -->
+		<!-- svelte-ignore a11y-no-static-element-interactions -->
+		<div class="modal-content" on:click|stopPropagation>
+			<div class="modal-header">
+				<h2 class="modal-title">Detalle del Proyecto</h2>
+				<button class="modal-close-btn" on:click={closeProjectDetail} title="Cerrar">
+					<svg viewBox="0 0 24 24" width="24" height="24">
+						<path
+							fill="currentColor"
+							d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"
+						/>
+					</svg>
+				</button>
+			</div>
+
+			<div class="modal-body">
+				<div class="project-detail-grid">
+					<div class="detail-item">
+						<label class="detail-label">Código:</label>
+						<span class="detail-value">{selectedProject.codigo || 'No especificado'}</span>
+					</div>
+
+					<div class="detail-item full-width">
+						<label class="detail-label">Título:</label>
+						<span class="detail-value">{selectedProject.titulo || 'No especificado'}</span>
+					</div>
+
+					<div class="detail-item">
+						<label class="detail-label">Tipo de Proyecto:</label>
+						<span class="detail-value">{selectedProject.tipo_proyecto || 'No especificado'}</span>
+					</div>
+
+					<div class="detail-item">
+						<label class="detail-label">Estado:</label>
+						<span
+							class="status-badge"
+							class:active={selectedProject.estado === 'En ejecución'}
+							class:closing={selectedProject.estado === 'En cierre'}
+							class:closed={selectedProject.estado === 'Cerrado' ||
+								selectedProject.estado === 'Finalizado'}
+							class:unknown={!selectedProject.estado}
+						>
+							{selectedProject.estado || 'Desconocido'}
+						</span>
+					</div>
+
+					<div class="detail-item full-width">
+						<label class="detail-label">Objetivo:</label>
+						<span class="detail-value">{selectedProject.objetivo || 'No especificado'}</span>
+					</div>
+
+					<div class="detail-item">
+						<label class="detail-label">Facultad/Entidad:</label>
+						<span class="detail-value"
+							>{selectedProject.facultad_o_entidad_o_area_responsable || 'No especificado'}</span
+						>
+					</div>
+
+					<div class="detail-item">
+						<label class="detail-label">Coordinador/Director:</label>
+						<span class="detail-value"
+							>{selectedProject.coordinador_director || 'No especificado'}</span
+						>
+					</div>
+
+					<div class="detail-item">
+						<label class="detail-label">Correo Electrónico:</label>
+						<span class="detail-value">
+							{#if selectedProject.correo_electronico_coordinador}
+								<a
+									href="mailto:{selectedProject.correo_electronico_coordinador}"
+									class="email-link"
+								>
+									{selectedProject.correo_electronico_coordinador}
+								</a>
+							{:else}
+								No especificado
+							{/if}
+						</span>
+					</div>
+
+					<div class="detail-item">
+						<label class="detail-label">Fecha de Inicio:</label>
+						<span class="detail-value">{selectedProject.fecha_inicio || 'No especificado'}</span>
+					</div>
+
+					<div class="detail-item">
+						<label class="detail-label">Fecha de Fin Planeada:</label>
+						<span class="detail-value"
+							>{selectedProject.fecha_fin_planeado || 'No especificado'}</span
+						>
+					</div>
+
+					<div class="detail-item">
+						<label class="detail-label">Campo Amplio:</label>
+						<span class="detail-value">{selectedProject.campo_amplio || 'No especificado'}</span>
+					</div>
+
+					<div class="detail-item">
+						<label class="detail-label">Campo Específico:</label>
+						<span class="detail-value">{selectedProject.campo_especifico || 'No especificado'}</span
+						>
+					</div>
+
+					<div class="detail-item">
+						<label class="detail-label">Campo Detallado:</label>
+						<span class="detail-value">{selectedProject.campo_detallado || 'No especificado'}</span>
+					</div>
+
+					<div class="detail-item">
+						<label class="detail-label">Alcance Territorial:</label>
+						<span class="detail-value"
+							>{selectedProject.alcance_territorial || 'No especificado'}</span
+						>
+					</div>
+
+					<div class="detail-item">
+						<label class="detail-label">Investigadores Acreditados SENESCYT:</label>
+						<span class="detail-value">
+							<span
+								class="acredited-badge"
+								class:yes={selectedProject.investigadores_acreditados_senescyt === 'SI'}
+								class:no={selectedProject.investigadores_acreditados_senescyt === 'NO'}
+							>
+								{selectedProject.investigadores_acreditados_senescyt || 'No especificado'}
+							</span>
+						</span>
+					</div>
+
+					<div class="detail-item">
+						<label class="detail-label">Fuente de Financiamiento:</label>
+						<span class="detail-value"
+							>{selectedProject.fuente_financiamiento || 'No especificado'}</span
+						>
+					</div>
+				</div>
+			</div>
+
+			<div class="modal-footer">
+				<button class="btn-secondary" on:click={closeProjectDetail}> Cerrar </button>
+			</div>
+		</div>
+	</div>
+{/if}
+
+<!-- Event listener para cerrar con Escape -->
+<svelte:window on:keydown={handleKeydown} />
+
 <style lang="scss">
 	@import '$lib/scss/breakpoints.scss';
+	@import '$lib/scss/mixins.scss';
 
 	.projects-table-container {
 		background: var(--color--card-background);
@@ -289,12 +483,15 @@
 		th {
 			font-weight: 600;
 			background-color: color-mix(in srgb, var(--color--primary) 5%, transparent);
-			cursor: pointer;
 			position: relative;
 			user-select: none;
 
-			&:hover {
-				background-color: color-mix(in srgb, var(--color--primary) 10%, transparent);
+			&.sortable {
+				cursor: pointer;
+
+				&:hover {
+					background-color: color-mix(in srgb, var(--color--primary) 10%, transparent);
+				}
 			}
 		}
 
@@ -347,6 +544,65 @@
 		}
 	}
 
+	.detail-btn {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.3rem;
+		padding: 0.4rem 0.6rem;
+		border: 1px solid color-mix(in srgb, var(--color--primary) 40%, transparent);
+		border-radius: 6px;
+		background-color: color-mix(in srgb, var(--color--primary) 8%, transparent);
+		color: var(--color--primary);
+		cursor: pointer;
+		font-size: 0.8rem;
+		font-weight: 500;
+		transition: all 0.2s ease;
+
+		&:hover {
+			background-color: var(--color--primary);
+			color: white;
+			transform: translateY(-1px);
+			box-shadow: 0 2px 8px color-mix(in srgb, var(--color--primary) 25%, transparent);
+		}
+
+		&:active {
+			transform: translateY(0);
+		}
+
+		svg {
+			transition: transform 0.2s ease;
+		}
+
+		&:hover svg {
+			transform: scale(1.1);
+		}
+
+		.detail-btn-text {
+			@include for-phone-only {
+				display: none;
+			}
+		}
+	}
+
+	.acredited-badge {
+		display: inline-block;
+		padding: 0.2rem 0.4rem;
+		border-radius: 0.5rem;
+		font-size: 0.75rem;
+		font-weight: 600;
+		text-transform: uppercase;
+
+		&.yes {
+			background-color: #d1f8ea;
+			color: #00714e;
+		}
+
+		&.no {
+			background-color: #ffebee;
+			color: #c62828;
+		}
+	}
+
 	.no-results {
 		text-align: center;
 		padding: 2rem 1rem;
@@ -390,6 +646,194 @@
 		&-ellipsis {
 			padding: 0.4rem 0.4rem;
 			color: var(--color--text-shade);
+		}
+	}
+
+	// Modal styles
+	.modal-overlay {
+		position: fixed;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		background-color: rgba(0, 0, 0, 0.6);
+		backdrop-filter: blur(4px);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		z-index: 1000;
+		padding: 1rem;
+		animation: fadeIn 0.2s ease-out;
+	}
+
+	.modal-content {
+		background: var(--color--card-background);
+		border-radius: 16px;
+		box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04),
+			0 0 0 1px color-mix(in srgb, var(--color--text) 10%, transparent);
+		max-width: 800px;
+		width: 100%;
+		max-height: 90vh;
+		overflow: hidden;
+		display: flex;
+		flex-direction: column;
+		animation: slideUp 0.3s ease-out;
+
+		@include for-phone-only {
+			max-width: 95vw;
+			margin: 0.5rem;
+		}
+	}
+
+	.modal-header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding: 1.5rem 2rem 1rem;
+		border-bottom: 1px solid color-mix(in srgb, var(--color--text) 10%, transparent);
+
+		@include for-phone-only {
+			padding: 1rem 1.5rem 0.75rem;
+		}
+	}
+
+	.modal-title {
+		font-size: 1.5rem;
+		font-weight: 700;
+		color: var(--color--text);
+		margin: 0;
+
+		@include for-phone-only {
+			font-size: 1.25rem;
+		}
+	}
+
+	.modal-close-btn {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 2.5rem;
+		height: 2.5rem;
+		border: none;
+		border-radius: 50%;
+		background-color: color-mix(in srgb, var(--color--text) 8%, transparent);
+		color: var(--color--text-shade);
+		cursor: pointer;
+		transition: all 0.2s ease;
+
+		&:hover {
+			background-color: color-mix(in srgb, var(--color--text) 15%, transparent);
+			color: var(--color--text);
+			transform: scale(1.05);
+		}
+
+		&:active {
+			transform: scale(0.95);
+		}
+	}
+
+	.modal-body {
+		flex: 1;
+		overflow-y: auto;
+		padding: 1.5rem 2rem;
+
+		@include for-phone-only {
+			padding: 1rem 1.5rem;
+		}
+	}
+
+	.project-detail-grid {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 1.25rem;
+
+		@include for-phone-only {
+			grid-template-columns: 1fr;
+			gap: 1rem;
+		}
+	}
+
+	.detail-item {
+		&.full-width {
+			grid-column: 1 / -1;
+		}
+	}
+
+	.detail-label {
+		display: block;
+		font-weight: 600;
+		color: var(--color--text);
+		margin-bottom: 0.4rem;
+		font-size: 0.9rem;
+	}
+
+	.detail-value {
+		display: block;
+		color: var(--color--text-shade);
+		line-height: 1.5;
+		word-wrap: break-word;
+	}
+
+	.email-link {
+		color: var(--color--primary);
+		text-decoration: none;
+		transition: color 0.2s ease;
+
+		&:hover {
+			color: color-mix(in srgb, var(--color--primary) 80%, black);
+			text-decoration: underline;
+		}
+	}
+
+	.modal-footer {
+		padding: 1rem 2rem 1.5rem;
+		border-top: 1px solid color-mix(in srgb, var(--color--text) 10%, transparent);
+		display: flex;
+		justify-content: flex-end;
+
+		@include for-phone-only {
+			padding: 1rem 1.5rem;
+		}
+	}
+
+	.btn-secondary {
+		padding: 0.6rem 1.5rem;
+		border: 1px solid color-mix(in srgb, var(--color--text) 20%, transparent);
+		border-radius: 8px;
+		background-color: transparent;
+		color: var(--color--text);
+		cursor: pointer;
+		font-weight: 500;
+		transition: all 0.2s ease;
+
+		&:hover {
+			background-color: color-mix(in srgb, var(--color--text) 8%, transparent);
+			border-color: var(--color--text);
+		}
+
+		&:active {
+			transform: translateY(1px);
+		}
+	}
+
+	// Animations
+	@keyframes fadeIn {
+		from {
+			opacity: 0;
+		}
+		to {
+			opacity: 1;
+		}
+	}
+
+	@keyframes slideUp {
+		from {
+			opacity: 0;
+			transform: translateY(2rem) scale(0.95);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0) scale(1);
 		}
 	}
 </style>
