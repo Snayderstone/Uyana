@@ -546,7 +546,7 @@
 	<div aria-label="Mapa de proyectos por facultad de la UCE">
 		<GeoJsonChoropleth
 			{map}
-			dataUrl="/geo/map_uce_facultades_v5.geojson"
+			dataUrl="/geo/map_uce_facultades_v5.1.geojson"
 			idProperty="facultad_o_entidad_o_area_responsable"
 			{valueById}
 			{highlightedFacultad}

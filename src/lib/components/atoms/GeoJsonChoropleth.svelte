@@ -175,15 +175,23 @@
 			// === HOVER: tooltip al pasar el puntero === // ADD
 			const id = feature?.properties?.[idProperty];
 			if (id && L) {
-				layer
-					.bindTooltip(`<div class="faculty-hover-tooltip">${id}</div>`, {
-						permanent: false, // se cierra solo
-						direction: 'center', // aparece dentro del polígono
-						className: 'faculty-hover-tooltip-container', // clase personalizada
-						sticky: true, // sigue el puntero
-						interactive: false // no bloquea clics
-					})
-					.openTooltip();
+				const id = feature?.properties?.[idProperty];
+				if (id && L) {
+					const v = id != null ? valueById[id] : null;
+					layer
+						.bindTooltip(
+							hoverCardHTML(feature?.properties ?? {}, id, typeof v === 'number' ? v : null),
+							{
+								permanent: false,
+								direction: 'bottom', // abre hacia abajo
+								offset: [0, cardOffsetY], // muévelo un poco hacia abajo
+								className: 'faculty-card-tooltip', // nuestra clase nueva
+								sticky: true,
+								interactive: false
+							}
+						)
+						.openTooltip();
+				}
 			}
 		});
 
@@ -221,7 +229,7 @@
 					centroides[id] = [center.lat, center.lng];
 				}
 
-				// 👇 si el padre pasó un callback extra
+				// si el padre pasó un callback extra
 				if (onEachFeature) {
 					onEachFeature(feature, layer);
 				}
@@ -234,8 +242,8 @@
 	function restyleLayer() {
 		if (!geoLayer) return;
 		geoLayer.eachLayer((layer: any) => {
-  geoLayer.resetStyle(layer); // resetea al estilo base antes de aplicar el nuevo
-});
+			geoLayer.resetStyle(layer); // resetea al estilo base antes de aplicar el nuevo
+		});
 		geoLayer.setStyle(styleForFeature);
 
 		// Si hay una facultad destacada, aplicar estilo especial
@@ -417,11 +425,69 @@
 		}
 	}
 	export { centroides };
+
+	// SVG por defecto (cámbialo por tu laurel/ánfora/columna). Es inline y liviano.
+	const DEFAULT_CARD_SVG = `
+<svg viewBox="0 0 270.125 270.125"
+     xmlns="http://www.w3.org/2000/svg"
+     aria-hidden="true"
+     width="1em" height="1em"
+     fill="currentColor">
+  <path d="M33.892,70.088
+	c-19.537,1.555-35.578,18.669-33.75,38.771c1.569,17.255,16.823,31.414,34.676,29.519c14.97-1.588,27.251-14.994,25.264-30.604
+	c-1.615-12.681-13.199-23.104-26.578-20.975c-10.387,1.653-18.976,11.473-16.606,22.643c0.859,4.047,3.183,7.559,6.492,9.941
+	c3.309,2.382,7.922,3.55,12.416,2.119c2.944-0.937,5.294-2.818,6.887-5.521c1.593-2.704,2.11-6.917-0.02-10.262
+	c-1.717-2.698-3.293-3.232-5.766-3.648c-1.236-0.208-2.965-0.285-4.805,0.912c-1.84,1.197-2.815,3.672-2.815,5.422
+	c-0.017,1.336,0.5,2.623,1.438,3.574c-0.491-0.141-0.978-0.339-1.494-0.711c-1.205-0.868-2.243-2.443-2.553-3.902
+	c-1.059-4.992,3.23-9.867,8.395-10.69c7.348-1.17,14.144,4.951,15.088,12.359c1.231,9.671-6.743,18.372-16.4,19.396
+	c-11.975,1.271-22.577-8.57-23.66-20.48C8.803,93.684,20.517,81.184,34.685,80.057c0.126-0.01,0.253-0.016,0.379-0.023h200
+	c0.126,0.01,0.252,0.014,0.377,0.023c14.168,1.127,25.882,13.627,24.584,27.896c-1.083,11.911-11.685,21.751-23.66,20.48
+	c-9.658-1.025-17.632-9.726-16.4-19.396c0.943-7.409,7.739-13.529,15.088-12.359c5.165,0.822,9.454,5.697,8.394,10.69
+	c-0.31,1.459-1.348,3.035-2.553,3.902c-0.516,0.371-1,0.57-1.49,0.711c0.936-0.952,1.452-2.239,1.434-3.574
+	c0-1.75-0.973-4.225-2.812-5.422c-1.84-1.197-3.568-1.12-4.805-0.912c-2.473,0.416-4.05,0.951-5.768,3.648
+	c-2.129,3.344-1.611,7.558-0.018,10.262c1.593,2.704,3.943,4.585,6.887,5.521c4.494,1.43,9.105,0.263,12.414-2.119
+	s5.633-5.894,6.492-9.941c2.37-11.169-6.219-20.989-16.605-22.643c-13.379-2.129-24.964,8.294-26.578,20.975
+	c-1.988,15.61,10.296,29.015,25.266,30.604c17.852,1.894,33.105-12.264,34.674-29.52c1.828-20.102-14.213-37.217-33.75-38.771
+	c-0.406-0.062-0.781-0.037-1.17-0.045h-200c-0.389-0.024-0.8,0.021-1.172,0.047L33.892,70.088z M15.063,20.063c-2.761,0-5,2.239-5,5
+	v10c0,1.326,0.527,2.598,1.465,3.535l20,20c0.938,0.938,2.209,1.465,3.535,1.465h200c1.326,0,2.598-0.527,3.535-1.465l20-20
+	c0.938-0.938,1.465-2.209,1.465-3.535v-10c0-2.761-2.239-5-5-5C255.063,20.063,15.063,20.063,15.063,20.063z M20.063,30.063h230
+	v2.928l-17.072,17.072H37.133l-17.07-17.072V30.063z M75.063,100.063c-2.761,0-5,2.239-5,5v140c0.001,2.762,2.24,5,5.002,4.999
+	c0.987,0,1.951-0.292,2.772-0.839l28.441-18.963c1.366-0.91,2.198-2.433,2.227-4.074l1.557-91.039c0-0.028,0-0.056,0-0.084
+	c0-3.28,10.058-3.373,10-0.09c0,0.03,0,0.06,0,0.09v80c0.001,2.762,2.24,5,5.002,4.999c0.987,0,1.951-0.292,2.772-0.839l30-20
+	c1.391-0.927,2.226-2.488,2.227-4.16v-60c0-3.339,10-3.339,10,0v50c0.001,2.762,2.241,5,5.003,4.998c0.775,0,1.54-0.181,2.234-0.528
+	l20-10c1.693-0.847,2.763-2.577,2.764-4.471v-70c0-2.761-2.239-5-5-5h-120H75.063z M80.063,110.063h110v61.908l-10,5v-41.908
+	c0-16.668-30-16.668-30,0v57.324l-20,13.334v-70.658v0.088c0.297-16.724-29.998-16.815-29.998-0.088v-0.086l-1.512,88.418
+	l-18.488,12.326V110.063L80.063,110.063z"/>
+</svg>`;
+
+	// Permite reemplazar el SVG desde afuera si quieres
+	export let cardSVG: string = DEFAULT_CARD_SVG;
+
+	// (Opcional) separación vertical hacia abajo
+	export let cardOffsetY: number = 16;
+
+	// Utilidad: arma el HTML del “card” de hover
+	function hoverCardHTML(props: any, id: string, value: number | null) {
+		const name = id ?? props?.facultad ?? 'Facultad';
+		const valTxt = value == null ? '–' : String(value);
+		return `
+    <div class="fac-card">
+      <div class="fac-card__row">
+        <span class="fac-card__icon">${cardSVG}</span>
+        <div class="fac-card__col">
+          <div class="fac-card__title">${name}</div>
+          <div class="fac-card__meta"><b>${valTxt}</b> proyectos</div>
+        </div>
+      </div>
+    </div>
+  `;
+	}
 </script>
 
 <div class="geo-json-choropleth-wrapper">
 	<!-- Componente no tiene contenido directo, renderiza en el mapa -->
 </div>
+export {centroides};
 
 <style>
 	.geo-json-choropleth-wrapper {
@@ -471,5 +537,98 @@
 		font-size: 14px;
 		box-shadow: 0 0 6px rgba(0, 0, 0, 0.3);
 	}
+	/* Contenedor del tooltip Leaflet (sin fondo/borde por defecto) */
+	:global(.faculty-card-tooltip) {
+		background: transparent !important;
+		border: 0 !important;
+		box-shadow: none !important;
+		padding: 0 !important;
+		pointer-events: none !important; /* no bloquea interacciones */
+	}
+
+	/* El “card” que aparece y se despliega hacia abajo */
+	:global(.faculty-card-tooltip .fac-card) {
+		--bg: var(--color--background, #121212);
+		--fg: var(--color--text, #ffffff);
+		--bd: color-mix(in srgb, var(--color--secondary, #00bcd4) 65%, #000);
+		--shadow: 0 8px 20px rgba(0, 0, 0, 0.27), 0 2px 6px rgba(0, 0, 0, 0.484);
+		background: var(--bg);
+		color: var(--fg);
+		border: 1px solid var(--bd);
+		border-radius: 12px;
+		padding: 8px 10px;
+		box-shadow: var(--shadow);
+
+		/* Animación: abrir hacia abajo */
+		transform-origin: top center;
+		animation: fac-dropdown 0.42s ease-out both;
+	}
+
+	/* Layout interno */
+	:global(.faculty-card-tooltip .fac-card__row) {
+		display: flex;
+		flex-direction: column; /* pila vertical */
+		align-items: center; /* centrado horizontal */
+		grid-template-columns: 18px auto;
+		gap: 8px;
+		align-items: center;
+		text-align: center; /* centra los textos */
+	}
+
+	:global(.faculty-card-tooltip .fac-card__icon) {
+		order: 3;
+		font-size: 36px;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		color: var(--color--secondary, #00bcd4);
+		animation: fac-float 3s ease-in-out infinite;
+	}
+	/* --- 3) Brillo + “flotando” del SVG --- */
+	:global(.faculty-card-tooltip .fac-card__icon svg) {
+		/* brillo del color secundario + sombra inferior para sensación de flotar */
+		filter: drop-shadow(0 0 6px rgba(var(--color--secondary-rgb, 0, 188, 212), 0.7))
+			drop-shadow(0 0 14px rgba(var(--color--secondary-rgb, 0, 188, 212), 0.4))
+			drop-shadow(0 6px 10px rgba(0, 0, 0, 0.35)); /* sombra hacia abajo */
+		transform: translateZ(0);
+		will-change: filter, transform;
+	}
+
+	:global(.faculty-card-tooltip .fac-card__title) {
+		order: 1;
+		font-weight: 800;
+		letter-spacing: 0.2px;
+		line-height: 1.1;
+	}
+
+	:global(.faculty-card-tooltip .fac-card__meta) {
+		order: 2;
+		font-size: 12px;
+		opacity: 0.9;
+		margin-top: 2px;
+	}
+
+	/* Keyframes del despliegue hacia abajo */
+	@keyframes fac-dropdown {
+		from {
+			opacity: 0;
+			transform: translateY(-6px) scaleY(0.85);
+			clip-path: inset(0 0 100% 0);
+		}
+		to {
+			opacity: 0.9;
+			transform: translateY(0) scaleY(1);
+			clip-path: inset(0 0 0 0);
+		}
+	}
+
+	@keyframes fac-float {
+		0%,
+		100% {
+			transform: translateY(0);
+		}
+		50% {
+			transform: translateY(-10px);
+		}
+	}
 </style>
-export { centroides };
