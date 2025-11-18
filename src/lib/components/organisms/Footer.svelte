@@ -11,7 +11,7 @@
 	</div>
 	<div class="content">
 		<div class="copyright">
-			Universidad Central del Ecuador <a
+			© 2025 Universidad Central del Ecuador <a
 				href="https://www.uce.edu.ec/web/di"
 				target="_blank"
 				rel="noopener noreferrer">- Dirección de Investigación</a
@@ -48,7 +48,7 @@
 			text-align: center;
 
 			.credits {
-				font-weight: 400;
+				font-weight: 300;
 				font-size: 90%;
 				color: var(--color--text-shade);
 			}
@@ -65,5 +65,30 @@
 				filter: drop-shadow(0px 0px 3px var(--color--primary));
 			}
 		}
+		a {
+		position: relative;
+		text-decoration: none; /* eliminar underline por defecto */
+		
+		/* subrayado personalizado */
+		&::after {
+			content: "";
+			position: absolute;
+			left: 0;
+			bottom: -2px; /* ajusta la distancia de la raya */
+			width: 100%;
+			height: 2px; /* grosor de la raya */
+			background-color: rgb(var(--color--text-rgb)); /* color secondary */
+			transition: background-color 0.3s ease;
+		}
+
+		&:hover {
+			filter: drop-shadow(0px 0px 3px var(--color--primary));
+
+			/* si quieres cambiar el color de la raya en hover (opcional): */
+			// &::after {
+			//     background-color: rgb(var(--color--primary-rgb));
+			// }
+		}
+	}
 	}
 </style>

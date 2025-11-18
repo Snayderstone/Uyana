@@ -34,15 +34,36 @@
 <div class="container">
 	<Hero />
 	<div class="container">
-		<Sparkles>
-			<Button href="/map" color="primary" size="medium" style="solid">Empezar Ahora!</Button>
-		</Sparkles>
+		<div class="buttons-wrapper">
+			<Sparkles>
+				<Button
+					href="/map"
+					color="primary"
+					size="medium"
+					style="solid"
+					additionalClass="btn-personalizado1"
+				>
+					!Empezar Ahora!
+				</Button>
+			</Sparkles>
+			<Sparkles>
+				<Button
+					href="/map"
+					color="primary"
+					style="understated"
+					size="medium"
+					additionalClass="btn-personalizado2"
+				>
+					Explorar Características
+				</Button>
+			</Sparkles>
+		</div>
+		<About />
+		{#if posts && posts.length > 0}
+			<RecentPosts {posts} />
+		{/if}
+		<Features {features} />
 	</div>
-	<About />
-	{#if posts && posts.length > 0}
-		<RecentPosts {posts} />
-	{/if}
-	<Features {features} />
 </div>
 
 <style>
@@ -51,5 +72,28 @@
 		margin: 0 auto;
 		padding: 0 20px;
 		text-align: center; /* ← centra texto e inline-blocks */
+	}
+	:global(.btn-personalizado2) {
+		border-radius: 10px !important;
+		border: 1px solid rgb(var(--color--primary-rgb)) !important;
+		font-weight: 300 !important;
+	}
+	:global(.btn-personalizado1) {
+		border-radius: 10px !important;
+	}
+	.buttons-wrapper {
+		display: flex;
+		flex-direction: column; /* móvil */
+		align-items: center;
+		gap: 16px; /* espacio entre botones */
+		margin: 20px 0;
+	}
+	/* Pantallas medianas y grandes */
+	@media (min-width: 768px) {
+		.buttons-wrapper {
+			flex-direction: row; /* uno al lado del otro */
+			justify-content: center;
+			gap: 50px; /* un poco más de espacio */
+		}
 	}
 </style>

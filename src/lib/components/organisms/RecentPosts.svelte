@@ -14,7 +14,7 @@
 	align="left"
 >
 	<div slot="button">
-		<Button href="/blog">Ver más</Button>
+		<Button href="/blog" additionalClass="btn-personalizado1">!Ver más!</Button>
 	</div>
 	<div class="grid">
 		{#each posts as post}
@@ -42,5 +42,8 @@
 		@include for-phone-only {
 			grid-template-columns: 1fr;
 		}
+	}
+	:global(.btn-personalizado1) {
+		border-radius: 10px !important;
 	}
 </style>

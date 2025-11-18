@@ -8,12 +8,12 @@
 
 <header class:has-background={showBackground}>
 	<nav class="container">
-		<a class="logo" href="/" aria-label="Uyana - Página principal">
+		<div class="logo" aria-label="Uyana - Página principal">
 			<Logo />
-		</a>
+		</div>
 
 		<div class="links">
-			<a href="/map">Mapa</a>
+			<a href="/map">Mapa(Proyectos)</a>
 		</div>
 
 		<div class="links">
