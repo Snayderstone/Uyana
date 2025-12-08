@@ -15,11 +15,17 @@
  *  - Obtener todos los proyectos con sus instituciones asociadas
  *  - Obtener conteos de proyectos agrupados por institución
  */
+// src/lib/db/projects.repository.ts
+/**
+ * Projects Repository
+ * -------------------
+ * Consultas directas a la BD relacionadas con proyectos
+ */
 
 import { supabase } from './supabase.client';
+import type { ProjectMapModel } from '$lib/models/map.model';
 
 export const ProjectsRepository = {
-
   /**
    * Obtiene pares (proyecto_id, institucion_id)
    * desde la tabla puente proyecto_institucion.
@@ -39,7 +45,6 @@ export const ProjectsRepository = {
 
   /**
    * Obtiene todas las instituciones y su geometría.
-   * Esto es necesario para generar mapas temáticos.
    */
   async getAllInstitutions() {
     const { data, error } = await supabase
@@ -69,10 +74,9 @@ export const ProjectsRepository = {
       return [];
     }
 
-    // Agrupar manualmente porque Supabase no permite count + group sin RPC
     const counts = new Map<number, number>();
 
-    data.forEach(row => {
+    data.forEach((row: any) => {
       const id = row.institucion_id;
       counts.set(id, (counts.get(id) || 0) + 1);
     });
@@ -81,6 +85,60 @@ export const ProjectsRepository = {
       institucion_id,
       count
     }));
-  }
+  },
 
+  /**
+   * Obtiene el conteo de proyectos por facultad
+   * para visualización en mapas.
+   * Recorre las relaciones:
+   *  facultades → carreras → participantes → proyecto_participante
+   */
+  async getProjectCountByFacultyForMap(): Promise<ProjectMapModel[]> {
+    const { data, error } = await supabase
+      .from('facultades')
+      .select(`
+        id,
+        nombre,
+        geometry,
+        carreras (
+          participantes (
+            proyecto_participante (
+              proyecto_id
+            )
+          )
+        )
+      `);
+
+    if (error) {
+      console.error('Error getProjectCountByFacultyForMap:', error);
+      throw error;
+    }
+
+    return (data ?? []).map((fac: any) => {
+      const carreras = fac.carreras ?? [];
+      const projectIdsSet = new Set<number>();
+
+      for (const carrera of carreras) {
+        const participantes = carrera.participantes ?? [];
+        for (const part of participantes) {
+          const proyPart = part.proyecto_participante ?? [];
+          for (const rel of proyPart) {
+            if (rel.proyecto_id) {
+              projectIdsSet.add(rel.proyecto_id);
+            }
+          }
+        }
+      }
+
+      const model: ProjectMapModel = {
+        id: fac.id,
+        titulo: fac.nombre,
+        geometry: fac.geometry,
+        projectCount: projectIdsSet.size,
+        level: 'faculty'
+      };
+
+      return model;
+    });
+  }
 };

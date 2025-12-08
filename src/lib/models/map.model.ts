@@ -3,6 +3,17 @@
  * ----------
  * Modelos utilizados para mapas (heatmap, clusters, grafos, etc.)
  */
+// src/lib/models/map.model.ts
+export type MapLevel = 'institution' | 'faculty';
+
+export interface ProjectMapModel {
+  id: number;          // id de la institución o facultad
+  titulo: string;      // nombre de la institución o facultad
+  geometry: any;       // jsonb de la columna geometry (GeoJSON)
+  projectCount: number;
+  level: MapLevel;     // 'institution' o 'faculty'
+}
+
 
 export type MapPoint = {
     lat: number;
@@ -18,7 +29,7 @@ export type MapRegion = {
     projectCount?: number;
 };
 
-export type ProjectMapModel = {
+export type ProjectMapModel2 = {
   id: number;
   titulo: string;
 

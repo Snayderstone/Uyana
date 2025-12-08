@@ -21,7 +21,8 @@ export type Proyecto = {
 };
 
 export async function obtenerProyectos(): Promise<Proyecto[]> {
-	const { data, error } = await supabase.from('proyectos_siies_uce').select('*');
+	// 👇 OJO: cambia 'proyectos' por el nombre real si tu tabla/vista se llama distinto
+	const { data, error } = await supabase.from('proyectos').select('*');
 
 	if (error) {
 		console.error('Error al obtener proyectos:', error);
@@ -30,6 +31,7 @@ export async function obtenerProyectos(): Promise<Proyecto[]> {
 
 	return data || [];
 }
+
 
 export async function obtenerProyectosPorEstado(): Promise<{ estado: string; cantidad: number }[]> {
 	const proyectos = await obtenerProyectos();
@@ -263,7 +265,7 @@ export async function obtenerRankingInvestigadores(limite: number = 10): Promise
 > {
 	try {
 		const { data, error } = await supabase
-			.from('proyectos_siies_uce')
+			.from('proyectos')
 			.select('coordinador_director, codigo, titulo, estado, facultad_o_entidad_o_area_responsable')
 			.not('coordinador_director', 'is', null)
 			.neq('coordinador_director', '');
@@ -360,7 +362,7 @@ export async function obtenerEstadisticasInvestigador(nombreInvestigador: string
 } | null> {
 	try {
 		const { data, error } = await supabase
-			.from('proyectos_siies_uce')
+			.from('proyectos')
 			.select('*')
 			.ilike('coordinador_director', `%${nombreInvestigador}%`);
 

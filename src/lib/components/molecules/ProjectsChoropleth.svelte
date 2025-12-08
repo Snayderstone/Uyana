@@ -3,7 +3,11 @@
 	import { onMount, onDestroy, createEventDispatcher } from 'svelte';
 	import type { Map, LatLng } from 'leaflet';
 	import GeoJsonChoropleth from '$lib/components/atoms/GeoJsonChoropleth.svelte';
-	import { obtenerProyectosPorFacultad, type Proyecto } from '$lib/services/proyectosService';
+	// Solo usamos el tipo Proyecto para los proyectos filtrados
+import type { Proyecto } from '$lib/services/proyectosService';
+// NUEVO: usamos tu servicio nuevo
+import { ProjectService } from '$lib/services/project.service';
+import type { MapLevel, ProjectMapModel } from '$lib/models/map.model';
 	import PopupDashboard from '$lib/components/atoms/PopupDashboard.svelte';
 	import FacultadRankingLayer from '$lib/components/atoms/FacultadRankingLayer.svelte';
 
@@ -14,6 +18,9 @@
 	export const proyectos: Proyecto[] = [];
 	export let filteredProyectos: Proyecto[] = [];
 	export let highlightedFacultad: string | null = null; // Facultad que debe ser destacada
+	
+	// Nivel actual del mapa (por ahora siempre facultad)
+let mapLevel: MapLevel = 'faculty';
 	let centroides: Record<string, [number, number]> = {};
 	let rankingData: { facultad: string; cantidad: number; center: [number, number] }[] = [];
 
@@ -45,87 +52,82 @@
 	});
 
 	// Función para normalizar nombres de facultades para que coincidan con los del GeoJSON
-	function normalizarNombreFacultad(nombre: string): string {
-		if (!nombre) return 'No especificada';
+	// Función para normalizar nombres de facultades para que coincidan con los del GeoJSON
+function normalizarNombreFacultad(nombre: string): string {
+  if (!nombre) return 'No especificada';
 
-		// Limpieza básica de texto para normalización estándar
-		const nombreLimpio = nombre
-			.trim()
-			.replace(/\s+/g, ' ') // Eliminar espacios múltiples
-			.replace(/^facultad\s+de\s+/i, '') // Eliminar "Facultad de" inicial si existe
-			.replace(/^facultad\s+/i, ''); // O simplemente "Facultad" si existe
+  // Pasamos todo a minúsculas para normalizar
+  let s = nombre.trim().toLowerCase();
 
-		// Mapeo explícito de nombres de facultades para asegurar consistencia
-		const mapeoNombres: Record<string, string> = {
-			'Ciencias Agrícolas': 'Facultad De Ciencias Agrícolas',
-			'Facultad Ciencias Agrícolas': 'Facultad De Ciencias Agrícolas',
-			'Facultad de Ciencias Agrícolas': 'Facultad De Ciencias Agrícolas',
-			// Agregar más mapeos si se descubren otras discrepancias
-			[nombreLimpio]: `Facultad De ${nombreLimpio.charAt(0).toUpperCase()}${nombreLimpio.slice(1)}`
-		};
+  // Quitamos prefijos "facultad de" o "facultad"
+  s = s.replace(/^facultad\s+de\s+/, '');
+  s = s.replace(/^facultad\s+/, '');
 
-		// Si existe un mapeo explícito, usarlo
-		if (mapeoNombres[nombre]) {
-			return mapeoNombres[nombre];
-		}
+  // Normalizamos espacios
+  s = s.replace(/\s+/g, ' ');
 
-		// Si el nombre ya incluye "Facultad De", probablemente ya está en el formato correcto
-		if (nombre.startsWith('Facultad De ')) {
-			return nombre;
-		}
+  // Capitalizamos cada palabra ("ciencias agrícolas" → "Ciencias Agrícolas")
+  const title = s
+    .split(' ')
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ');
 
-		// Si ninguna de las condiciones anteriores aplica, aplicar formato estándar
-		if (!nombre.toLowerCase().includes('facultad')) {
-			return `Facultad De ${nombreLimpio.charAt(0).toUpperCase()}${nombreLimpio.slice(1)}`;
-		}
+  // Formato final que debe coincidir con el GeoJSON:
+  // "Facultad De Ciencias Agrícolas"
+  return `Facultad De ${title}`;
+}
 
-		// Como último recurso, devolver el nombre original
-		return nombre;
-	}
 
 	// Función para cargar datos de proyectos por facultad
-	async function cargarDatos() {
-		try {
-			proyectosPorFacultad = await obtenerProyectosPorFacultad();
+// Función para cargar datos de proyectos por facultad
+async function cargarDatos() {
+  try {
+    // 👇 AHORA usamos el servicio nuevo basado en la BD relacional
+    const filas = await ProjectService.getProjectsForMap('faculty');
 
-			// Crear el objeto valueById para el componente GeoJsonChoropleth
-			valueById = {};
-			proyectosPorFacultad.forEach((item) => {
-				// Normalizar el nombre de la facultad para que coincida con el GeoJSON
-				const facultadKey = normalizarNombreFacultad(item.facultad);
-				valueById[facultadKey] = item.cantidad;
-			});
+    // Adaptamos al formato que el resto del componente ya usa
+    proyectosPorFacultad = filas.map((row) => ({
+      facultad: row.titulo,          // nombre de la facultad
+      cantidad: row.projectCount     // número de proyectos
+    }));
 
-			// Cálculo de estadísticas básicas para mejor visualización y diagnóstico
-			if (proyectosPorFacultad.length > 0) {
-				const cantidades = proyectosPorFacultad.map((p) => p.cantidad);
-				const minProyectos = Math.min(...cantidades);
-				const maxProyectos = Math.max(...cantidades);
-				const avgProyectos = cantidades.reduce((a, b) => a + b, 0) / cantidades.length;
-				const facultadMax =
-					proyectosPorFacultad.find((p) => p.cantidad === maxProyectos)?.facultad || 'Desconocida';
+    // Crear el objeto valueById para el componente GeoJsonChoropleth
+    valueById = {};
+    proyectosPorFacultad.forEach((item) => {
+      // Normalizar el nombre de la facultad para que coincida con el GeoJSON
+      const facultadKey = normalizarNombreFacultad(item.facultad);
+      valueById[facultadKey] = item.cantidad;
+    });
 
-				console.info(
-					`Estadísticas: Min=${minProyectos}, Max=${maxProyectos} (${facultadMax}), Promedio=${avgProyectos.toFixed(
-						1
-					)}`
-				);
-				console.info(
-					`Total facultades: ${proyectosPorFacultad.length}, Total proyectos: ${cantidades.reduce(
-						(a, b) => a + b,
-						0
-					)}`
-				);
-			}
-		} catch (error) {
-			console.error('Error al cargar datos de proyectos por facultad:', error);
-			// Proporcionar datos de respaldo o mostrar mensaje de error al usuario
-			dispatch('dataError', {
-				message: 'No se pudieron cargar los datos de proyectos',
-				error: error instanceof Error ? error.message : 'Error desconocido'
-			});
-		}
-	}
+    // 🔹 Estadísticas (dejamos tu lógica tal cual)
+    if (proyectosPorFacultad.length > 0) {
+      const cantidades = proyectosPorFacultad.map((p) => p.cantidad);
+      const minProyectos = Math.min(...cantidades);
+      const maxProyectos = Math.max(...cantidades);
+      const avgProyectos = cantidades.reduce((a, b) => a + b, 0) / cantidades.length;
+      const facultadMax =
+        proyectosPorFacultad.find((p) => p.cantidad === maxProyectos)?.facultad || 'Desconocida';
+
+      console.info(
+        `Estadísticas: Min=${minProyectos}, Max=${maxProyectos} (${facultadMax}), Promedio=${avgProyectos.toFixed(
+          1
+        )}`
+      );
+      console.info(
+        `Total facultades: ${proyectosPorFacultad.length}, Total proyectos: ${cantidades.reduce(
+          (a, b) => a + b,
+          0
+        )}`
+      );
+    }
+  } catch (error) {
+    console.error('Error al cargar datos de proyectos para el mapa:', error);
+    dispatch('dataError', {
+      message: 'No se pudieron cargar los datos de proyectos',
+      error: error instanceof Error ? error.message : 'Error desconocido'
+    });
+  }
+}
 
 	// Función para calcular el promedio de duración de proyectos en meses
 	function calcularPromedioDuracion(proyectos: Proyecto[]): string {

@@ -9,7 +9,7 @@
 	const { mapConfig } = data;
 
 	let pageHeight: number;
-	let activeTab: 'map' | 'dashboard' = 'map';
+	let activeTab: 'map' | 'dashboard' | 'participants' = 'map';
 
 	// Ajustar altura de la página para maximizar el espacio para el mapa
 	onMount(() => {
@@ -28,7 +28,7 @@
 		pageHeight = window.innerHeight - 120;
 	}
 
-	function setTab(tab: 'map' | 'dashboard') {
+	function setTab(tab: 'map' | 'dashboard' | 'participants') {
 		activeTab = tab;
 	}
 </script>
@@ -73,6 +73,27 @@
 			</button>
 			<button
 				class="tab-button"
+				class:active={activeTab === 'participants'}
+				on:click={() => setTab('participants')}
+			>
+				<svg
+					xmlns="http://www.w3.org/2000/svg"
+					width="18"
+					height="18"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="2"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+				>
+					<circle cx="12" cy="7" r="4" />
+					<path d="M5.5 21a8.38 8.38 0 0 1 13 0" />
+				</svg>
+				Participantes
+			</button>
+			<button
+				class="tab-button"
 				class:active={activeTab === 'dashboard'}
 				on:click={() => setTab('dashboard')}
 			>
@@ -108,6 +129,12 @@
 	{:else if activeTab === 'dashboard'}
 		<div class="dashboard-container" in:fade={{ duration: 300 }} out:fade={{ duration: 200 }}>
 			<ProjectDashboard />
+		</div>
+	{:else if activeTab === 'participants'}
+		<div class="map-container" in:fade={{ duration: 300 }} out:fade={{ duration: 200 }}>
+			<!-- Aún no existe este componente -->
+			<!-- Después lo crearemos -->
+			<ParticipantsMapExplorer />
 		</div>
 	{/if}
 </div>
