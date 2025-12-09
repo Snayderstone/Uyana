@@ -2,107 +2,243 @@
  * Project Service
  * ---------------
  * Se encarga de orquestar datos provenientes de múltiples repositorios
- * para construir un ProjectMapModel completamente armado.
+ * para construir modelos listos para mapas y análisis.
  *
- *   IMPORTANTE:
- * - Este servicio **NO consulta directamente a Supabase**
- * - SOLO utiliza métodos del ProjectsRepository
- * - Aquí se hace la lógica de transformación y unión de datos
- *
- * Este servicio se usa principalmente desde los componentes del MAPA:
- *  - ProjectMapExplorer.svelte
- *  - ProjectsChoropleth.svelte (cuando lo actualicemos a geometry real)
- *  - Otros componentes relacionados con visualización geoespacial
- * Project Service
- * ---------------
- * Orquesta todos los datos provenientes de ProjectDatasource
- * y construye modelos completos o ligeros para el mapa.
+ * IMPORTANTE:
+ *  - NO consulta directamente a Supabase.
+ *  - SOLO usa repositorios (ProjectsRepository).
+ *  - Aquí sí podemos combinar datos y transformarlos.
  */
 
-import { ProjectDatasource } from '$lib/db/project.datasource';
-import type { MapLevel, ProjectFullModel, ProjectMapModel } from '$lib/models/project.model';
+// src/lib/services/project.service.ts
+
+import { ProjectsRepository } from '$lib/db/projects.repository';
+import type { MapLevel, ProjectMapModel } from '$lib/models/map.model';
+
+/**
+ * Utilidad interna:
+ * Normaliza el nombre de facultad para que coincida
+ * con el formato usado en el GeoJSON y en el mapa.
+ *
+ * IMPORTANTE:
+ *  - Debe estar en sincronía con la función homónima
+ *    que tienes en `ProjectsChoropleth.svelte`.
+ */
+function normalizarNombreFacultad(nombre: string): string {
+  if (!nombre) return 'No especificada';
+
+  let s = nombre.trim().toLowerCase();
+
+  // Quitamos prefijos "facultad de" o "facultad"
+  s = s.replace(/^facultad\s+de\s+/, '');
+  s = s.replace(/^facultad\s+/, '');
+
+  // Normalizamos espacios
+  s = s.replace(/\s+/g, ' ');
+
+  // Capitalizamos cada palabra ("ciencias agrícolas" → "Ciencias Agrícolas")
+  const title = s
+    .split(' ')
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ');
+
+  // Formato final:
+  // "Facultad De Ciencias Agrícolas"
+  return `Facultad De ${title}`;
+}
+/**
+ * Normaliza una geometry que viene desde la BD (jsonb)
+ * a un objeto GeoJSON válido para Leaflet:
+ *  - { type: 'Polygon' | 'MultiPolygon', coordinates: [...] }
+ *  - Si viene envuelta como Feature o FeatureCollection, la desempaqueta.
+ *  - Si no se puede usar, devuelve null.
+ */
+function normalizeGeometry(raw: any): any | null {
+  if (!raw) return null;
+
+  // Caso 1: ya es geometry válida
+  if (raw.type && Array.isArray(raw.coordinates)) {
+    return raw;
+  }
+
+  // Caso 2: viene como Feature
+  if (raw.type === 'Feature' && raw.geometry) {
+    if (raw.geometry.type && Array.isArray(raw.geometry.coordinates)) {
+      return raw.geometry;
+    }
+  }
+
+  // Caso 3: viene como FeatureCollection, tomamos la primera geometry válida
+  if (raw.type === 'FeatureCollection' && Array.isArray(raw.features)) {
+    const firstWithGeom = raw.features.find(
+      (f: any) => f?.geometry?.type && Array.isArray(f.geometry.coordinates)
+    );
+    if (firstWithGeom) {
+      return firstWithGeom.geometry;
+    }
+  }
+
+  // Cualquier otro caso → no lo usamos
+  return null;
+}
 
 export const ProjectService = {
-
-  /** 🔵 MODELO LIGERO PARA EL MAPA — nivel institución */
+  /**
+   * Mapa de proyectos por INSTITUCIÓN
+   * Usa:
+   *  - instituciones (id, nombre, geometry)
+   *  - proyecto_institucion (conteo de proyectos por institucion_id)
+   */
   async getProjectsByInstitutionForMap(): Promise<ProjectMapModel[]> {
-    const institutions = await ProjectDatasource.getInstitutions();
-    const pairs = await ProjectDatasource.getProjectInstitutions();
+    // 1. Instituciones con geometry
+    const institutions = await ProjectsRepository.getAllInstitutions();
 
+    // 2. Conteos de proyectos por institución
+    const counts = await ProjectsRepository.getProjectCountByInstitution();
     const countMap = new Map<number, number>();
-
-    pairs.forEach(p => {
-      countMap.set(p.institucion_id, (countMap.get(p.institucion_id) || 0) + 1);
+    counts.forEach((item: any) => {
+      countMap.set(item.institucion_id, item.count);
     });
 
-    return institutions.map(inst => ({
+    // 3. Construimos el modelo unificado para el mapa
+    const result: ProjectMapModel[] = institutions.map((inst: any) => ({
       id: inst.id,
       titulo: inst.nombre,
       geometry: inst.geometry,
       projectCount: countMap.get(inst.id) || 0,
       level: 'institution'
     }));
+
+    return result;
   },
 
-  /** 🟣 MODELO LIGERO PARA EL MAPA — nivel facultad */
+  /**
+   * Mapa de proyectos por FACULTAD
+   * Delegamos directo al repositorio que ya construye ProjectMapModel.
+   */
   async getProjectsByFacultyForMap(): Promise<ProjectMapModel[]> {
-    const faculties = await ProjectDatasource.getFacultiesFull();
-
-    return faculties.map((f: any) => {
-      const projectIds = new Set<number>();
-
-      f.carreras?.forEach((car: any) => {
-        car.participantes?.forEach((p: any) => {
-          p.proyecto_participante?.forEach((rel: any) => {
-            if (rel.proyecto_id) projectIds.add(rel.proyecto_id);
-          });
-        });
-      });
-
-      return {
-        id: f.id,
-        titulo: f.nombre,
-        geometry: f.geometry,
-        projectCount: projectIds.size,
-        level: 'faculty'
-      };
-    });
+    return ProjectsRepository.getProjectCountByFacultyForMap();
   },
 
-  /** 📌 Función pública usada por la UI del mapa */
+  /**
+   * Función genérica para obtener datos de proyectos para mapa.
+   *
+   *  - level: 'institution' | 'faculty'
+   *
+   * Esto es lo que usas desde componentes Svelte cuando solo
+   * necesitas la lista de entidades + conteo (no el GeoJSON).
+   */
   async getProjectsForMap(level: MapLevel): Promise<ProjectMapModel[]> {
-    return level === 'institution'
-      ? this.getProjectsByInstitutionForMap()
-      : this.getProjectsByFacultyForMap();
+    if (level === 'institution') {
+      return this.getProjectsByInstitutionForMap();
+    }
+
+    // Por defecto, usamos facultad
+    return this.getProjectsByFacultyForMap();
   },
 
-  /** 🔥 MODELO ULTRA COMPLETO PARA DASHBOARD */
-  async getAllProjectsFull(): Promise<ProjectFullModel[]> {
-    const base = await ProjectDatasource.getAllProjects();
-    const institutions = await ProjectDatasource.getProjectInstitutions();
-    const areas = await ProjectDatasource.getProjectAreas();
-    const lines = await ProjectDatasource.getProjectLines();
-    const types = await ProjectDatasource.getProjectTypes();
-    const finance = await ProjectDatasource.getProjectFinancing();
-    const participants = await ProjectDatasource.getProjectParticipants();
+  /**
+   * NUEVO:
+   * Construye un GeoJSON listo para Leaflet para el nivel "facultad".
+   *
+   * Usa:
+   *  - ProjectsRepository.getProjectCountByFacultyForMap()
+   *
+   * Devuelve:
+   *  {
+   *    type: 'FeatureCollection',
+   *    features: [
+   *      {
+   *        type: 'Feature',
+   *        geometry: { ... },
+   *        properties: {
+   *          id: number,
+   *          nombre_original: string,
+   *          facultad: string, // normalizado
+   *          facultad_o_entidad_o_area_responsable: string, // normalizado (clave que usa el mapa)
+   *          projectCount: number,
+   *          level: 'faculty'
+   *        }
+   *      },
+   *      ...
+   *    ]
+   *  }
+   */
+    async getProjectsByFacultyGeoJsonForMap(): Promise<any> {
+    const rows = await ProjectsRepository.getProjectCountByFacultyForMap();
 
-    return base.map((p: any) => ({
-      ...p,
-      instituciones: institutions.filter(i => i.proyecto_id === p.id).map(i => i.institucion_id),
-      areas: areas.filter(i => i.proyecto_id === p.id).map(i => i.area_conocimiento_id),
-      lineas: lines.filter(i => i.proyecto_id === p.id).map(i => i.linea_investigacion_id),
-      tipos: types.filter(i => i.proyecto_id === p.id).map(i => i.tipo_id),
-      financiamiento: finance.filter(i => i.proyecto_id === p.id).map(i => i.fuente_financiamiento_id),
-      participantes: participants.filter(i => i.proyecto_id === p.id).map(i => i.participante_id),
+    const features = (rows ?? [])
+      .map((row) => {
+        const geom = normalizeGeometry(row.geometry);
+        if (!geom) {
+          // Ignoramos filas sin geometry válida
+          return null;
+        }
 
-      facultades: [],   // se llenará en versión avanzada
-      carreras: []      // se llenará en versión avanzada
-    }));
+        const nombreOriginal = row.titulo ?? 'Sin nombre';
+        const nombreNormalizado = normalizarNombreFacultad(nombreOriginal);
+
+        return {
+          type: 'Feature',
+          geometry: geom,
+          properties: {
+            id: row.id,
+            nombre_original: nombreOriginal,
+            facultad: nombreNormalizado,
+            facultad_o_entidad_o_area_responsable: nombreNormalizado,
+            projectCount: row.projectCount ?? 0,
+            level: row.level ?? 'faculty'
+          }
+        };
+      })
+      .filter((f): f is { type: 'Feature'; geometry: any; properties: any } => f !== null);
+
+    return {
+      type: 'FeatureCollection',
+      features
+    };
   },
+    /**
+   * GeoJSON para mapa por INSTITUCIÓN
+   */
+  async getProjectsByInstitutionGeoJsonForMap(): Promise<any> {
+    // Reutilizamos los métodos del repositorio que ya tienes
+    const institutions = await ProjectsRepository.getAllInstitutions();
+    const counts = await ProjectsRepository.getProjectCountByInstitution();
 
-  /** Obtener un proyecto ULTRA completo por ID */
-  async getProjectFullById(id: number): Promise<ProjectFullModel | null> {
-    const all = await this.getAllProjectsFull();
-    return all.find(p => p.id === id) || null;
+    const countMap = new Map<number, number>();
+    counts.forEach((item: any) => {
+      countMap.set(item.institucion_id, item.count);
+    });
+
+    const features = (institutions ?? [])
+      .map((inst: any) => {
+        const geom = normalizeGeometry(inst.geometry);
+        if (!geom) {
+          // Nada de geometrías null o inválidas
+          return null;
+        }
+
+        const nombre = inst.nombre ?? 'Sin nombre';
+
+        return {
+          type: 'Feature',
+          geometry: geom,
+          properties: {
+            id: inst.id,
+            nombre_original: nombre,
+            facultad_o_entidad_o_area_responsable: nombre, // para que GeoJsonChoropleth lo use igual
+            projectCount: countMap.get(inst.id) ?? 0,
+            level: 'institution'
+          }
+        };
+      })
+      .filter((f): f is { type: 'Feature'; geometry: any; properties: any } => f !== null);
+
+    return {
+      type: 'FeatureCollection',
+      features
+    };
   }
+
 };

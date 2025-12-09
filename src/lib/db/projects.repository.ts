@@ -140,5 +140,45 @@ export const ProjectsRepository = {
 
       return model;
     });
+  },
+    /**
+   * Obtiene el conteo de proyectos por institución
+   * y lo adapta al modelo ProjectMapModel para el mapa.
+   *
+   * Reutiliza:
+   *  - getProjectCountByInstitution()  → { institucion_id, count }
+   *  - getAllInstitutions()           → { id, nombre, geometry }
+   */
+  async getProjectCountByInstitutionForMap(): Promise<ProjectMapModel[]> {
+    // 1) Traemos los conteos y las instituciones en paralelo
+    const [counts, institutions] = await Promise.all([
+      this.getProjectCountByInstitution(),
+      this.getAllInstitutions()
+    ]);
+
+    // 2) Pasamos los conteos a un Map para lookup rápido
+    const countById = new Map<number, number>();
+    counts.forEach((row: any) => {
+      countById.set(row.institucion_id, row.count);
+    });
+
+    // 3) Armamos el ProjectMapModel[]
+    const models: ProjectMapModel[] = (institutions ?? []).map((inst: any) => {
+      const id = inst.id;
+      const projectCount = countById.get(id) ?? 0;
+
+      const model: ProjectMapModel = {
+        id,
+        titulo: inst.nombre,     // 👈 nombre de la institución
+        geometry: inst.geometry, // 👈 geometría de la tabla instituciones
+        projectCount,
+        level: 'institution'
+      };
+
+      return model;
+    });
+
+    return models;
   }
+
 };

@@ -4,10 +4,10 @@
 	import type { Map, LatLng } from 'leaflet';
 	import GeoJsonChoropleth from '$lib/components/atoms/GeoJsonChoropleth.svelte';
 	// Solo usamos el tipo Proyecto para los proyectos filtrados
-import type { Proyecto } from '$lib/services/proyectosService';
-// NUEVO: usamos tu servicio nuevo
-import { ProjectService } from '$lib/services/project.service';
-import type { MapLevel, ProjectMapModel } from '$lib/models/map.model';
+	import type { Proyecto } from '$lib/services/proyectosService';
+	// NUEVO: usamos tu servicio nuevo
+	import { ProjectService } from '$lib/services/project.service';
+	import type { MapLevel, ProjectMapModel } from '$lib/models/map.model';
 	import PopupDashboard from '$lib/components/atoms/PopupDashboard.svelte';
 	import FacultadRankingLayer from '$lib/components/atoms/FacultadRankingLayer.svelte';
 
@@ -18,9 +18,9 @@ import type { MapLevel, ProjectMapModel } from '$lib/models/map.model';
 	export const proyectos: Proyecto[] = [];
 	export let filteredProyectos: Proyecto[] = [];
 	export let highlightedFacultad: string | null = null; // Facultad que debe ser destacada
-	
+
 	// Nivel actual del mapa (por ahora siempre facultad)
-let mapLevel: MapLevel = 'faculty';
+	export let mapLevel: MapLevel = 'faculty';
 	let centroides: Record<string, [number, number]> = {};
 	let rankingData: { facultad: string; cantidad: number; center: [number, number] }[] = [];
 
@@ -31,6 +31,8 @@ let mapLevel: MapLevel = 'faculty';
 	let proyectosPorFacultad: { facultad: string; cantidad: number }[] = [];
 	let valueById: Record<string, number> = {};
 	let dashboards: { facultad: string; tipo: string; side: 'left' | 'right' }[] = [];
+	//GeoJSON que viene desde la base de datos (vía ProjectService)
+	let geoJsonData: any = null;
 
 	// Sistema de memoización para evitar recálculos innecesarios
 	let memoizedFilteredProyectos = {
@@ -48,86 +50,187 @@ let mapLevel: MapLevel = 'faculty';
 
 	// Cargamos los datos al iniciar
 	onMount(async () => {
-		await cargarDatos();
+		await cargarDatos(mapLevel);
 	});
 
+	// Cuando cambie el nivel del mapa (faculty ↔ institution), recargamos datos
+	let lastLevel: MapLevel | null = null;
+	$: if (mapLevel && mapLevel !== lastLevel) {
+		lastLevel = mapLevel;
+		cargarDatos(mapLevel);
+	}
+
 	// Función para normalizar nombres de facultades para que coincidan con los del GeoJSON
 	// Función para normalizar nombres de facultades para que coincidan con los del GeoJSON
-function normalizarNombreFacultad(nombre: string): string {
-  if (!nombre) return 'No especificada';
+	function normalizarNombreFacultad(nombre: string): string {
+		if (!nombre) return 'No especificada';
 
-  // Pasamos todo a minúsculas para normalizar
-  let s = nombre.trim().toLowerCase();
+		// Pasamos todo a minúsculas para normalizar
+		let s = nombre.trim().toLowerCase();
 
-  // Quitamos prefijos "facultad de" o "facultad"
-  s = s.replace(/^facultad\s+de\s+/, '');
-  s = s.replace(/^facultad\s+/, '');
+		// Quitamos prefijos "facultad de" o "facultad"
+		s = s.replace(/^facultad\s+de\s+/, '');
+		s = s.replace(/^facultad\s+/, '');
 
-  // Normalizamos espacios
-  s = s.replace(/\s+/g, ' ');
+		// Normalizamos espacios
+		s = s.replace(/\s+/g, ' ');
 
-  // Capitalizamos cada palabra ("ciencias agrícolas" → "Ciencias Agrícolas")
-  const title = s
-    .split(' ')
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(' ');
+		// Capitalizamos cada palabra ("ciencias agrícolas" → "Ciencias Agrícolas")
+		const title = s
+			.split(' ')
+			.map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+			.join(' ');
 
-  // Formato final que debe coincidir con el GeoJSON:
-  // "Facultad De Ciencias Agrícolas"
-  return `Facultad De ${title}`;
-}
-
+		// Formato final que debe coincidir con el GeoJSON:
+		// "Facultad De Ciencias Agrícolas"
+		return `Facultad De ${title}`;
+	}
 
 	// Función para cargar datos de proyectos por facultad
-// Función para cargar datos de proyectos por facultad
-async function cargarDatos() {
-  try {
-    // 👇 AHORA usamos el servicio nuevo basado en la BD relacional
-    const filas = await ProjectService.getProjectsForMap('faculty');
+	async function cargarDatos(level: MapLevel) {
+		try {
+			// 1) Traemos los datos agregados para el nivel actual
+			const filas = await ProjectService.getProjectsForMap(level);
 
-    // Adaptamos al formato que el resto del componente ya usa
-    proyectosPorFacultad = filas.map((row) => ({
-      facultad: row.titulo,          // nombre de la facultad
-      cantidad: row.projectCount     // número de proyectos
-    }));
+			// 2) Adaptamos al formato interno que ya usabas
+			proyectosPorFacultad = filas.map((row) => ({
+				facultad: row.titulo, // nombre de la facultad o institución
+				cantidad: row.projectCount // número de proyectos
+			}));
 
-    // Crear el objeto valueById para el componente GeoJsonChoropleth
-    valueById = {};
-    proyectosPorFacultad.forEach((item) => {
-      // Normalizar el nombre de la facultad para que coincida con el GeoJSON
-      const facultadKey = normalizarNombreFacultad(item.facultad);
-      valueById[facultadKey] = item.cantidad;
-    });
+			// --- función auxiliar para la clave ---
+			const getKey = (rowTitle: string): string => {
+				if (level === 'faculty') {
+					// usamos tu normalización
+					return normalizarNombreFacultad(rowTitle);
+				}
+				// en instituciones usamos el nombre tal cual (puedes ajustar si ves diferencias)
+				return rowTitle.trim();
+			};
 
-    // 🔹 Estadísticas (dejamos tu lógica tal cual)
-    if (proyectosPorFacultad.length > 0) {
-      const cantidades = proyectosPorFacultad.map((p) => p.cantidad);
-      const minProyectos = Math.min(...cantidades);
-      const maxProyectos = Math.max(...cantidades);
-      const avgProyectos = cantidades.reduce((a, b) => a + b, 0) / cantidades.length;
-      const facultadMax =
-        proyectosPorFacultad.find((p) => p.cantidad === maxProyectos)?.facultad || 'Desconocida';
+			// 3) valueById → se usa para colorear el mapa
+			valueById = {};
+			proyectosPorFacultad.forEach((item) => {
+				const key = getKey(item.facultad);
+				valueById[key] = item.cantidad;
+			});
 
-      console.info(
-        `Estadísticas: Min=${minProyectos}, Max=${maxProyectos} (${facultadMax}), Promedio=${avgProyectos.toFixed(
-          1
-        )}`
-      );
-      console.info(
-        `Total facultades: ${proyectosPorFacultad.length}, Total proyectos: ${cantidades.reduce(
-          (a, b) => a + b,
-          0
-        )}`
-      );
-    }
-  } catch (error) {
-    console.error('Error al cargar datos de proyectos para el mapa:', error);
-    dispatch('dataError', {
-      message: 'No se pudieron cargar los datos de proyectos',
-      error: error instanceof Error ? error.message : 'Error desconocido'
-    });
-  }
-}
+			// 4) Construimos el GeoJSON dinámico desde `filas`
+			const allowedGeomTypes = [
+				'Polygon',
+				'MultiPolygon',
+				'Point',
+				'MultiPoint',
+				'LineString',
+				'MultiLineString'
+			];
+
+			const features = filas
+				.filter((row) => !!row.geometry)
+				.map((row) => {
+					let geomRaw: any = row.geometry;
+
+					// Si viene como string, intentamos parsear
+					if (typeof geomRaw === 'string') {
+						try {
+							geomRaw = JSON.parse(geomRaw);
+						} catch (e) {
+							console.error('No se pudo parsear geometry JSON:', geomRaw, e);
+							return null;
+						}
+					}
+
+					// Asegurarnos de tener un objeto GeoJSON válido
+					if (geomRaw.type && geomRaw.coordinates) {
+						// ok
+					} else if (geomRaw.geometry && geomRaw.geometry.type && geomRaw.geometry.coordinates) {
+						geomRaw = geomRaw.geometry;
+					} else {
+						console.warn('Geometry con formato no esperado, se ignora:', geomRaw);
+						return null;
+					}
+					// ⚠️ Normalizar type a formato estándar GeoJSON (mayúscula inicial)
+					if (typeof geomRaw.type === 'string') {
+						const t = geomRaw.type.toLowerCase();
+
+						if (t === 'polygon') geomRaw.type = 'Polygon';
+						else if (t === 'multipolygon') geomRaw.type = 'MultiPolygon';
+						else if (t === 'point') geomRaw.type = 'Point';
+						else if (t === 'multipoint') geomRaw.type = 'MultiPoint';
+						else if (t === 'linestring') geomRaw.type = 'LineString';
+						else if (t === 'multilinestring') geomRaw.type = 'MultiLineString';
+					}
+
+					// ⚠️ Validación extra: tipo soportado por Leaflet
+					if (!allowedGeomTypes.includes(geomRaw.type)) {
+						console.warn(
+							`Geometry con tipo no soportado (${geomRaw.type}), se ignora. row.id=${row.id}, level=${level}`
+						);
+						return null;
+					}
+
+					const key = getKey(row.titulo);
+
+					return {
+						type: 'Feature',
+						geometry: geomRaw,
+						properties: {
+							id: row.id,
+							facultad_o_entidad_o_area_responsable: key,
+							projectCount: row.projectCount ?? 0,
+							level: row.level ?? level
+						}
+					};
+				})
+				.filter((f) => f !== null);
+
+			geoJsonData = {
+				type: 'FeatureCollection',
+				features
+			};
+
+			console.log('GeoJSON generado para mapa', level, geoJsonData);
+			if (level === 'institution') {
+				// Log más detallado para depuración
+				try {
+					console.log(
+						'Ejemplo geometry institución:',
+						JSON.stringify(geoJsonData.features[0]?.geometry, null, 2)
+					);
+				} catch (e) {
+					console.error('No se pudo inspeccionar geometry de institution:', e);
+				}
+			}
+
+			// === estadísticas (tu lógica de antes) ===
+			if (proyectosPorFacultad.length > 0) {
+				const cantidades = proyectosPorFacultad.map((p) => p.cantidad);
+				const minProyectos = Math.min(...cantidades);
+				const maxProyectos = Math.max(...cantidades);
+				const avgProyectos = cantidades.reduce((a, b) => a + b, 0) / cantidades.length;
+				const facultadMax =
+					proyectosPorFacultad.find((p) => p.cantidad === maxProyectos)?.facultad || 'Desconocida';
+
+				console.info(
+					`Estadísticas: Min=${minProyectos}, Max=${maxProyectos} (${facultadMax}), Promedio=${avgProyectos.toFixed(
+						1
+					)}`
+				);
+				console.info(
+					`Total entidades: ${proyectosPorFacultad.length}, Total proyectos: ${cantidades.reduce(
+						(a, b) => a + b,
+						0
+					)}`
+				);
+			}
+		} catch (error) {
+			console.error('Error al cargar datos de proyectos para el mapa:', error);
+			dispatch('dataError', {
+				message: 'No se pudieron cargar los datos de proyectos',
+				error: error instanceof Error ? error.message : 'Error desconocido'
+			});
+		}
+	}
 
 	// Función para calcular el promedio de duración de proyectos en meses
 	function calcularPromedioDuracion(proyectos: Proyecto[]): string {
@@ -546,35 +649,39 @@ async function cargarDatos() {
 
 {#if map}
 	<div aria-label="Mapa de proyectos por facultad de la UCE">
-		<GeoJsonChoropleth
-			{map}
-			dataUrl="/geo/map_uce_facultades_v5.1.geojson"
-			idProperty="facultad_o_entidad_o_area_responsable"
-			{valueById}
-			{highlightedFacultad}
-			baseFillOpacity={0.85}
-			hoverEnabled={true}
-			popupEnabled={true}
-			popupFormatter={formatPopup}
-			colorAt={generateColor}
-			highlightStyle={{
-				color: '#ff00ff', // Color fluorescente para el borde
-				weight: 4,
-				opacity: 1,
-				fillOpacity: 0.9,
-				dashArray: '5, 10', // Línea punteada
-				className: 'highlighted-feature' // Clase CSS para el resaltado (sin animaciones)
-			}}
-			bind:this={geoJsonInstance}
-			onEachFeature={(feature, layer) => {
-				if (feature?.properties?.facultad_o_entidad_o_area_responsable) {
-					const facultad = feature.properties.facultad_o_entidad_o_area_responsable;
-					const center = layer.getBounds().getCenter();
-					centroides[facultad] = [center.lat, center.lng];
-				}
-			}}
-		/>
+		{#if geoJsonData}
+			<GeoJsonChoropleth
+				{map}
+				data={geoJsonData}
+				idProperty="facultad_o_entidad_o_area_responsable"
+				{valueById}
+				{highlightedFacultad}
+				baseFillOpacity={0.85}
+				hoverEnabled={true}
+				popupEnabled={true}
+				popupFormatter={formatPopup}
+				colorAt={generateColor}
+				highlightStyle={{
+					color: '#ff00ff',
+					weight: 4,
+					opacity: 1,
+					fillOpacity: 0.9,
+					dashArray: '5, 10',
+					className: 'highlighted-feature'
+				}}
+				bind:this={geoJsonInstance}
+				onEachFeature={(feature, layer) => {
+					if (feature?.properties?.facultad_o_entidad_o_area_responsable) {
+						const facultad = feature.properties.facultad_o_entidad_o_area_responsable;
+						const center = layer.getBounds().getCenter();
+						centroides[facultad] = [center.lat, center.lng];
+					}
+				}}
+			/>
+		{/if}
+
 		<FacultadRankingLayer {map} data={rankingData} />
+
 		{#each dashboards as dash}
 			<div class="popup-dashboard-container {dash.side}">
 				<PopupDashboard facultad={dash.facultad} tipo={dash.tipo} />

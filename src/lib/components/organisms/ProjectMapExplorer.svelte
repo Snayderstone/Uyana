@@ -10,14 +10,14 @@
 	import { obtenerProyectos, type Proyecto } from '$lib/services/proyectosService';
 	import Sparkles from '../atoms/Sparkles.svelte';
 	import ProjectsDashboard from '$lib/components/molecules/ProjectsDashboard.svelte';
-	let showDashboard = false;
-
+	import type { MapLevel } from '$lib/models/map.model';
 	import type { Map, LatLngTuple } from 'leaflet';
-
 	// Props para el mapa
 	export let center: LatLngTuple = [-0.1992, -78.5059]; // Quito - UCE por defecto
 	export let zoom = 16;
 
+	let mapLevel: MapLevel = 'faculty';
+	let showDashboard = false;
 	// Referencias
 	let map: Map | null = null;
 	let mapComponent: LeafletMapComponent;
@@ -349,6 +349,7 @@
 			{#if map}
 				<ProjectsChoropleth
 					{map}
+					{mapLevel} 
 					{filteredProyectos}
 					{highlightedFacultad}
 					on:viewFacultyProjects={handleViewFacultyProjects}
@@ -367,6 +368,22 @@
 
 			<!-- Controles de mapa integrados -->
 			<div class="map-controls">
+				<div class="map-level-toggle">
+  <button
+    class="map-level-btn"
+    class:active={mapLevel === 'faculty'}
+    on:click={() => (mapLevel = 'faculty')}
+  >
+    Facultades
+  </button>
+  <button
+    class="map-level-btn"
+    class:active={mapLevel === 'institution'}
+    on:click={() => (mapLevel = 'institution')}
+  >
+    Instituciones
+  </button>
+</div>
 				<!-- Botón para alternar pantalla completa -->
 				<button
 					class="map-control-btn"
@@ -1215,4 +1232,30 @@
 		overflow-y: auto; /* aquí está el scroll */
 		padding: 10px;
 	}
+	.map-level-toggle {
+  display: flex;
+  gap: 4px;
+  margin-top: 8px;
+
+  .map-level-btn {
+    background: var(--color--card-background);
+    border: 1px solid color-mix(in srgb, var(--color--text) 15%, transparent);
+    border-radius: 999px;
+    padding: 4px 10px;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .map-level-btn.active {
+    background: var(--color--primary);
+    color: white;
+    border-color: var(--color--primary);
+  }
+
+  .map-level-btn:not(.active):hover {
+    background: color-mix(in srgb, var(--color--primary) 10%, var(--color--card-background));
+  }
+}
+
 </style>

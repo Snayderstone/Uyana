@@ -104,13 +104,13 @@
 		// Asegurar que valores extremos (como el máximo) sean tratados adecuadamente
 		// reduciendo ligeramente lo para que los valores altos destaquen más
 		lo = Math.max(0, lo * 0.9);
-
+		/*
 		console.log(
 			`Dominio calculado: [${lo}, ${hi}] de valores: [${Math.min(...values)}, ${Math.max(
 				...values
 			)}]`
 		);
-
+		*/
 		return { lo, hi };
 	}
 
@@ -138,14 +138,15 @@
 
 		// Normalizar valor entre 0 y 1
 		const t = typeof v === 'number' ? to01(v, domain.lo, domain.hi) : 0;
-
+		/*
 		// Depurar valores para identificar posibles problemas
 		if (id === 'Facultad De Ciencias Agrícolas') {
 			console.log(
 				`Depuración Facultad De Ciencias Agrícolas: valor=${v}, t=${t}, dominio=[${domain.lo}, ${domain.hi}]`
 			);
 		}
-
+		*/
+		// Obtener color de relleno según el valor normalizado
 		const fill = colorAt(t);
 		return {
 			color: lineColor,
