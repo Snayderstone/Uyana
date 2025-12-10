@@ -90,4 +90,45 @@ export interface ProjectFullModel {
   tipos: number[];
   financiamiento: number[];
 }
+// ===============================
+// 🔹 Modelo "plano" para la UI
+//     (equivalente al antiguo `Proyecto` de proyectosService.ts)
+// ===============================
+export type ProyectoFlat = {
+  id: number;
+  codigo: string;
+  titulo: string;
+  tipo_proyecto: string;
+  objetivo: string;
+
+  estado: string;
+  facultad_o_entidad_o_area_responsable: string;
+
+  fecha_inicio: string;
+  fecha_fin_planeado: string;
+
+  coordinador_director: string;
+  correo_electronico_coordinador: string;
+
+  // Área de conocimiento
+  campo_amplio: string;
+  campo_especifico: string;
+  campo_detallado: string;
+
+  // Se mantiene por compatibilidad, pero no se usa como filtro
+  alcance_territorial: string;
+
+  // Info legible para UI
+  investigadores_acreditados_senescyt: string;
+
+  // Fuente(s) de financiamiento formateada
+  fuente_financiamiento: string;
+
+  // 🔹 Nuevos campos de filtros
+  anio_inicio: number | null;
+  tiene_investigadores_acreditados: boolean;
+  numero_investigadores_acreditados: number;
+  para_siies: boolean;
+};
+
 
