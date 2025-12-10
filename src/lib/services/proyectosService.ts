@@ -16,19 +16,44 @@ export type Proyecto = {
   titulo: string;
   tipo_proyecto: string;
   objetivo: string;
+
   estado: string;
   facultad_o_entidad_o_area_responsable: string;
+
   fecha_inicio: string;
   fecha_fin_planeado: string;
+
   coordinador_director: string;
   correo_electronico_coordinador: string;
+
+  // Área de conocimiento (viene del área de la BD)
   campo_amplio: string;
   campo_especifico: string;
   campo_detallado: string;
+
+  // 🔹 Se mantiene por compatibilidad, pero ya no lo usaremos como filtro
   alcance_territorial: string;
+
+  // Información legible para la UI
   investigadores_acreditados_senescyt: string;
+
+  // Fuente(s) de financiamiento (cadena ya formateada)
   fuente_financiamiento: string;
+
+  // 🔹 Nuevos campos para filtros:
+  // Año numérico de inicio (derivado de fecha_inicio_planeada)
+  anio_inicio: number | null;
+
+  // ¿Tiene al menos un investigador acreditado SENESCYT?
+  tiene_investigadores_acreditados: boolean;
+
+  // Nº de investigadores acreditados en el proyecto
+  numero_investigadores_acreditados: number;
+
+  // ¿Está marcado como “para SIIES” en la BD?
+  para_siies: boolean;
 };
+
 
 export async function obtenerProyectos(): Promise<Proyecto[]> {
   // 1) Traemos todos los datasets necesarios en paralelo (TODO normalizado, sin vistas)
@@ -138,7 +163,7 @@ export async function obtenerProyectos(): Promise<Proyecto[]> {
   });
 
   // 3) Construimos el array “plano” de Proyecto ====================
-  const proyectos: Proyecto[] = projects.map((p: any) => {
+    const proyectos: Proyecto[] = projects.map((p: any) => {
     const projectId = p.id as number;
 
     const tipo = tipoByProject.get(projectId) ?? 'No especificado';
@@ -148,29 +173,53 @@ export async function obtenerProyectos(): Promise<Proyecto[]> {
     const coord = coordinadorByProject.get(projectId) ?? { nombre: '', email: '' };
     const acreditadosCount = acreditadosByProject.get(projectId) ?? 0;
 
+    // 🔹 Año de inicio (derivado de fecha_inicio_planeada)
+    const fechaInicioPlaneada: string | null = p.fecha_inicio_planeada ?? null;
+    let anioInicio: number | null = null;
+    if (fechaInicioPlaneada) {
+      const fecha = new Date(fechaInicioPlaneada);
+      if (!Number.isNaN(fecha.getTime())) {
+        anioInicio = fecha.getFullYear();
+      }
+    }
+
+    const tieneAcreditados = acreditadosCount > 0;
+
     return {
       id: projectId,
       codigo: p.codigo ?? '',
       titulo: p.titulo ?? '',
       objetivo: p.objetivo ?? '',
+
       tipo_proyecto: tipo,
       estado: p.estado?.nombre ?? 'Sin estado',
       facultad_o_entidad_o_area_responsable: facultad,
-      fecha_inicio: p.fecha_inicio_planeada ?? '',
+
+      fecha_inicio: fechaInicioPlaneada ?? '',
       fecha_fin_planeado: p.fecha_fin_planeada ?? '',
+
       coordinador_director: coord.nombre,
       correo_electronico_coordinador: coord.email,
-      // No tienes campos separados de campo_amplio/específico/detallado en el modelo,
-      // así que usamos el área como campo_amplio y dejamos los otros vacíos.
+
       campo_amplio: area,
       campo_especifico: '',
       campo_detallado: '',
-      // Como dijiste: NO hay alcance territorial en la BD → lo dejamos vacío.
+
+      // Se mantiene vacío porque no hay datos en la BD
       alcance_territorial: '',
-      // Para filtros podemos usar un “Sí/No (n)” legible:
-      investigadores_acreditados_senescyt:
-        acreditadosCount > 0 ? `Sí (${acreditadosCount})` : 'No',
-      fuente_financiamiento: fuente
+
+      // Texto legible para la UI
+      investigadores_acreditados_senescyt: tieneAcreditados
+        ? `Sí (${acreditadosCount})`
+        : 'No',
+
+      fuente_financiamiento: fuente,
+
+      // 🔹 Nuevos campos para filtros
+      anio_inicio: anioInicio,
+      tiene_investigadores_acreditados: tieneAcreditados,
+      numero_investigadores_acreditados: acreditadosCount,
+      para_siies: !!p.para_siies
     };
   });
 

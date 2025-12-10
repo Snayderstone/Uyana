@@ -10,12 +10,11 @@
 
 	const dispatch = createEventDispatcher();
 
-	// Opciones para filtros (se generan automáticamente de los datos)
+		// Opciones para filtros (se generan automáticamente de los datos)
 	let facultades: string[] = [];
 	let estados: string[] = [];
 	let camposAmplios: string[] = [];
 	let tiposProyecto: string[] = [];
-	let alcancesTerritorial: string[] = [];
 	let fuentesFinanciamiento: string[] = [];
 
 	// Filtros seleccionados
@@ -23,9 +22,30 @@
 	let filtroEstado: string = '';
 	let filtroCampoAmplio: string = '';
 	let filtroTipoProyecto: string = '';
-	let filtroAlcanceTerritorial: string = '';
 	let filtroFuenteFinanciamiento: string = '';
 	let filtroTexto: string = '';
+
+	// 🔹 Nuevo: filtro "Con / Sin investigadores acreditados"
+	// valores posibles: '', 'con', 'sin'
+	let filtroAcreditados: string = '';
+
+	// 🔹 Nuevo: checkbox "Solo proyectos para SIIES"
+	let soloParaSIIES: boolean = false;
+
+	// 🔹 Nuevo: rango de año de inicio
+	let minAnioInicio: number | null = null;
+	let maxAnioInicio: number | null = null;
+	let filtroAnioInicioDesde: number | '' = '';
+	let filtroAnioInicioHasta: number | '' = '';
+	// 🔹 Modelo para chips de filtros activos
+	type ActiveFilter = {
+		name: string;
+		value: string;
+		clear: () => void;
+	};
+
+	let activeFilterCount = 0;
+	let activeFilters: ActiveFilter[] = [];
 
 	// Panel de filtros expandido/colapsado
 	let filtersExpanded = false;
@@ -33,9 +53,10 @@
 	// Mensaje de éxito para limpiar filtros
 	let showClearSuccess = false;
 	let filteredProyectos: Proyecto[] = [];
+
 	$: console.log('[ProjectFilters] prop proyectos cambió, length =', proyectos.length);
 	// Extraer opciones únicas de los datos de proyectos
-	$: {
+		$: {
 		if (proyectos.length > 0) {
 			facultades = [
 				...new Set(proyectos.map((p) => p.facultad_o_entidad_o_area_responsable).filter(Boolean))
@@ -43,21 +64,37 @@
 			estados = [...new Set(proyectos.map((p) => p.estado).filter(Boolean))].sort();
 			camposAmplios = [...new Set(proyectos.map((p) => p.campo_amplio).filter(Boolean))].sort();
 			tiposProyecto = [...new Set(proyectos.map((p) => p.tipo_proyecto).filter(Boolean))].sort();
-			alcancesTerritorial = [
-				...new Set(proyectos.map((p) => p.alcance_territorial).filter(Boolean))
-			].sort();
-			console.log("Ejemplo de proyectos:", proyectos.slice(0,3)); 
 			fuentesFinanciamiento = [
 				...new Set(proyectos.map((p) => p.fuente_financiamiento).filter(Boolean))
 			].sort();
-			console.log("Fuentes únicas:", fuentesFinanciamiento);
+			console.log('Ejemplo de proyectos:', proyectos.slice(0, 3));
+			console.log('Fuentes únicas:', fuentesFinanciamiento);
+			// 🔹 Cálculo de rango de años de inicio
+			const anios = proyectos
+				.map((p) => p.anio_inicio)
+				.filter((a): a is number => typeof a === 'number');
+			if (anios.length) {
+				minAnioInicio = Math.min(...anios);
+				maxAnioInicio = Math.max(...anios);
+				// Si el usuario no ha tocado aún los filtros de año, inicializamos al rango completo
+				if (filtroAnioInicioDesde === '') {
+					filtroAnioInicioDesde = minAnioInicio;
+				}
+				if (filtroAnioInicioHasta === '') {
+					filtroAnioInicioHasta = maxAnioInicio;
+				}
+			} else {
+				minAnioInicio = null;
+				maxAnioInicio = null;
+				filtroAnioInicioDesde = '';
+				filtroAnioInicioHasta = '';
+			}
 		}
 	}
-
-	function aplicarFiltros() {
+		function aplicarFiltros() {
 		// Aplicar filtros a los proyectos
 		filteredProyectos = proyectos.filter((proyecto) => {
-			// Filtro de texto (búsqueda en título, objetivo, coordinador)
+			// 🔎 Filtro de texto (búsqueda en título, objetivo, coordinador, facultad)
 			const textMatch =
 				!filtroTexto ||
 				proyecto.titulo?.toLowerCase().includes(filtroTexto.toLowerCase()) ||
@@ -67,7 +104,7 @@
 					?.toLowerCase()
 					.includes(filtroTexto.toLowerCase());
 
-			// Filtros de selección
+			// 🎓 Filtros de selección básicos
 			const facultadMatch =
 				!filtroFacultad || proyecto.facultad_o_entidad_o_area_responsable === filtroFacultad;
 
@@ -77,21 +114,38 @@
 
 			const tipoMatch = !filtroTipoProyecto || proyecto.tipo_proyecto === filtroTipoProyecto;
 
-			const alcanceMatch =
-				!filtroAlcanceTerritorial || proyecto.alcance_territorial === filtroAlcanceTerritorial;
-
 			const financiamientoMatch =
 				!filtroFuenteFinanciamiento ||
 				proyecto.fuente_financiamiento === filtroFuenteFinanciamiento;
 
+			// 🧪 Nuevo: Con / sin investigadores acreditados
+			const acreditadosMatch =
+				!filtroAcreditados ||
+				(filtroAcreditados === 'con' && proyecto.tiene_investigadores_acreditados) ||
+				(filtroAcreditados === 'sin' && !proyecto.tiene_investigadores_acreditados);
+
+			// 🏛️ Nuevo: Solo proyectos para SIIES
+			const siiesMatch = !soloParaSIIES || proyecto.para_siies === true;
+			// 📅 Nuevo: Rango de año de inicio
+			let anioMatch = true;
+			const anio = proyecto.anio_inicio;
+			if (typeof filtroAnioInicioDesde === 'number' && anio != null) {
+				anioMatch = anioMatch && anio >= filtroAnioInicioDesde;
+			}
+			if (typeof filtroAnioInicioHasta === 'number' && anio != null) {
+				anioMatch = anioMatch && anio <= filtroAnioInicioHasta;
+			}
+			// Nota: si anio es null, lo dejamos pasar (anioMatch se queda en true)
 			return (
 				textMatch &&
 				facultadMatch &&
 				estadoMatch &&
 				campoMatch &&
 				tipoMatch &&
-				alcanceMatch &&
-				financiamientoMatch
+				financiamientoMatch &&
+				acreditadosMatch &&
+				siiesMatch &&
+				anioMatch
 			);
 		});
 
@@ -105,46 +159,109 @@
 			}
 		}
 	}
-
-	// Contar filtros activos
-	$: activeFilterCount =
-		[
+		// Contar filtros activos
+	$: {
+		const baseFilters = [
 			filtroFacultad,
 			filtroEstado,
 			filtroCampoAmplio,
 			filtroTipoProyecto,
-			filtroAlcanceTerritorial,
-			filtroFuenteFinanciamiento
-		].filter(Boolean).length + (filtroTexto ? 1 : 0);
+			filtroFuenteFinanciamiento,
+			filtroAcreditados,
+			soloParaSIIES ? 'siies' : ''
+		];
+
+		const yearFilterActive =
+			typeof filtroAnioInicioDesde === 'number' ||
+			typeof filtroAnioInicioHasta === 'number';
+
+		let count = baseFilters.filter(Boolean).length;
+
+		if (yearFilterActive) count += 1;
+		if (filtroTexto) count += 1;
+
+		activeFilterCount = count;
+	}
 
 	// Arreglo con los filtros activos para mostrar
-	$: activeFilters = [
-		{ name: 'Texto', value: filtroTexto, clear: () => (filtroTexto = '') },
-		{ name: 'Facultad', value: filtroFacultad, clear: () => (filtroFacultad = '') },
-		{ name: 'Estado', value: filtroEstado, clear: () => (filtroEstado = '') },
-		{ name: 'Campo Amplio', value: filtroCampoAmplio, clear: () => (filtroCampoAmplio = '') },
-		{ name: 'Tipo', value: filtroTipoProyecto, clear: () => (filtroTipoProyecto = '') },
-		{
-			name: 'Alcance',
-			value: filtroAlcanceTerritorial,
-			clear: () => (filtroAlcanceTerritorial = '')
-		},
-		{
-			name: 'Financiamiento',
-			value: filtroFuenteFinanciamiento,
-			clear: () => (filtroFuenteFinanciamiento = '')
-		}
-	].filter((filter) => filter.value);
+	$: {
+		let yearLabel = '';
+		const desde = filtroAnioInicioDesde;
+		const hasta = filtroAnioInicioHasta;
 
+		if (typeof desde === 'number' || typeof hasta === 'number') {
+			if (typeof desde === 'number' && typeof hasta === 'number') {
+				yearLabel = `${desde}–${hasta}`;
+			} else if (typeof desde === 'number') {
+				yearLabel = `Desde ${desde}`;
+			} else if (typeof hasta === 'number') {
+				yearLabel = `Hasta ${hasta}`;
+			}
+		}
+
+		activeFilters = [
+			{ name: 'Texto', value: filtroTexto, clear: () => (filtroTexto = '') },
+			{ name: 'Facultad', value: filtroFacultad, clear: () => (filtroFacultad = '') },
+			{ name: 'Estado', value: filtroEstado, clear: () => (filtroEstado = '') },
+			{
+				name: 'Área de conocimiento',
+				value: filtroCampoAmplio,
+				clear: () => (filtroCampoAmplio = '')
+			},
+			{ name: 'Tipo', value: filtroTipoProyecto, clear: () => (filtroTipoProyecto = '') },
+			{
+				name: 'Financiamiento',
+				value: filtroFuenteFinanciamiento,
+				clear: () => (filtroFuenteFinanciamiento = '')
+			},
+			{
+				name: 'Acreditados',
+				value:
+					filtroAcreditados === 'con'
+						? 'Con acreditados'
+						: filtroAcreditados === 'sin'
+						? 'Sin acreditados'
+						: '',
+				clear: () => (filtroAcreditados = '')
+			},
+			{
+				name: 'SIIES',
+				value: soloParaSIIES ? 'Solo proyectos SIIES' : '',
+				clear: () => (soloParaSIIES = false)
+			},
+			{
+				name: 'Año inicio',
+				value: yearLabel,
+				clear: () => {
+					if (minAnioInicio != null && maxAnioInicio != null) {
+						filtroAnioInicioDesde = minAnioInicio;
+						filtroAnioInicioHasta = maxAnioInicio;
+					} else {
+						filtroAnioInicioDesde = '';
+						filtroAnioInicioHasta = '';
+					}
+				}
+			}
+		].filter((filter) => filter.value);
+	}
 	// Limpiar todos los filtros
-	function limpiarFiltros() {
+		function limpiarFiltros() {
 		filtroFacultad = '';
 		filtroEstado = '';
 		filtroCampoAmplio = '';
 		filtroTipoProyecto = '';
-		filtroAlcanceTerritorial = '';
 		filtroFuenteFinanciamiento = '';
 		filtroTexto = '';
+		filtroAcreditados = '';
+		soloParaSIIES = false;
+
+		if (minAnioInicio != null && maxAnioInicio != null) {
+			filtroAnioInicioDesde = minAnioInicio;
+			filtroAnioInicioHasta = maxAnioInicio;
+		} else {
+			filtroAnioInicioDesde = '';
+			filtroAnioInicioHasta = '';
+		}
 
 		// Notificar que se ha eliminado la selección de facultad
 		dispatch('facultadSelected', '');
@@ -382,10 +499,10 @@
 							<polyline points="3.27 6.96 12 12.01 20.73 6.96" />
 							<line x1="12" y1="22.08" x2="12" y2="12" />
 						</svg>
-						Campo Amplio
+						Área de Conocimiento
 					</label>
 					<select id="campo" bind:value={filtroCampoAmplio}>
-						<option value="">Todos los campos</option>
+						<option value="">Todos las areas</option>
 						{#each camposAmplios as campo}
 							<option value={campo}>{campo}</option>
 						{/each}
@@ -419,33 +536,6 @@
 						{/each}
 					</select>
 				</div>
-
-				<div class="filter-group">
-					<label for="alcance">
-						<svg
-							xmlns="http://www.w3.org/2000/svg"
-							width="16"
-							height="16"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="2"
-							stroke-linecap="round"
-							stroke-linejoin="round"
-						>
-							<circle cx="12" cy="12" r="10" />
-							<path d="M16.2 7.8l-2 6.3-6.4 2.1 2-6.3z" />
-						</svg>
-						Alcance Territorial
-					</label>
-					<select id="alcance" bind:value={filtroAlcanceTerritorial}>
-						<option value="">Todos los alcances</option>
-						{#each alcancesTerritorial as alcance}
-							<option value={alcance}>{alcance}</option>
-						{/each}
-					</select>
-				</div>
-
 				<div class="filter-group">
 					<label for="financiamiento">
 						<svg
@@ -477,6 +567,76 @@
 							</option>
 						{/each}
 					</select>
+				</div>
+								<div class="filter-group">
+					<label for="acreditados">
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							width="16"
+							height="16"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						>
+							<circle cx="12" cy="8" r="4" />
+							<path d="M6 20v-1a6 6 0 0 1 12 0v1" />
+						</svg>
+						Investigadores acreditados
+					</label>
+					<select id="acreditados" bind:value={filtroAcreditados}>
+						<option value="">Todos</option>
+						<option value="con">Con acreditados</option>
+						<option value="sin">Sin acreditados</option>
+					</select>
+				</div>
+
+				<div class="filter-group">
+					<label for="anio-desde">
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							width="16"
+							height="16"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						>
+							<rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+							<line x1="16" y1="2" x2="16" y2="6" />
+							<line x1="8" y1="2" x2="8" y2="6" />
+							<line x1="3" y1="10" x2="21" y2="10" />
+						</svg>
+						Año de inicio
+					</label>
+					<div class="year-range">
+						<input
+							id="anio-desde"
+							type="number"
+							min={minAnioInicio ?? undefined}
+							max={maxAnioInicio ?? undefined}
+							bind:value={filtroAnioInicioDesde}
+							placeholder={minAnioInicio != null ? String(minAnioInicio) : 'Desde'}
+						/>
+						<span class="year-separator">–</span>
+						<input
+							id="anio-hasta"
+							type="number"
+							min={minAnioInicio ?? undefined}
+							max={maxAnioInicio ?? undefined}
+							bind:value={filtroAnioInicioHasta}
+							placeholder={maxAnioInicio != null ? String(maxAnioInicio) : 'Hasta'}
+						/>
+					</div>
+
+					<label class="siies-checkbox">
+						<input type="checkbox" bind:checked={soloParaSIIES} />
+						Solo proyectos para SIIES
+					</label>
 				</div>
 			</div>
 
@@ -817,6 +977,47 @@
 			&:hover:not(:focus) {
 				border-color: color-mix(in srgb, var(--color--primary) 90%, transparent);
 				background: color-mix(in srgb, var(--color--primary) 30%, transparent);
+			}
+		}
+				.year-range {
+			display: flex;
+			align-items: center;
+			gap: 8px;
+
+			input {
+				flex: 1;
+				padding: 8px 10px;
+				border-radius: 8px;
+				border: 1px solid color-mix(in srgb, var(--color--text) 20%, transparent);
+				background: var(--color--card-background);
+				color: var(--color--text);
+				font-size: 0.9rem;
+
+				&:focus {
+					border-color: var(--color--primary);
+					outline: none;
+					box-shadow: 0 0 0 2px
+							color-mix(in srgb, var(--color--primary) 20%, transparent),
+						0 3px 8px rgba(0, 0, 0, 0.08);
+				}
+			}
+
+			.year-separator {
+				color: var(--color--text-shade);
+				font-size: 0.9rem;
+			}
+		}
+
+		.siies-checkbox {
+			margin-top: 6px;
+			display: flex;
+			align-items: center;
+			gap: 6px;
+			font-size: 0.85rem;
+			color: var(--color--text-shade);
+
+			input[type='checkbox'] {
+				accent-color: var(--color--primary);
 			}
 		}
 	}
