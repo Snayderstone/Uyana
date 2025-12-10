@@ -33,7 +33,7 @@
 	// Mensaje de éxito para limpiar filtros
 	let showClearSuccess = false;
 	let filteredProyectos: Proyecto[] = [];
-
+	$: console.log('[ProjectFilters] prop proyectos cambió, length =', proyectos.length);
 	// Extraer opciones únicas de los datos de proyectos
 	$: {
 		if (proyectos.length > 0) {

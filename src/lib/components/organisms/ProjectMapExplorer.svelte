@@ -54,7 +54,10 @@
 
 			proyectos = await obtenerProyectos();
 			filteredProyectos = proyectos;
-
+			console.log('[ProjectMapExplorer] proyectos cargados:', {
+  				total: proyectos.length,
+  				ejemplo: proyectos[0] ?? null
+			});
 			// Calcular min y max para la leyenda
 			const proyectosPorFacultad: Record<string, number> = {};
 			proyectos.forEach((proyecto) => {

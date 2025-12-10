@@ -252,6 +252,7 @@ export const RelacionesSQLRepository = {
    *    codigo: string;
    *    titulo: string;
    *    estado: string;
+   *    participante_email: string;
    *    facultad: string;
    *    participante_id: number | null;
    *    participante_nombre: string;
@@ -261,58 +262,61 @@ export const RelacionesSQLRepository = {
    *  }[]
    */
   async getProjectParticipantsWithDetails() {
-    const { data, error } = await supabase
-      .from('proyecto_participante')
-      .select(
-        `
-        proyecto_id,
-        participantes (
-          id,
-          nombre,
-          carreras (
-            facultades (
-              nombre
-            )
-          )
-        ),
-        cargos (
-          nombre
-        ),
-        proyectos (
-          codigo,
-          titulo,
-          fecha_inicio_planeada,
-          fecha_fin_planeada,
-          estado:estado (
+  const { data, error } = await supabase
+    .from('proyecto_participante')
+    .select(
+      `
+      proyecto_id,
+      participantes (
+        id,
+        nombre,
+        email,
+        carreras (
+          facultades (
             nombre
           )
         )
-      `
-      );
+      ),
+      cargos (
+        nombre
+      ),
+      proyectos (
+        codigo,
+        titulo,
+        fecha_inicio_planeada,
+        fecha_fin_planeada,
+        estado:estado (
+          nombre
+        )
+      )
+    `
+    );
 
-    if (error) {
-      console.error('❌ RelacionesSQLRepository.getProjectParticipantsWithDetails():', error);
-      return [];
-    }
-
-    return (data ?? []).map((row: any) => {
-      const participante = row.participantes ?? null;
-      const carrera = participante?.carreras ?? null;
-      const facultad = carrera?.facultades ?? null;
-      const proyecto = row.proyectos ?? null;
-
-      return {
-        proyecto_id: row.proyecto_id as number,
-        codigo: proyecto?.codigo ?? '',
-        titulo: proyecto?.titulo ?? '',
-        estado: proyecto?.estado?.nombre ?? 'Sin estado',
-        facultad: facultad?.nombre ?? 'Sin facultad',
-        participante_id: participante?.id ?? null,
-        participante_nombre: participante?.nombre ?? '',
-        cargo_nombre: row.cargos?.nombre ?? null,
-        fecha_inicio_planeada: proyecto?.fecha_inicio_planeada ?? null,
-        fecha_fin_planeada: proyecto?.fecha_fin_planeada ?? null
-      };
-    });
+  if (error) {
+    console.error('❌ RelacionesSQLRepository.getProjectParticipantsWithDetails():', error);
+    return [];
   }
+
+  return (data ?? []).map((row: any) => {
+    const participante = row.participantes ?? null;
+    const carrera = participante?.carreras ?? null;
+    const facultad = carrera?.facultades ?? null;
+    const proyecto = row.proyectos ?? null;
+
+    return {
+      proyecto_id: row.proyecto_id as number,
+      codigo: proyecto?.codigo ?? '',
+      titulo: proyecto?.titulo ?? '',
+      estado: proyecto?.estado?.nombre ?? 'Sin estado',
+      facultad: facultad?.nombre ?? 'Sin facultad',
+      participante_id: participante?.id ?? null,
+      participante_nombre: participante?.nombre ?? '',
+      participante_email: participante?.email ?? '',
+      cargo_nombre: row.cargos?.nombre ?? null,
+      fecha_inicio_planeada: proyecto?.fecha_inicio_planeada ?? null,
+      fecha_fin_planeada: proyecto?.fecha_fin_planeada ?? null
+    };
+  });
+}
+
 };

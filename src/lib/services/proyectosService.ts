@@ -31,16 +31,164 @@ export type Proyecto = {
 };
 
 export async function obtenerProyectos(): Promise<Proyecto[]> {
-  // 👇 OJO: cambia 'proyectos' por el nombre real si tu tabla/vista se llama distinto
-  const { data, error } = await supabase.from('proyectos').select('*');
+  // 1) Traemos todos los datasets necesarios en paralelo (TODO normalizado, sin vistas)
+  const [
+    projects,
+    projectTypes,
+    projectAreas,
+    fundingRows,
+    participantsDetails,
+    participantsAcreditado
+  ] = await Promise.all([
+    RelacionesSQLRepository.getAllProjectsWithEstado(),
+    RelacionesSQLRepository.getProjectTypesWithNames(),
+    RelacionesSQLRepository.getProjectAreasWithNames(),
+    RelacionesSQLRepository.getProjectFundingWithNames(),
+    RelacionesSQLRepository.getProjectParticipantsWithDetails(),
+    RelacionesSQLRepository.getProjectParticipantsWithAcreditado()
+  ]);
 
-  if (error) {
-    console.error('Error al obtener proyectos:', error);
-    return [];
-  }
+  console.log('[obtenerProyectos] datasets cargados:', {
+    projects: projects.length,
+    projectTypes: projectTypes.length,
+    projectAreas: projectAreas.length,
+    fundingRows: fundingRows.length,
+    participantsDetails: participantsDetails.length,
+    participantsAcreditado: participantsAcreditado.length
+  });
 
-  return data || [];
+  // 2) Índices auxiliares por proyecto_id ==========================
+  // Tipo de proyecto (tomamos el primero como “principal”)
+  const tipoByProject = new Map<number, string>();
+  projectTypes.forEach((row: any) => {
+    const projectId = row.proyecto_id as number;
+    const nombreTipo: string = row.tipos?.nombre ?? '';
+    if (!projectId || !nombreTipo) return;
+    if (!tipoByProject.has(projectId)) {
+      tipoByProject.set(projectId, nombreTipo);
+    }
+  });
+
+  // Área de conocimiento (la usamos como campo_amplio)
+  const areaByProject = new Map<number, string>();
+  projectAreas.forEach((row: any) => {
+    const projectId = row.proyecto_id as number;
+    const nombreArea: string = row.area?.nombre ?? '';
+    if (!projectId || !nombreArea) return;
+    if (!areaByProject.has(projectId)) {
+      areaByProject.set(projectId, nombreArea);
+    }
+  });
+
+  // Fuente(s) de financiamiento (posible lista separada por comas)
+  const fundingByProject = new Map<number, string>();
+  fundingRows.forEach((row: any) => {
+    const projectId = row.proyecto_id as number;
+    const nombreFuente: string = row.fuente?.nombre ?? '';
+    if (!projectId || !nombreFuente) return;
+
+    const prev = fundingByProject.get(projectId);
+    if (!prev) {
+      fundingByProject.set(projectId, nombreFuente);
+    } else if (!prev.split(', ').includes(nombreFuente)) {
+      fundingByProject.set(projectId, `${prev}, ${nombreFuente}`);
+    }
+  });
+
+  // Facultad responsable y coordinador/director
+  const facultadByProject = new Map<number, string>();
+  const coordinadorByProject = new Map<number, { nombre: string; email: string }>();
+
+  participantsDetails.forEach((row: any) => {
+    const projectId = row.proyecto_id as number;
+    if (!projectId) return;
+
+    const facultad: string = row.facultad ?? '';
+    const esLider = esRolLider(row.cargo_nombre);
+
+    if (esLider) {
+      // Preferimos facultad del líder
+      if (facultad) {
+        facultadByProject.set(projectId, facultad);
+      }
+      const nombre: string = row.participante_nombre ?? '';
+      const email: string = row.participante_email ?? '';
+      if (nombre) {
+        coordinadorByProject.set(projectId, { nombre, email });
+      }
+    } else {
+      // Si aún no hay facultad asignada, usamos la primera que aparezca
+      if (facultad && !facultadByProject.has(projectId)) {
+        facultadByProject.set(projectId, facultad);
+      }
+    }
+  });
+
+  // Nº de participantes acreditados por proyecto
+  const acreditadosByProject = new Map<number, number>();
+  participantsAcreditado.forEach((row: any) => {
+    if (row.acreditado === true) {
+      const projectId = row.proyecto_id as number;
+      if (!projectId) return;
+      acreditadosByProject.set(
+        projectId,
+        (acreditadosByProject.get(projectId) ?? 0) + 1
+      );
+    }
+  });
+
+  // 3) Construimos el array “plano” de Proyecto ====================
+  const proyectos: Proyecto[] = projects.map((p: any) => {
+    const projectId = p.id as number;
+
+    const tipo = tipoByProject.get(projectId) ?? 'No especificado';
+    const area = areaByProject.get(projectId) ?? 'No especificado';
+    const fuente = fundingByProject.get(projectId) ?? 'Sin fuente';
+    const facultad = facultadByProject.get(projectId) ?? 'Sin facultad';
+    const coord = coordinadorByProject.get(projectId) ?? { nombre: '', email: '' };
+    const acreditadosCount = acreditadosByProject.get(projectId) ?? 0;
+
+    return {
+      id: projectId,
+      codigo: p.codigo ?? '',
+      titulo: p.titulo ?? '',
+      objetivo: p.objetivo ?? '',
+      tipo_proyecto: tipo,
+      estado: p.estado?.nombre ?? 'Sin estado',
+      facultad_o_entidad_o_area_responsable: facultad,
+      fecha_inicio: p.fecha_inicio_planeada ?? '',
+      fecha_fin_planeado: p.fecha_fin_planeada ?? '',
+      coordinador_director: coord.nombre,
+      correo_electronico_coordinador: coord.email,
+      // No tienes campos separados de campo_amplio/específico/detallado en el modelo,
+      // así que usamos el área como campo_amplio y dejamos los otros vacíos.
+      campo_amplio: area,
+      campo_especifico: '',
+      campo_detallado: '',
+      // Como dijiste: NO hay alcance territorial en la BD → lo dejamos vacío.
+      alcance_territorial: '',
+      // Para filtros podemos usar un “Sí/No (n)” legible:
+      investigadores_acreditados_senescyt:
+        acreditadosCount > 0 ? `Sí (${acreditadosCount})` : 'No',
+      fuente_financiamiento: fuente
+    };
+  });
+
+  // 4) Logs útiles para depurar filtros en la UI ===================
+  console.log('[obtenerProyectos] proyectos normalizados construidos:', {
+    total: proyectos.length,
+    ejemplo: proyectos[0],
+    facultadesUnicas: Array.from(
+      new Set(proyectos.map((p) => p.facultad_o_entidad_o_area_responsable))
+    ),
+    fuentesUnicas: Array.from(
+      new Set(proyectos.map((p) => p.fuente_financiamiento))
+    )
+  });
+
+  return proyectos;
 }
+
 // Versión nueva: delega al AnalyticsService (BD normalizada)
 export async function obtenerProyectosPorEstado(): Promise<{ estado: string; cantidad: number }[]> {
   return AnalyticsService.getProjectsByState();

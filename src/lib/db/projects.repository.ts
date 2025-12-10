@@ -234,6 +234,7 @@ export const ProjectsRepository = {
       return {
         facultadId: fac.id as number,
         facultadNombre: fac.nombre as string,
+        geometry: fac.geometry ?? null,          
         projectIds: Array.from(projectIdsSet)
       };
     });
