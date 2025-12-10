@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { Investigador } from '$lib/supabase';
+	import type { Investigador } from '$lib/models/investigator.model';
 
 	export let investigadores: Investigador[] = [];
 

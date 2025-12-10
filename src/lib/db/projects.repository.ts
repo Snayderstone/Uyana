@@ -141,44 +141,103 @@ export const ProjectsRepository = {
       return model;
     });
   },
-    /**
-   * Obtiene el conteo de proyectos por institución
-   * y lo adapta al modelo ProjectMapModel para el mapa.
+  /**
+   * Devuelve los proyectos con su estado_id (lo mínimo necesario
+   * para estadísticas por estado).
    *
-   * Reutiliza:
-   *  - getProjectCountByInstitution()  → { institucion_id, count }
-   *  - getAllInstitutions()           → { id, nombre, geometry }
+   * Tabla: proyectos
+   * Columnas: id, estado_id
    */
-  async getProjectCountByInstitutionForMap(): Promise<ProjectMapModel[]> {
-    // 1) Traemos los conteos y las instituciones en paralelo
-    const [counts, institutions] = await Promise.all([
-      this.getProjectCountByInstitution(),
-      this.getAllInstitutions()
-    ]);
+  async getAllProjectsBasic() {
+    const { data, error } = await supabase
+      .from('proyectos')
+      .select('id, estado_id');
 
-    // 2) Pasamos los conteos a un Map para lookup rápido
-    const countById = new Map<number, number>();
-    counts.forEach((row: any) => {
-      countById.set(row.institucion_id, row.count);
-    });
+    if (error) {
+      console.error('Error ProjectsRepository.getAllProjectsBasic():', error);
+      return [];
+    }
 
-    // 3) Armamos el ProjectMapModel[]
-    const models: ProjectMapModel[] = (institutions ?? []).map((inst: any) => {
-      const id = inst.id;
-      const projectCount = countById.get(id) ?? 0;
+    return data;
+  },
 
-      const model: ProjectMapModel = {
+  /**
+   * Devuelve todos los estados disponibles.
+   *
+   * Tabla: estado
+   * Columnas: id, nombre
+   */
+  async getAllStates() {
+    const { data, error } = await supabase
+      .from('estado')
+      .select('id, nombre');
+
+    if (error) {
+      console.error('Error ProjectsRepository.getAllStates():', error);
+      return [];
+    }
+
+    return data;
+  },
+    /**
+   * Mapea cada facultad a los IDs de proyectos relacionados.
+   *
+   * Recorre:
+   *  facultades → carreras → participantes → proyecto_participante → proyectos
+   *
+   * Devuelve:
+   *  [
+   *    {
+   *      facultadId: number;
+   *      facultadNombre: string;
+   *      projectIds: number[];
+   *    },
+   *    ...
+   *  ]
+   */
+  async getProjectIdsByFaculty() {
+    const { data, error } = await supabase
+      .from('facultades')
+      .select(`
         id,
-        titulo: inst.nombre,     // 👈 nombre de la institución
-        geometry: inst.geometry, // 👈 geometría de la tabla instituciones
-        projectCount,
-        level: 'institution'
+        nombre,
+        carreras (
+          participantes (
+            proyecto_participante (
+              proyecto_id
+            )
+          )
+        )
+      `);
+
+    if (error) {
+      console.error('Error ProjectsRepository.getProjectIdsByFaculty():', error);
+      return [];
+    }
+
+    return (data ?? []).map((fac: any) => {
+      const carreras = fac.carreras ?? [];
+      const projectIdsSet = new Set<number>();
+
+      for (const carrera of carreras) {
+        const participantes = carrera.participantes ?? [];
+        for (const part of participantes) {
+          const rels = part.proyecto_participante ?? [];
+          for (const rel of rels) {
+            if (rel.proyecto_id != null) {
+              projectIdsSet.add(rel.proyecto_id as number);
+            }
+          }
+        }
+      }
+
+      return {
+        facultadId: fac.id as number,
+        facultadNombre: fac.nombre as string,
+        projectIds: Array.from(projectIdsSet)
       };
-
-      return model;
     });
-
-    return models;
   }
 
 };
+

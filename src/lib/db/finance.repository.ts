@@ -1,28 +1,60 @@
 /**
- * Projects Repository
- * -------------------
- * Este repositorio contiene TODAS las consultas directas a la base
- * relacionadas con la tabla `finance` y sus tablas puente.
+ * Finance Repository
+ * ------------------
+ * Consultas directas a la tabla `fuente_financiamiento`.
  *
  * IMPORTANTE:
  *  - No incluir lógica de negocio
  *  - No transformar datos
- *  - No agregar filtros complejos
- *  - SOLO consultas puras a Supabase (BASE DE DATOS)
+ *  - SOLO consultas puras a Supabase
  */
 
 import { supabase } from './supabase.client';
 
-// Aquí definiremos todas las funciones de consulta
 export const FinanceRepository = {
+  // Obtener fuente de financiamiento por id
+  async getById(id: number) {
+    const { data, error } = await supabase
+      .from('fuente_financiamiento')
+      .select('*')
+      .eq('id', id)
+      .single();
 
-    // TODO: obtener finance por id
-    async getById(id: number) { /* implementar */ },
+    if (error) {
+      console.error('❌ FinanceRepository.getById():', error);
+      return null;
+    }
 
-    // TODO: obtener todos los finance
-    async getAll() { /* implementar */ },
+    return data;
+  },
 
-    // TODO: obtener finance con filtros básicos
-    async getWithFilters(filters: any) { /* implementar */ },
+  // Obtener todas las fuentes de financiamiento
+  async getAll() {
+    const { data, error } = await supabase.from('fuente_financiamiento').select('*');
 
+    if (error) {
+      console.error('❌ FinanceRepository.getAll():', error);
+      return [];
+    }
+
+    return data ?? [];
+  },
+
+  // Obtener fuentes con filtros básicos
+  async getWithFilters(filters: { nombre?: string }) {
+    let query = supabase.from('fuente_financiamiento').select('*');
+
+    if (filters.nombre) {
+      query = query.ilike('nombre', `%${filters.nombre}%`);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      console.error('❌ FinanceRepository.getWithFilters():', error);
+      return [];
+    }
+
+    return data ?? [];
+  }
 };

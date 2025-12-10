@@ -1,28 +1,86 @@
 /**
  * Participantes Repository
- * -------------------
- * Este repositorio contiene TODAS las consultas directas a la base
- * relacionadas con la tabla `Participantes` y sus tablas puente.
+ * ------------------------
+ * Consultas directas a la tabla `participantes`.
  *
  * IMPORTANTE:
- *  - No incluir lógica de negocio
- *  - No transformar datos
- *  - No agregar filtros complejos
- *  - SOLO consultas puras a Supabase (BASE DE DATOS)
+ *  - NO lógica de negocio
+ *  - NO agregaciones complejas
+ *  - SOLO consultas puras a Supabase
+ *
+ * Archivo: src/lib/db/participants.repository.ts
  */
 
 import { supabase } from './supabase.client';
 
-// Aquí definiremos todas las funciones de consulta
 export const ParticipantesRepository = {
+  /**
+   * Obtener un participante por ID.
+   */
+  async getById(id: number) {
+    const { data, error } = await supabase
+      .from('participantes')
+      .select('*')
+      .eq('id', id)
+      .single();
 
-    // TODO: obtener Participantes por id
-    async getById(id: number) { /* implementar */ },
+    if (error) {
+      console.error('❌ ParticipantesRepository.getById():', error);
+      return null;
+    }
 
-    // TODO: obtener todos los Participantes
-    async getAll() { /* implementar */ },
+    return data;
+  },
 
-    // TODO: obtener Participantes con filtros básicos
-    async getWithFilters(filters: any) { /* implementar */ },
+  /**
+   * Obtener todos los participantes.
+   * OJO: si la tabla crece mucho, luego podemos paginar.
+   */
+  async getAll() {
+    const { data, error } = await supabase.from('participantes').select('*');
 
+    if (error) {
+      console.error('❌ ParticipantesRepository.getAll():', error);
+      return [];
+    }
+
+    return data ?? [];
+  },
+
+  /**
+   * Obtener participantes con filtros básicos.
+   *
+   * Filtros soportados (opcionales):
+   *  - filters.nombre: string (ILike)
+   *  - filters.genero: string (igual)
+   *  - filters.acreditado: boolean
+   */
+  async getWithFilters(filters: {
+    nombre?: string;
+    genero?: string;
+    acreditado?: boolean;
+  }) {
+    let query = supabase.from('participantes').select('*');
+
+    if (filters.nombre) {
+      query = query.ilike('nombre', `%${filters.nombre}%`);
+    }
+
+    if (filters.genero) {
+      query = query.eq('genero', filters.genero);
+    }
+
+    if (typeof filters.acreditado === 'boolean') {
+      query = query.eq('acreditado', filters.acreditado);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      console.error('❌ ParticipantesRepository.getWithFilters():', error);
+      return [];
+    }
+
+    return data ?? [];
+  }
 };

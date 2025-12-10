@@ -1,4 +1,14 @@
-import { supabase } from '$lib/supabase';
+//proyectosService.ts
+/**
+ * Proyectos Service
+ * -----------------
+ * Lógica de negocio relacionada con proyectos
+ */
+
+import { supabase } from '$lib/db/supabase.client';
+import { AnalyticsService } from '$lib/services/analytics.service';
+import type { GlobalStats } from '$lib/services/analytics.service';
+import { RelacionesSQLRepository } from '$lib/db/relations.repository';
 
 export type Proyecto = {
 	id: number;
@@ -31,81 +41,30 @@ export async function obtenerProyectos(): Promise<Proyecto[]> {
 
 	return data || [];
 }
-
-
+// Versión nueva: delega al AnalyticsService (BD normalizada)
 export async function obtenerProyectosPorEstado(): Promise<{ estado: string; cantidad: number }[]> {
-	const proyectos = await obtenerProyectos();
-
-	if (proyectos.length === 0) return [];
-
-	// Agrupar por estado
-	const estadoCount: Record<string, number> = {};
-
-	proyectos.forEach((proyecto) => {
-		const estado = proyecto.estado || 'No especificado';
-		estadoCount[estado] = (estadoCount[estado] || 0) + 1;
-	});
-
-	// Convertir a array para mostrar en gráfica
-	return Object.entries(estadoCount).map(([estado, cantidad]) => ({
-		estado,
-		cantidad
-	}));
+  return AnalyticsService.getProjectsByState();
 }
-
+// Versión nueva: delega al AnalyticsService (BD normalizada)
 export async function obtenerProyectosPorFacultad(): Promise<
-	{ facultad: string; cantidad: number }[]
+  { facultad: string; cantidad: number }[]
 > {
-	const proyectos = await obtenerProyectos();
-
-	if (proyectos.length === 0) return [];
-
-	// Agrupar por facultad
-	const facultadCount: Record<string, number> = {};
-
-	proyectos.forEach((proyecto) => {
-		const facultad = proyecto.facultad_o_entidad_o_area_responsable || 'No especificado';
-		facultadCount[facultad] = (facultadCount[facultad] || 0) + 1;
-	});
-
-	// Convertir a array para mostrar en gráfica
-	return (
-		Object.entries(facultadCount)
-			.map(([facultad, cantidad]) => ({
-				facultad,
-				cantidad
-			}))
-			// Ordenar de mayor a menor
-			.sort((a, b) => b.cantidad - a.cantidad)
-	);
+  // Nueva versión: usa BD normalizada vía AnalyticsService
+  return AnalyticsService.getProjectsByFacultyOverview();
 }
-
 export async function obtenerProyectosPorCampoAmplio(): Promise<
-	{ campo: string; cantidad: number }[]
+  { campo: string; cantidad: number }[]
 > {
-	const proyectos = await obtenerProyectos();
+  // Nueva versión: usamos BD normalizada (áreas de conocimiento)
+  const stats = await AnalyticsService.getProjectsByArea();
 
-	if (proyectos.length === 0) return [];
-
-	// Agrupar por campo amplio
-	const campoCount: Record<string, number> = {};
-
-	proyectos.forEach((proyecto) => {
-		const campo = proyecto.campo_amplio || 'No especificado';
-		campoCount[campo] = (campoCount[campo] || 0) + 1;
-	});
-
-	// Convertir a array para mostrar en gráfica
-	return (
-		Object.entries(campoCount)
-			.map(([campo, cantidad]) => ({
-				campo,
-				cantidad
-			}))
-			// Ordenar de mayor a menor
-			.sort((a, b) => b.cantidad - a.cantidad)
-	);
+  // Adaptamos nombres: area → campo (para no romper la UI)
+  return stats.map(({ area, cantidad }) => ({
+    campo: area,
+    cantidad
+  }));
 }
+
 
 export async function obtenerProyectosPorAlcance(): Promise<
 	{ alcance: string; cantidad: number }[]
@@ -128,321 +87,261 @@ export async function obtenerProyectosPorAlcance(): Promise<
 		cantidad
 	}));
 }
-
 export async function obtenerProyectosPorFinanciamiento(): Promise<
-	{ fuente: string; cantidad: number }[]
+  { fuente: string; cantidad: number }[]
 > {
-	const proyectos = await obtenerProyectos();
-
-	if (proyectos.length === 0) return [];
-
-	// Agrupar por fuente de financiamiento
-	const fuenteCount: Record<string, number> = {};
-
-	proyectos.forEach((proyecto) => {
-		const fuente = proyecto.fuente_financiamiento || 'No especificado';
-		fuenteCount[fuente] = (fuenteCount[fuente] || 0) + 1;
-	});
-
-	// Convertir a array para mostrar en gráfica
-	return Object.entries(fuenteCount).map(([fuente, cantidad]) => ({
-		fuente,
-		cantidad
-	}));
+  // Nueva versión: usa BD normalizada (fuente_financiamiento + proyecto_fuente_financiamiento)
+  return AnalyticsService.getProjectsByFundingSource();
 }
-
-// Función para obtener estadísticas generales de los proyectos
+// Función para obtener proyectos por tipo (versión nueva, usando BD normalizada)
 export async function obtenerProyectosPorTipo(): Promise<{ tipo: string; cantidad: number }[]> {
-	const proyectos = await obtenerProyectos();
-
-	if (proyectos.length === 0) return [];
-
-	// Agrupar por tipo de proyecto
-	const tipoCount: Record<string, number> = {};
-
-	proyectos.forEach((proyecto) => {
-		const tipo = proyecto.tipo_proyecto || 'No especificado';
-		tipoCount[tipo] = (tipoCount[tipo] || 0) + 1;
-	});
-
-	// Convertir a array para mostrar en gráfica
-	return Object.entries(tipoCount)
-		.map(([tipo, cantidad]) => ({
-			tipo,
-			cantidad
-		}))
-		.sort((a, b) => b.cantidad - a.cantidad);
-}
-
-export async function obtenerEstadisticasGenerales(): Promise<{
-	totalProyectos: number;
-	proyectosActivos: number;
-	proyectosCerrados: number;
-	investigadoresAcreditados: number;
-	proyectosPorTipoPrincipal: { tipo: string; cantidad: number };
-}> {
-	const proyectos = await obtenerProyectos();
-	const tiposProyectos = await obtenerProyectosPorTipo();
-
-	if (proyectos.length === 0) {
-		return {
-			totalProyectos: 0,
-			proyectosActivos: 0,
-			proyectosCerrados: 0,
-			investigadoresAcreditados: 0,
-			proyectosPorTipoPrincipal: { tipo: 'No hay datos', cantidad: 0 }
-		};
-	}
-
-	// Calcular estadísticas
-	const totalProyectos = proyectos.length;
-
-	const proyectosActivos = proyectos.filter(
-		(p) => p.estado === 'En ejecución' || p.estado === 'En cierre'
-	).length;
-
-	const proyectosCerrados = proyectos.filter(
-		(p) => p.estado === 'Cerrado' || p.estado === 'Finalizado'
-	).length;
-
-	const investigadoresAcreditados = proyectos.filter(
-		(p) => p.investigadores_acreditados_senescyt === 'SI'
-	).length;
-
-	// Obtener el tipo de proyecto más común
-	const proyectosPorTipoPrincipal =
-		tiposProyectos.length > 0 ? tiposProyectos[0] : { tipo: 'No hay datos', cantidad: 0 };
-
-	return {
-		totalProyectos,
-		proyectosActivos,
-		proyectosCerrados,
-		investigadoresAcreditados,
-		proyectosPorTipoPrincipal
-	};
-}
-
-export async function obtenerEstadisticasPorFacultad(nombreFacultad: string) {
-	const proyectos = await obtenerProyectos();
-
-	const proyectosFacultad = proyectos.filter(
-		(p) => p.facultad_o_entidad_o_area_responsable === nombreFacultad
-	);
-
-	const totalProyectos = proyectos.length;
-	const cantidadFacultad = proyectosFacultad.length;
-
-	const estados = {
-		ejecucion: proyectosFacultad.filter((p) => p.estado === 'En ejecución').length,
-		cierre: proyectosFacultad.filter((p) => p.estado === 'En cierre').length,
-		cerrados: proyectosFacultad.filter((p) => p.estado === 'Cerrado' || p.estado === 'Finalizado')
-			.length
-	};
-
-	return {
-		totalProyectos,
-		cantidadFacultad,
-		estados
-	};
+  // Delegamos al AnalyticsService, que ya trabaja con proyecto_tipo + tipos
+  return AnalyticsService.getProjectsByType();
 }
 
 /**
- * Obtiene el ranking de investigadores por número de proyectos dirigidos
+ * Estadísticas generales de proyectos (versión nueva)
+ * ---------------------------------------------------
+ * Esta función mantiene la MISMA firma que usaba tu UI,
+ * pero por dentro delega al nuevo AnalyticsService,
+ * que trabaja con la BD normalizada.
+ *
+ * ⚠️ IMPORTANTE:
+ *  - NO usamos más `obtenerProyectos()` aquí.
+ *  - Si en algún momento cambias la forma de las estadísticas,
+ *    cambia primero AnalyticsService.getGlobalStats() y aquí
+ *    solo adaptas el shape si hace falta.
+ */
+export async function obtenerEstadisticasGenerales(): Promise<{
+  totalProyectos: number;
+  proyectosActivos: number;
+  proyectosCerrados: number;
+  investigadoresAcreditados: number;
+  proyectosPorTipoPrincipal: { tipo: string; cantidad: number };
+}> {
+  // Usamos el servicio nuevo, que ya hace todos los joins
+  const stats: GlobalStats = await AnalyticsService.getGlobalStats();
+
+  // Adaptamos el resultado al formato que ya usaba tu dashboard
+  return {
+    totalProyectos: stats.totalProyectos,
+    proyectosActivos: stats.proyectosActivos,
+    proyectosCerrados: stats.proyectosCerrados,
+    investigadoresAcreditados: stats.investigadoresAcreditados,
+    proyectosPorTipoPrincipal:
+      stats.proyectosPorTipoPrincipal ?? { tipo: 'No hay datos', cantidad: 0 }
+  };
+}
+export async function obtenerEstadisticasPorFacultad(nombreFacultad: string) {
+  // Nueva versión: delega completamente al AnalyticsService
+  return AnalyticsService.getFacultyStats(nombreFacultad);
+}
+/** 🔹 Helper interno: decide si un cargo indica rol de líder del proyecto */
+function esRolLider(cargoNombre?: string | null): boolean {
+  if (!cargoNombre) return false;
+  const texto = cargoNombre.toLowerCase();
+
+  return (
+    texto.includes('director') ||
+    texto.includes('directora') ||
+    texto.includes('coordinador') ||
+    texto.includes('coordinadora') ||
+    texto.includes('investigador principal') ||
+    texto.includes('responsable')
+  );
+}
+/**
+ * Ranking de investigadores por número de PROYECTOS donde son líderes
+ * (director/coordinador/etc, según el cargo).
  */
 export async function obtenerRankingInvestigadores(limite: number = 10): Promise<
-	Array<{
-		investigador: string;
-		total_proyectos: number;
-		proyectos_activos: number;
-		proyectos_completados: number;
-		detalles_proyectos: Array<{
-			codigo: string;
-			titulo: string;
-			estado: string;
-			facultad: string;
-		}>;
-	}>
+  Array<{
+    investigador: string;
+    total_proyectos: number;
+    proyectos_activos: number;
+    proyectos_completados: number;
+    detalles_proyectos: Array<{
+      codigo: string;
+      titulo: string;
+      estado: string;
+      facultad: string;
+    }>;
+  }>
 > {
-	try {
-		const { data, error } = await supabase
-			.from('proyectos')
-			.select('coordinador_director, codigo, titulo, estado, facultad_o_entidad_o_area_responsable')
-			.not('coordinador_director', 'is', null)
-			.neq('coordinador_director', '');
+  try {
+    const rows = await RelacionesSQLRepository.getProjectParticipantsWithDetails();
 
-		if (error) throw error;
+    const agrupacion = new Map<
+      string,
+      {
+        total: number;
+        activos: number;
+        completados: number;
+        proyectos: Array<{
+          codigo: string;
+          titulo: string;
+          estado: string;
+          facultad: string;
+        }>;
+      }
+    >();
 
-		// Agrupar proyectos por coordinador/director
-		const agrupacionInvestigadores = new Map<
-			string,
-			{
-				total: number;
-				activos: number;
-				completados: number;
-				proyectos: Array<{
-					codigo: string;
-					titulo: string;
-					estado: string;
-					facultad: string;
-				}>;
-			}
-		>();
+    rows.forEach((row: any) => {
+      if (!esRolLider(row.cargo_nombre)) return;
 
-		data?.forEach((proyecto) => {
-			const investigador = proyecto.coordinador_director?.trim();
-			if (investigador) {
-				if (!agrupacionInvestigadores.has(investigador)) {
-					agrupacionInvestigadores.set(investigador, {
-						total: 0,
-						activos: 0,
-						completados: 0,
-						proyectos: []
-					});
-				}
+      const nombre = (row.participante_nombre ?? '').trim();
+      if (!nombre) return;
 
-				const stats = agrupacionInvestigadores.get(investigador)!;
-				stats.total++;
+      if (!agrupacion.has(nombre)) {
+        agrupacion.set(nombre, {
+          total: 0,
+          activos: 0,
+          completados: 0,
+          proyectos: []
+        });
+      }
 
-				const estado = proyecto.estado?.toLowerCase() || '';
-				if (estado.includes('ejecución') || estado.includes('activo')) {
-					stats.activos++;
-				} else if (
-					estado.includes('finalizado') ||
-					estado.includes('completado') ||
-					estado.includes('cierre')
-				) {
-					stats.completados++;
-				}
+      const stats = agrupacion.get(nombre)!;
+      stats.total++;
 
-				stats.proyectos.push({
-					codigo: proyecto.codigo || '',
-					titulo: proyecto.titulo || '',
-					estado: proyecto.estado || '',
-					facultad: proyecto.facultad_o_entidad_o_area_responsable || ''
-				});
-			}
-		});
+      const estado = (row.estado ?? '').toLowerCase();
+      if (estado.includes('ejecución') || estado.includes('ejecucion') || estado.includes('activo')) {
+        stats.activos++;
+      } else if (
+        estado.includes('finalizado') ||
+        estado.includes('completado') ||
+        estado.includes('cierre')
+      ) {
+        stats.completados++;
+      }
 
-		// Convertir a array y ordenar por total de proyectos
-		const ranking = Array.from(agrupacionInvestigadores.entries())
-			.map(([investigador, stats]) => ({
-				investigador,
-				total_proyectos: stats.total,
-				proyectos_activos: stats.activos,
-				proyectos_completados: stats.completados,
-				detalles_proyectos: stats.proyectos
-			}))
-			.sort((a, b) => b.total_proyectos - a.total_proyectos)
-			.slice(0, limite);
+      stats.proyectos.push({
+        codigo: row.codigo || '',
+        titulo: row.titulo || '',
+        estado: row.estado || '',
+        facultad: row.facultad || ''
+      });
+    });
 
-		return ranking;
-	} catch (error) {
-		console.error('Error al obtener ranking de investigadores:', error);
-		throw new Error('Error al obtener el ranking de investigadores');
-	}
+    const ranking = Array.from(agrupacion.entries())
+      .map(([investigador, stats]) => ({
+        investigador,
+        total_proyectos: stats.total,
+        proyectos_activos: stats.activos,
+        proyectos_completados: stats.completados,
+        detalles_proyectos: stats.proyectos
+      }))
+      .sort((a, b) => b.total_proyectos - a.total_proyectos)
+      .slice(0, limite);
+
+    return ranking;
+  } catch (error) {
+    console.error('Error al obtener ranking de investigadores:', error);
+    throw new Error('Error al obtener el ranking de investigadores');
+  }
 }
-
 /**
- * Obtiene estadísticas detalladas de un investigador específico
+ * 🔹 NUEVA VERSIÓN (BD normalizada)
+ * Estadísticas detalladas de un investigador específico
+ * considerando solo los proyectos donde tiene rol de líder.
  */
 export async function obtenerEstadisticasInvestigador(nombreInvestigador: string): Promise<{
-	investigador: string;
-	total_proyectos: number;
-	proyectos_por_estado: Record<string, number>;
-	proyectos_por_facultad: Record<string, number>;
-	proyectos_por_año: Record<string, number>;
-	detalles_proyectos: Array<{
-		codigo: string;
-		titulo: string;
-		estado: string;
-		facultad: string;
-		fecha_inicio: string;
-		fecha_fin: string;
-	}>;
+  investigador: string;
+  total_proyectos: number;
+  proyectos_por_estado: Record<string, number>;
+  proyectos_por_facultad: Record<string, number>;
+  proyectos_por_año: Record<string, number>;
+  detalles_proyectos: Array<{
+    codigo: string;
+    titulo: string;
+    estado: string;
+    facultad: string;
+    fecha_inicio: string;
+    fecha_fin: string;
+  }>;
 } | null> {
-	try {
-		const { data, error } = await supabase
-			.from('proyectos')
-			.select('*')
-			.ilike('coordinador_director', `%${nombreInvestigador}%`);
+  try {
+    const rows = await RelacionesSQLRepository.getProjectParticipantsWithDetails();
+    const termino = nombreInvestigador.toLowerCase().trim();
 
-		if (error) throw error;
+    const filtrados = rows.filter((row: any) => {
+      if (!esRolLider(row.cargo_nombre)) return false;
+      const nombre = (row.participante_nombre ?? '').toLowerCase();
+      return nombre.includes(termino);
+    });
 
-		if (!data || data.length === 0) {
-			return null;
-		}
+    if (!filtrados.length) {
+      return null;
+    }
 
-		const proyectosPorEstado: Record<string, number> = {};
-		const proyectosPorFacultad: Record<string, number> = {};
-		const proyectosPorAño: Record<string, number> = {};
-		const detallesProyectos: Array<{
-			codigo: string;
-			titulo: string;
-			estado: string;
-			facultad: string;
-			fecha_inicio: string;
-			fecha_fin: string;
-		}> = [];
+    const proyectosPorEstado: Record<string, number> = {};
+    const proyectosPorFacultad: Record<string, number> = {};
+    const proyectosPorAño: Record<string, number> = {};
+    const detallesProyectos: Array<{
+      codigo: string;
+      titulo: string;
+      estado: string;
+      facultad: string;
+      fecha_inicio: string;
+      fecha_fin: string;
+    }> = [];
 
-		data.forEach((proyecto) => {
-			// Estadísticas por estado
-			const estado = proyecto.estado || 'Sin estado';
-			proyectosPorEstado[estado] = (proyectosPorEstado[estado] || 0) + 1;
+    filtrados.forEach((row: any) => {
+      const estado = row.estado || 'Sin estado';
+      proyectosPorEstado[estado] = (proyectosPorEstado[estado] || 0) + 1;
 
-			// Estadísticas por facultad
-			const facultad = proyecto.facultad_o_entidad_o_area_responsable || 'Sin facultad';
-			proyectosPorFacultad[facultad] = (proyectosPorFacultad[facultad] || 0) + 1;
+      const facultad = row.facultad || 'Sin facultad';
+      proyectosPorFacultad[facultad] = (proyectosPorFacultad[facultad] || 0) + 1;
 
-			// Estadísticas por año
-			const fechaInicio = proyecto.fecha_inicio;
-			if (fechaInicio) {
-				const año = fechaInicio.split('/')[2] || 'Sin año';
-				proyectosPorAño[año] = (proyectosPorAño[año] || 0) + 1;
-			}
+      const fechaInicio: string | null = row.fecha_inicio_planeada ?? null;
+      if (fechaInicio) {
+        const year = new Date(fechaInicio).getFullYear().toString();
+        proyectosPorAño[year] = (proyectosPorAño[year] || 0) + 1;
+      }
 
-			// Detalles del proyecto
-			detallesProyectos.push({
-				codigo: proyecto.codigo || '',
-				titulo: proyecto.titulo || '',
-				estado: proyecto.estado || '',
-				facultad: proyecto.facultad_o_entidad_o_area_responsable || '',
-				fecha_inicio: proyecto.fecha_inicio || '',
-				fecha_fin: proyecto.fecha_fin_planeado || ''
-			});
-		});
+      detallesProyectos.push({
+        codigo: row.codigo || '',
+        titulo: row.titulo || '',
+        estado: row.estado || '',
+        facultad: row.facultad || '',
+        fecha_inicio: row.fecha_inicio_planeada ?? '',
+        fecha_fin: row.fecha_fin_planeada ?? ''
+      });
+    });
 
-		return {
-			investigador: nombreInvestigador,
-			total_proyectos: data.length,
-			proyectos_por_estado: proyectosPorEstado,
-			proyectos_por_facultad: proyectosPorFacultad,
-			proyectos_por_año: proyectosPorAño,
-			detalles_proyectos: detallesProyectos
-		};
-	} catch (error) {
-		console.error('Error al obtener estadísticas de investigador:', error);
-		throw new Error('Error al obtener las estadísticas del investigador');
-	}
+    return {
+      investigador: nombreInvestigador,
+      total_proyectos: filtrados.length,
+      proyectos_por_estado: proyectosPorEstado,
+      proyectos_por_facultad: proyectosPorFacultad,
+      proyectos_por_año: proyectosPorAño,
+      detalles_proyectos: detallesProyectos
+    };
+  } catch (error) {
+    console.error('Error al obtener estadísticas de investigador:', error);
+    throw new Error('Error al obtener las estadísticas del investigador');
+  }
 }
 
 /**
  * Busca investigadores por término de búsqueda
+ * (se apoya en el ranking ya normalizado)
  */
 export async function buscarInvestigadores(
-	termino: string
+  termino: string
 ): Promise<Array<{ investigador: string; total_proyectos: number }>> {
-	try {
-		const ranking = await obtenerRankingInvestigadores(50); // Obtener más resultados para filtrar
-		const terminoNormalizado = termino.toLowerCase().trim();
+  try {
+    const ranking = await obtenerRankingInvestigadores(50);
+    const terminoNormalizado = termino.toLowerCase().trim();
 
-		return ranking
-			.filter((inv) => inv.investigador.toLowerCase().includes(terminoNormalizado))
-			.map((inv) => ({
-				investigador: inv.investigador,
-				total_proyectos: inv.total_proyectos
-			}));
-	} catch (error) {
-		console.error('Error al buscar investigadores:', error);
-		throw new Error('Error al buscar investigadores');
-	}
+    return ranking
+      .filter((inv) => inv.investigador.toLowerCase().includes(terminoNormalizado))
+      .map((inv) => ({
+        investigador: inv.investigador,
+        total_proyectos: inv.total_proyectos
+      }));
+  } catch (error) {
+    console.error('Error al buscar investigadores:', error);
+    throw new Error('Error al buscar investigadores');
+  }
 }

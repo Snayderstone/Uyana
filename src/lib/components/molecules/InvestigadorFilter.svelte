@@ -1,6 +1,6 @@
 <script lang="ts">
 	import Button from '$lib/components/atoms/Button.svelte';
-	import type { Investigador } from '$lib/supabase';
+	import type { Investigador } from '$lib/models/investigator.model';
 
 	export let investigadores: Investigador[] = [];
 	export let filtrados: Investigador[] = [];

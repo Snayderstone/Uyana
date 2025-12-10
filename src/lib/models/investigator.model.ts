@@ -4,14 +4,17 @@
  * Modelo para investigadores/participantes, usado por la UI.
  */
 
-export type InvestigatorModel = {
-    id: number;
-    name: string;
-    email: string;
-    gender: string;
-    accredited: boolean;
+// src/lib/models/investigator.model.ts
 
-    career?: any;     // carrera asociada
-    faculty?: any;    // facultad asociada
-    socials?: any[];  // redes sociales procesadas
+export type Investigador = {
+  id: number;
+  foto: string;
+  nombre: string;
+  email: string;
+  linea_investigacion: string;
+  facultad: string;
+  redes: string;
+  // Propiedades calculadas para la interfaz
+  redesArray?: Array<{ nombre: string; url: string }>;
 };
+

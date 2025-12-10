@@ -3,7 +3,7 @@
 	import InvestigadorFilter from '$lib/components/molecules/InvestigadorFilter.svelte';
 	import InvestigadoresChart from '$lib/components/organisms/InvestigadoresChart.svelte';
 	import Button from '$lib/components/atoms/Button.svelte';
-	import type { Investigador } from '$lib/supabase';
+	import type { Investigador } from '$lib/models/investigator.model';
 
 	export let investigadores: Investigador[] = [];
 

@@ -1,8 +1,7 @@
 <script lang="ts">
 	import Card from '$lib/components/atoms/Card.svelte';
-	import type { Investigador } from '$lib/supabase';
+	import type { Investigador } from '$lib/models/investigator.model';
 	import ExternalLink from '$lib/icons/external-link.svelte';
-
 	export let investigador: Investigador;
 </script>
 

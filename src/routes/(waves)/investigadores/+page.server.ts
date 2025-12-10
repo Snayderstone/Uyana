@@ -1,4 +1,4 @@
-import { obtenerInvestigadores } from '$lib/supabase';
+import { obtenerInvestigadores } from '$lib/services/investigator.service';
 
 export async function load() {
 	// Obtener los investigadores desde Supabase

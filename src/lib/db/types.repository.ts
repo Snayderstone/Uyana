@@ -1,28 +1,55 @@
 /**
  * Tipo Repository
- * -------------------
- * Este repositorio contiene TODAS las consultas directas a la base
- * relacionadas con la tabla `Tipo` y sus tablas puente.
- *
- * IMPORTANTE:
- *  - No incluir lógica de negocio
- *  - No transformar datos
- *  - No agregar filtros complejos
- *  - SOLO consultas puras a Supabase (BASE DE DATOS)
+ * ---------------
+ * Consultas directas a la tabla `tipos`.
  */
 
 import { supabase } from './supabase.client';
 
-// Aquí definiremos todas las funciones de consulta
 export const TipoRepository = {
+  // Obtener tipo por id
+  async getById(id: number) {
+    const { data, error } = await supabase
+      .from('tipos')
+      .select('*')
+      .eq('id', id)
+      .single();
 
-    // TODO: obtener Tipo por id
-    async getById(id: number) { /* implementar */ },
+    if (error) {
+      console.error('❌ TipoRepository.getById():', error);
+      return null;
+    }
 
-    // TODO: obtener todos los Tipo
-    async getAll() { /* implementar */ },
+    return data;
+  },
 
-    // TODO: obtener Tipo con filtros básicos
-    async getWithFilters(filters: any) { /* implementar */ },
+  // Obtener todos los tipos
+  async getAll() {
+    const { data, error } = await supabase.from('tipos').select('*');
 
+    if (error) {
+      console.error('❌ TipoRepository.getAll():', error);
+      return [];
+    }
+
+    return data ?? [];
+  },
+
+  // Obtener tipos con filtros básicos
+  async getWithFilters(filters: { nombre?: string }) {
+    let query = supabase.from('tipos').select('*');
+
+    if (filters.nombre) {
+      query = query.ilike('nombre', `%${filters.nombre}%`);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      console.error('❌ TipoRepository.getWithFilters():', error);
+      return [];
+    }
+
+    return data ?? [];
+  }
 };
