@@ -349,7 +349,7 @@
 			{#if map}
 				<ProjectsChoropleth
 					{map}
-					{mapLevel} 
+					{mapLevel}
 					{filteredProyectos}
 					{highlightedFacultad}
 					on:viewFacultyProjects={handleViewFacultyProjects}
@@ -369,21 +369,21 @@
 			<!-- Controles de mapa integrados -->
 			<div class="map-controls">
 				<div class="map-level-toggle">
-  <button
-    class="map-level-btn"
-    class:active={mapLevel === 'faculty'}
-    on:click={() => (mapLevel = 'faculty')}
-  >
-    Facultades
-  </button>
-  <button
-    class="map-level-btn"
-    class:active={mapLevel === 'institution'}
-    on:click={() => (mapLevel = 'institution')}
-  >
-    Instituciones
-  </button>
-</div>
+					<button
+						class="map-level-btn"
+						class:active={mapLevel === 'faculty'}
+						on:click={() => (mapLevel = 'faculty')}
+					>
+						Facultades
+					</button>
+					<button
+						class="map-level-btn"
+						class:active={mapLevel === 'institution'}
+						on:click={() => (mapLevel = 'institution')}
+					>
+						Instituciones
+					</button>
+				</div>
 				<!-- Botón para alternar pantalla completa -->
 				<button
 					class="map-control-btn"
@@ -1233,29 +1233,28 @@
 		padding: 10px;
 	}
 	.map-level-toggle {
-  display: flex;
-  gap: 4px;
-  margin-top: 8px;
+		display: flex;
+		gap: 4px;
+		margin-top: 8px;
 
-  .map-level-btn {
-    background: var(--color--card-background);
-    border: 1px solid color-mix(in srgb, var(--color--text) 15%, transparent);
-    border-radius: 999px;
-    padding: 4px 10px;
-    font-size: 0.75rem;
-    cursor: pointer;
-    transition: all 0.2s ease;
-  }
+		.map-level-btn {
+			background: var(--color--card-background);
+			border: 1px solid color-mix(in srgb, var(--color--text) 15%, transparent);
+			border-radius: 999px;
+			padding: 4px 10px;
+			font-size: 0.75rem;
+			cursor: pointer;
+			transition: all 0.2s ease;
+		}
 
-  .map-level-btn.active {
-    background: var(--color--primary);
-    color: white;
-    border-color: var(--color--primary);
-  }
+		.map-level-btn.active {
+			background: var(--color--primary);
+			color: white;
+			border-color: var(--color--primary);
+		}
 
-  .map-level-btn:not(.active):hover {
-    background: color-mix(in srgb, var(--color--primary) 10%, var(--color--card-background));
-  }
-}
-
+		.map-level-btn:not(.active):hover {
+			background: color-mix(in srgb, var(--color--primary) 10%, var(--color--card-background));
+		}
+	}
 </style>

@@ -11,35 +11,35 @@ import type { GlobalStats } from '$lib/services/analytics.service';
 import { RelacionesSQLRepository } from '$lib/db/relations.repository';
 
 export type Proyecto = {
-	id: number;
-	codigo: string;
-	titulo: string;
-	tipo_proyecto: string;
-	objetivo: string;
-	estado: string;
-	facultad_o_entidad_o_area_responsable: string;
-	fecha_inicio: string;
-	fecha_fin_planeado: string;
-	coordinador_director: string;
-	correo_electronico_coordinador: string;
-	campo_amplio: string;
-	campo_especifico: string;
-	campo_detallado: string;
-	alcance_territorial: string;
-	investigadores_acreditados_senescyt: string;
-	fuente_financiamiento: string;
+  id: number;
+  codigo: string;
+  titulo: string;
+  tipo_proyecto: string;
+  objetivo: string;
+  estado: string;
+  facultad_o_entidad_o_area_responsable: string;
+  fecha_inicio: string;
+  fecha_fin_planeado: string;
+  coordinador_director: string;
+  correo_electronico_coordinador: string;
+  campo_amplio: string;
+  campo_especifico: string;
+  campo_detallado: string;
+  alcance_territorial: string;
+  investigadores_acreditados_senescyt: string;
+  fuente_financiamiento: string;
 };
 
 export async function obtenerProyectos(): Promise<Proyecto[]> {
-	// 👇 OJO: cambia 'proyectos' por el nombre real si tu tabla/vista se llama distinto
-	const { data, error } = await supabase.from('proyectos').select('*');
+  // 👇 OJO: cambia 'proyectos' por el nombre real si tu tabla/vista se llama distinto
+  const { data, error } = await supabase.from('proyectos').select('*');
 
-	if (error) {
-		console.error('Error al obtener proyectos:', error);
-		return [];
-	}
+  if (error) {
+    console.error('Error al obtener proyectos:', error);
+    return [];
+  }
 
-	return data || [];
+  return data || [];
 }
 // Versión nueva: delega al AnalyticsService (BD normalizada)
 export async function obtenerProyectosPorEstado(): Promise<{ estado: string; cantidad: number }[]> {
@@ -67,25 +67,25 @@ export async function obtenerProyectosPorCampoAmplio(): Promise<
 
 
 export async function obtenerProyectosPorAlcance(): Promise<
-	{ alcance: string; cantidad: number }[]
+  { alcance: string; cantidad: number }[]
 > {
-	const proyectos = await obtenerProyectos();
+  const proyectos = await obtenerProyectos();
 
-	if (proyectos.length === 0) return [];
+  if (proyectos.length === 0) return [];
 
-	// Agrupar por alcance territorial
-	const alcanceCount: Record<string, number> = {};
+  // Agrupar por alcance territorial
+  const alcanceCount: Record<string, number> = {};
 
-	proyectos.forEach((proyecto) => {
-		const alcance = proyecto.alcance_territorial || 'No especificado';
-		alcanceCount[alcance] = (alcanceCount[alcance] || 0) + 1;
-	});
+  proyectos.forEach((proyecto) => {
+    const alcance = proyecto.alcance_territorial || 'No especificado';
+    alcanceCount[alcance] = (alcanceCount[alcance] || 0) + 1;
+  });
 
-	// Convertir a array para mostrar en gráfica
-	return Object.entries(alcanceCount).map(([alcance, cantidad]) => ({
-		alcance,
-		cantidad
-	}));
+  // Convertir a array para mostrar en gráfica
+  return Object.entries(alcanceCount).map(([alcance, cantidad]) => ({
+    alcance,
+    cantidad
+  }));
 }
 export async function obtenerProyectosPorFinanciamiento(): Promise<
   { fuente: string; cantidad: number }[]

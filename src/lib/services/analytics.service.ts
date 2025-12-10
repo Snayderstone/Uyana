@@ -126,19 +126,19 @@ export const AnalyticsService = {
       proyectosPorTipoPrincipal
     };
   },
-    /**
-   * Proyectos agrupados por estado.
-   *
-   * Devuelve:
-   *  [
-   *    { estado: 'En ejecución', cantidad: 120 },
-   *    { estado: 'Cerrado', cantidad: 30 },
-   *    ...
-   *  ]
-   *
-   * Usa la BD normalizada:
-   *  - proyectos + join a estado (a través de RelacionesSQLRepository)
-   */
+  /**
+ * Proyectos agrupados por estado.
+ *
+ * Devuelve:
+ *  [
+ *    { estado: 'En ejecución', cantidad: 120 },
+ *    { estado: 'Cerrado', cantidad: 30 },
+ *    ...
+ *  ]
+ *
+ * Usa la BD normalizada:
+ *  - proyectos + join a estado (a través de RelacionesSQLRepository)
+ */
   async getProjectsByState(): Promise<{ estado: string; cantidad: number }[]> {
     // Traemos proyectos con su objeto `estado`
     const projects = await RelacionesSQLRepository.getAllProjectsWithEstado();
@@ -159,20 +159,20 @@ export const AnalyticsService = {
       cantidad
     }));
   },
-    /**
-   * Proyectos agrupados por tipo de proyecto.
-   *
-   * Devuelve:
-   *  [
-   *    { tipo: 'Investigación', cantidad: 200 },
-   *    { tipo: 'Vinculación', cantidad: 80 },
-   *    ...
-   *  ]
-   *
-   * Usa la relación:
-   *  - proyecto_tipo
-   *  - tipos (catálogo, campo `nombre`)
-   */
+  /**
+ * Proyectos agrupados por tipo de proyecto.
+ *
+ * Devuelve:
+ *  [
+ *    { tipo: 'Investigación', cantidad: 200 },
+ *    { tipo: 'Vinculación', cantidad: 80 },
+ *    ...
+ *  ]
+ *
+ * Usa la relación:
+ *  - proyecto_tipo
+ *  - tipos (catálogo, campo `nombre`)
+ */
   async getProjectsByType(): Promise<{ tipo: string; cantidad: number }[]> {
     const projectTypes = await RelacionesSQLRepository.getProjectTypesWithNames();
 
@@ -191,20 +191,20 @@ export const AnalyticsService = {
       .map(([tipo, cantidad]) => ({ tipo, cantidad }))
       .sort((a, b) => b.cantidad - a.cantidad);
   },
-    /**
-   * Proyectos agrupados por facultad (BD normalizada).
-   *
-   * Usa la relación:
-   *  facultades → carreras → participantes → proyecto_participante
-   * a través de `ProjectsRepository.getProjectCountByFacultyForMap()`.
-   *
-   * Devuelve:
-   *  [
-   *    { facultad: 'Facultad de Ingeniería...', cantidad: 42 },
-   *    { facultad: 'Facultad de Ciencias...', cantidad: 30 },
-   *    ...
-   *  ]
-   */
+  /**
+ * Proyectos agrupados por facultad (BD normalizada).
+ *
+ * Usa la relación:
+ *  facultades → carreras → participantes → proyecto_participante
+ * a través de `ProjectsRepository.getProjectCountByFacultyForMap()`.
+ *
+ * Devuelve:
+ *  [
+ *    { facultad: 'Facultad de Ingeniería...', cantidad: 42 },
+ *    { facultad: 'Facultad de Ciencias...', cantidad: 30 },
+ *    ...
+ *  ]
+ */
   async getProjectsByFaculty(): Promise<{ facultad: string; cantidad: number }[]> {
     const facultiesForMap = await ProjectsRepository.getProjectCountByFacultyForMap();
 
@@ -219,19 +219,19 @@ export const AnalyticsService = {
       }))
       .sort((a, b) => b.cantidad - a.cantidad);
   },
-    /**
-   * Proyectos agrupados por facultad.
-   *
-   * Devuelve:
-   *  [
-   *    { facultad: 'Facultad de Ingeniería', cantidad: 120 },
-   *    { facultad: 'Facultad de Medicina',  cantidad: 80 },
-   *    ...
-   *  ]
-   *
-   * Usa la BD normalizada:
-   *  - facultades → carreras → participantes → proyecto_participante
-   */
+  /**
+ * Proyectos agrupados por facultad.
+ *
+ * Devuelve:
+ *  [
+ *    { facultad: 'Facultad de Ingeniería', cantidad: 120 },
+ *    { facultad: 'Facultad de Medicina',  cantidad: 80 },
+ *    ...
+ *  ]
+ *
+ * Usa la BD normalizada:
+ *  - facultades → carreras → participantes → proyecto_participante
+ */
   async getProjectsByFacultyOverview(): Promise<{ facultad: string; cantidad: number }[]> {
     const facultyProjects = await ProjectsRepository.getProjectIdsByFaculty();
 
@@ -251,23 +251,23 @@ export const AnalyticsService = {
     console.warn('AnalyticsService.getInstitutionStats() aún no está implementado');
     return null;
   },
-    /**
-   * Estadísticas por facultad (versión normalizada)
-   *
-   * Devuelve:
-   *  {
-   *    totalProyectos: number;      // total global en la BD
-   *    cantidadFacultad: number;    // proyectos asociados a esa facultad
-   *    estados: {
-   *      ejecucion: number;
-   *      cierre: number;
-   *      cerrados: number;
-   *    }
-   *  }
-   *
-   * La asociación proyecto ↔ facultad se hace vía:
-   *  facultades → carreras → participantes → proyecto_participante → proyectos
-   */
+  /**
+ * Estadísticas por facultad (versión normalizada)
+ *
+ * Devuelve:
+ *  {
+ *    totalProyectos: number;      // total global en la BD
+ *    cantidadFacultad: number;    // proyectos asociados a esa facultad
+ *    estados: {
+ *      ejecucion: number;
+ *      cierre: number;
+ *      cerrados: number;
+ *    }
+ *  }
+ *
+ * La asociación proyecto ↔ facultad se hace vía:
+ *  facultades → carreras → participantes → proyecto_participante → proyectos
+ */
   async getFacultyStats(nombreFacultad: string): Promise<{
     totalProyectos: number;
     cantidadFacultad: number;
@@ -332,7 +332,7 @@ export const AnalyticsService = {
       estados
     };
   },
-   /** 🔹 NUEVO: proyectos agrupados por área de conocimiento */
+  /** 🔹 NUEVO: proyectos agrupados por área de conocimiento */
   async getProjectsByArea(): Promise<{ area: string; cantidad: number }[]> {
     const projectAreas = await RelacionesSQLRepository.getProjectAreasWithNames();
     if (!projectAreas.length) return [];

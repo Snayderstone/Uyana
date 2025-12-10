@@ -90,7 +90,7 @@
 					<circle cx="12" cy="7" r="4" />
 					<path d="M5.5 21a8.38 8.38 0 0 1 13 0" />
 				</svg>
-				Participantes
+				Mapa de Participantes
 			</button>
 			<button
 				class="tab-button"
