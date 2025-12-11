@@ -13,16 +13,54 @@
 
 import { supabase } from './supabase.client';
 
-// Aquí definiremos todas las funciones de consulta
 export const InstitucionRepository = {
+  // Obtener una institución por id
+  async getById(id: number) {
+    const { data, error } = await supabase
+      .from('instituciones')
+      .select('id, nombre, geometry')
+      .eq('id', id)
+      .maybeSingle(); // o .single() si estás seguro
 
-    // TODO: obtener Institucion por id
-    async getById(id: number) { /* implementar */ },
+    if (error) {
+      console.error('Error InstitucionRepository.getById():', error);
+      return null;
+    }
 
-    // TODO: obtener todos los Institucion
-    async getAll() { /* implementar */ },
+    return data;
+  },
 
-    // TODO: obtener Institucion con filtros básicos
-    async getWithFilters(filters: any) { /* implementar */ },
+  // Obtener todas las instituciones
+  async getAll() {
+    const { data, error } = await supabase
+      .from('instituciones')
+      .select('id, nombre, geometry');
 
+    if (error) {
+      console.error('Error InstitucionRepository.getAll():', error);
+      return [];
+    }
+
+    return data ?? [];
+  },
+
+  // Filtros básicos (de momento opcional, puedes adaptarlo a tus columnas reales)
+  async getWithFilters(filters: { nombreContiene?: string } = {}) {
+    let query = supabase
+      .from('instituciones')
+      .select('id, nombre, geometry');
+
+    if (filters.nombreContiene) {
+      query = query.ilike('nombre', `%${filters.nombreContiene}%`);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      console.error('Error InstitucionRepository.getWithFilters():', error);
+      return [];
+    }
+
+    return data ?? [];
+  }
 };

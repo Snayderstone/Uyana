@@ -15,7 +15,7 @@
 
 	export let map: Map | null = null;
 	//export const proyectos: Proyecto[] = []; // Convertido a const para evitar advertencia de exportación no utilizada
-	export const proyectos: Proyecto[] = [];
+	export let proyectos: Proyecto[] = [];
 	export let filteredProyectos: Proyecto[] = [];
 	export let highlightedFacultad: string | null = null; // Facultad que debe ser destacada
 
@@ -46,14 +46,16 @@
 	rankingData = [];
 
 	$: {
-	rankingData = Object.entries(valueById)
-		.map(([facultad, cantidad]) => {
-			const center = centroides[facultad];
-			if (!center) return null; // si no hay centro, no dibujamos marcador
-			return { facultad, cantidad, center };
-		})
-		.filter((d): d is { facultad: string; cantidad: number; center: [number, number] } => d !== null);
-}
+		rankingData = Object.entries(valueById)
+			.map(([facultad, cantidad]) => {
+				const center = centroides[facultad];
+				if (!center) return null; // si no hay centro, no dibujamos marcador
+				return { facultad, cantidad, center };
+			})
+			.filter(
+				(d): d is { facultad: string; cantidad: number; center: [number, number] } => d !== null
+			);
+	}
 
 	// Cargamos los datos al iniciar
 	onMount(async () => {
@@ -92,6 +94,21 @@
 		// "Facultad De Ciencias Agrícolas"
 		return `Facultad De ${title}`;
 	}
+	// 🔹 Helper genérico: devuelve la clave que se usa tanto para el GeoJSON
+	// como para el valueById, dependiendo del nivel del mapa
+	function getEntityKey(level: MapLevel, rawName?: string | null): string {
+		if (!rawName) return 'No especificado';
+
+		const trimmed = rawName.trim();
+
+		if (level === 'faculty') {
+			// Facultades -> usamos la normalización que ya tenías
+			return normalizarNombreFacultad(trimmed);
+		}
+
+		// Instituciones -> por ahora solo recortamos espacios
+		return trimmed;
+	}
 
 	// Función para cargar datos de proyectos por facultad
 	async function cargarDatos(level: MapLevel) {
@@ -104,16 +121,8 @@
 				facultad: row.titulo, // nombre de la facultad o institución
 				cantidad: row.projectCount // número de proyectos
 			}));
-
-			// --- función auxiliar para la clave ---
-			const getKey = (rowTitle: string): string => {
-				if (level === 'faculty') {
-					// usamos tu normalización
-					return normalizarNombreFacultad(rowTitle);
-				}
-				// en instituciones usamos el nombre tal cual (puedes ajustar si ves diferencias)
-				return rowTitle.trim();
-			};
+			// Usamos el helper genérico para obtener la clave según el nivel
+			const getKey = (rowTitle: string): string => getEntityKey(level, rowTitle);
 
 			// 3) valueById → se usa para colorear el mapa
 			valueById = {};
@@ -281,36 +290,52 @@
 
 	// Función personalizada para el popup
 	function formatPopup(props: any, id: string, value: number | null): string {
-		const facultad = props?.facultad_o_entidad_o_area_responsable || id || 'Facultad';
+		const facultad = props?.facultad_o_entidad_o_area_responsable || id || 'Entidad';
 		const icono = props?.icono || '🎓';
 		const cantidad = value ?? 0;
 		const decano = props?.decano || '';
 		const subdecano = props?.subdecano || '';
-
-		// Simplificamos las carreras si son demasiadas
+		//recuperar carreras si existen y acortarla
 		let carreras = props?.carreras || '';
-		if (carreras.length > 60) {
+		if (typeof carreras === 'string' && carreras.length > 60) {
 			carreras = carreras.substring(0, 57) + '...';
 		}
-
-		// Encontrar proyectos de esta facultad
-		const proyectosFacultad = filteredProyectos.filter(
-			(p) => p.facultad_o_entidad_o_area_responsable === facultad
-		);
+		const level: MapLevel = props?.level || mapLevel;
+		// 🔹 Elegimos la lista base:
+		//    - si hay proyectos filtrados → usamos esos
+		//    - si no → usamos TODOS los proyectos que recibe el componente
+		const listaBase: Proyecto[] = filteredProyectos.length > 0 ? filteredProyectos : proyectos;
+		// 🔹 Proyectos asociados a esta entidad (facultad o institución)
+		let proyectosEntidad: Proyecto[] = [];
+		if (listaBase.length > 0) {
+			if (level === 'faculty') {
+				const keyPopup = getEntityKey('faculty', facultad);
+				proyectosEntidad = listaBase.filter((p) => {
+					const raw = p.facultad_o_entidad_o_area_responsable || '';
+					return getEntityKey('faculty', raw) === keyPopup;
+				});
+			} else {
+				const keyPopup = getEntityKey('institution', facultad);
+				proyectosEntidad = listaBase.filter((p) => {
+					const raw = p.institucion || '';
+					return getEntityKey('institution', raw) === keyPopup;
+				});
+			}
+		}
 
 		// Datos estadísticos adicionales
-		const proyectosActivos = proyectosFacultad.filter((p) => p.estado === 'En ejecución').length;
-		const proyectosCierre = proyectosFacultad.filter((p) => p.estado === 'En cierre').length;
-		const proyectosCerrados = proyectosFacultad.filter(
+		const proyectosActivos = proyectosEntidad.filter((p) => p.estado === 'En ejecución').length;
+		const proyectosCierre = proyectosEntidad.filter((p) => p.estado === 'En cierre').length;
+		const proyectosCerrados = proyectosEntidad.filter(
 			(p) => p.estado !== 'En ejecución' && p.estado !== 'En cierre'
 		).length;
-		const promedioDuracion = calcularPromedioDuracion(proyectosFacultad);
+		const promedioDuracion = calcularPromedioDuracion(proyectosEntidad);
 
 		// Determinamos el color según el número de proyectos
 		const colorClass = cantidad > 15 ? 'high' : cantidad > 7 ? 'medium' : 'low';
 
 		// Mostrar los proyectos más recientes primero (ordenados por fecha)
-		const proyectosOrdenados = [...proyectosFacultad].sort((a, b) => {
+		const proyectosOrdenados = [...proyectosEntidad].sort((a, b) => {
 			const fechaA = a.fecha_inicio ? a.fecha_inicio.split('/').reverse().join('') : '';
 			const fechaB = b.fecha_inicio ? b.fecha_inicio.split('/').reverse().join('') : '';
 			return fechaB.localeCompare(fechaA);
@@ -321,9 +346,9 @@
 
 		// Lista de proyectos adaptativa
 		const proyectosListaHTML =
-			proyectosFacultad.length > 0
+			proyectosEntidad.length > 0
 				? `<div class="proyecto-lista">
-          <h4>Proyectos recientes (${proyectosFacultad.length}):</h4>
+          <h4>Proyectos recientes (${proyectosEntidad.length}):</h4>
           <ul>
             ${proyectosOrdenados
 							.slice(0, maxProyectos)
@@ -358,9 +383,9 @@
 							})
 							.join('')}
             ${
-							proyectosFacultad.length > maxProyectos
+							proyectosEntidad.length > maxProyectos
 								? `<li class="ver-mas"><em>Y ${
-										proyectosFacultad.length - maxProyectos
+										proyectosEntidad.length - maxProyectos
 								  } más...</em></li>`
 								: ''
 						}
@@ -370,18 +395,18 @@
 
 		// Gráfico simple de distribución de estados
 		const distribucionEstados =
-			proyectosFacultad.length > 0
+			proyectosEntidad.length > 0
 				? `
 		<div class="distribucion-wrapper" aria-label="Distribución de proyectos por estado">
 			<div class="distribucion-chart">
 				<div class="barra barra-activo" style="width: ${
-					proyectosFacultad.length > 0 ? (proyectosActivos / proyectosFacultad.length) * 100 : 0
+					proyectosEntidad.length > 0 ? (proyectosActivos / proyectosEntidad.length) * 100 : 0
 				}%" title="En ejecución: ${proyectosActivos}"></div>
 				<div class="barra barra-cierre" style="width: ${
-					proyectosFacultad.length > 0 ? (proyectosCierre / proyectosFacultad.length) * 100 : 0
+					proyectosEntidad.length > 0 ? (proyectosCierre / proyectosEntidad.length) * 100 : 0
 				}%" title="En cierre: ${proyectosCierre}"></div>
 				<div class="barra barra-cerrado" style="width: ${
-					proyectosFacultad.length > 0 ? (proyectosCerrados / proyectosFacultad.length) * 100 : 0
+					proyectosEntidad.length > 0 ? (proyectosCerrados / proyectosEntidad.length) * 100 : 0
 				}%" title="Cerrados: ${proyectosCerrados}"></div>
 			</div>
 			<div class="distribucion-legend">
@@ -433,7 +458,7 @@
 					: ''
 			}
       ${
-				proyectosFacultad.length > 0
+				proyectosEntidad.length > 0
 					? `
             <div class="stat">
               <span class="stat-label">Promedio duración:</span>
@@ -444,7 +469,7 @@
 			}
     </div>
     
-    ${proyectosFacultad.length > 0 ? distribucionEstados : ''}
+    ${proyectosEntidad.length > 0 ? distribucionEstados : ''}
     ${proyectosListaHTML}
     
     <div class="popup-footer">
@@ -606,53 +631,53 @@
 
 		return datos;
 	}
-		// Actualizar los valores cuando cambien los proyectos filtrados
+	// Actualizar los valores cuando cambien los proyectos filtrados
 	$: {
-		// 🔹 Solo usamos los filtrados si REALMENTE hay filtros activos
+		// 🔹 Si hay filtros activos, usamos SIEMPRE los proyectos filtrados
 		if (hasActiveFilters && filteredProyectos.length > 0) {
-			// Crear una clave única basada en los IDs de los proyectos filtrados
-			const key = JSON.stringify(filteredProyectos.map((p) => p.id || p.titulo).sort());
+			const key = `${mapLevel}-${JSON.stringify(
+				filteredProyectos.map((p) => p.id || p.titulo).sort()
+			)}`;
 
-			// Solo recalcular si han cambiado los proyectos filtrados
 			if (memoizedFilteredProyectos.key !== key) {
-				console.info('Recalculando valores del mapa - cambio en proyectos filtrados');
+				console.info(
+					`Recalculando valores del mapa (nivel=${mapLevel}) - cambio en proyectos filtrados`
+				);
 
-				// Recalcular la cantidad de proyectos por facultad basado en los filtrados
-				const facultadCount: Record<string, number> = {};
+				const counts: Record<string, number> = {};
 
 				filteredProyectos.forEach((proyecto) => {
-					let facultad = proyecto.facultad_o_entidad_o_area_responsable || 'No especificado';
-					// Normalizar el nombre de la facultad para asegurar consistencia con el GeoJSON
-					facultad = normalizarNombreFacultad(facultad);
-					facultadCount[facultad] = (facultadCount[facultad] || 0) + 1;
+					const rawName =
+						mapLevel === 'faculty'
+							? proyecto.facultad_o_entidad_o_area_responsable
+							: proyecto.institucion;
+
+					const entityKey = getEntityKey(mapLevel, rawName || 'No especificado');
+					counts[entityKey] = (counts[entityKey] || 0) + 1;
 				});
 
-				// Guardar en la caché de memoización
 				memoizedFilteredProyectos.key = key;
-				memoizedFilteredProyectos.data = facultadCount;
-
-				// Actualizar el valueById para el mapa coroplético
-				valueById = facultadCount;
+				memoizedFilteredProyectos.data = counts;
+				valueById = counts;
 			}
 		} else if (proyectosPorFacultad.length > 0) {
-			// 🔹 Sin filtros activos → usamos los agregados globales (ranking completo)
-			if (memoizedFilteredProyectos.key !== 'all') {
-				console.info('Usando datos completos de proyectos por facultad');
+			// 🔹 Sin filtros activos → usamos los datos agregados devueltos por ProjectService
+			const key = `all-${mapLevel}`;
+			if (memoizedFilteredProyectos.key !== key) {
+				console.info(`Usando datos completos de proyectos para nivel=${mapLevel}`);
 
-				valueById = {};
+				const counts: Record<string, number> = {};
 				proyectosPorFacultad.forEach((item) => {
-					// Normalizar el nombre de la facultad para que coincida con el GeoJSON
-					const facultadKey = normalizarNombreFacultad(item.facultad);
-					valueById[facultadKey] = item.cantidad;
+					const entityKey = getEntityKey(mapLevel, item.facultad);
+					counts[entityKey] = item.cantidad;
 				});
 
-				// Actualizar la memoización
-				memoizedFilteredProyectos.key = 'all';
-				memoizedFilteredProyectos.data = { ...valueById };
+				memoizedFilteredProyectos.key = key;
+				memoizedFilteredProyectos.data = counts;
+				valueById = counts;
 			}
 		}
 	}
-
 </script>
 
 {#if map}

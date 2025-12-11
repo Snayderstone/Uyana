@@ -124,7 +124,7 @@ export type ProyectoFlat = {
   // Fuente(s) de financiamiento formateada
   fuente_financiamiento: string;
 
-    // 🔹 Nuevos campos de filtros
+    // 🔹 Nuevos campos de filtr
   anio_inicio: number | null;
   tiene_investigadores_acreditados: boolean;
   numero_investigadores_acreditados: number;

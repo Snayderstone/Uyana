@@ -9,10 +9,11 @@
 
 	export let proyectos: Proyecto[] = [];
 	export let mapLevel: MapLevel = 'faculty';
+	export let institucionesDisponibles: string[] = [];
 
 	const dispatch = createEventDispatcher();
 
-		// Opciones para filtros (se generan automáticamente de los datos)
+	// Opciones para filtros (se generan automáticamente de los datos)
 	let facultades: string[] = [];
 	let estados: string[] = [];
 	let camposAmplios: string[] = [];
@@ -63,14 +64,19 @@
 	}
 	$: console.log('[ProjectFilters] prop proyectos cambió, length =', proyectos.length);
 	// Extraer opciones únicas de los datos de proyectos
-		$: {
+	$: {
 		if (proyectos.length > 0) {
 			facultades = [
 				...new Set(proyectos.map((p) => p.facultad_o_entidad_o_area_responsable).filter(Boolean))
 			].sort();
-			instituciones = [
-				...new Set(proyectos.map((p) => p.institucion).filter(Boolean))
-			].sort();
+			// Si el padre nos pasa la lista desde el mapa, usamos esa.
+			// Si no, seguimos usando lo derivado de los proyectos como fallback.
+			if (institucionesDisponibles.length > 0) {
+				instituciones = [...institucionesDisponibles].sort();
+			} else {
+				instituciones = [...new Set(proyectos.map((p) => p.institucion).filter(Boolean))].sort();
+			}
+
 			estados = [...new Set(proyectos.map((p) => p.estado).filter(Boolean))].sort();
 			camposAmplios = [...new Set(proyectos.map((p) => p.campo_amplio).filter(Boolean))].sort();
 			tiposProyecto = [...new Set(proyectos.map((p) => p.tipo_proyecto).filter(Boolean))].sort();
@@ -101,7 +107,7 @@
 			}
 		}
 	}
-		function aplicarFiltros() {
+	function aplicarFiltros() {
 		// Aplicar filtros a los proyectos
 		filteredProyectos = proyectos.filter((proyecto) => {
 			const query = filtroTexto.toLowerCase();
@@ -163,7 +169,7 @@
 		});
 
 		// Emitir evento cuando cambian los proyectos filtrados
-				{
+		{
 			dispatch('filter', filteredProyectos);
 
 			if (filtroFacultad) {
@@ -182,7 +188,7 @@
 			}
 		}
 	}
-		// Contar filtros activos
+	// Contar filtros activos
 	$: {
 		const baseFilters = [
 			filtroFacultad,
@@ -195,8 +201,7 @@
 		];
 
 		const yearFilterActive =
-			typeof filtroAnioInicioDesde === 'number' ||
-			typeof filtroAnioInicioHasta === 'number';
+			typeof filtroAnioInicioDesde === 'number' || typeof filtroAnioInicioHasta === 'number';
 
 		let count = baseFilters.filter(Boolean).length;
 
@@ -272,7 +277,7 @@
 		].filter((filter) => filter.value);
 	}
 	// Limpiar todos los filtros
-		function limpiarFiltros() {
+	function limpiarFiltros() {
 		filtroFacultad = '';
 		filtroEstado = '';
 		filtroCampoAmplio = '';
@@ -290,14 +295,16 @@
 			filtroAnioInicioHasta = '';
 		}
 
-		// Notificar que se ha eliminado la selección de facultad/institución
+		// 🔹 Al limpiar, los proyectos filtrados vuelven a ser TODOS
+		filteredProyectos = proyectos;
+		dispatch('filter', proyectos);
+
 		if (mapLevel === 'faculty') {
 			dispatch('facultadSelected', '');
 		} else {
 			dispatch('institucionSelected', '');
 		}
 
-		// Mostrar mensaje de éxito
 		showClearSuccess = true;
 		setTimeout(() => {
 			showClearSuccess = false;
@@ -369,49 +376,49 @@
 			{/if}
 		</div>
 		<Sparkles>
-		<div
-			class="filters-toggle"
-			on:click={toggleFilters}
-			on:keydown={(e) => e.key === 'Enter' && toggleFilters()}
-			tabindex="0"
-			role="button"
-			aria-expanded={filtersExpanded}
-			aria-label={filtersExpanded ? 'Colapsar filtros' : 'Expandir filtros'}
-		>
-			<svg
-				xmlns="http://www.w3.org/2000/svg"
-				width="18"
-				height="18"
-				viewBox="0 0 24 24"
-				fill="none"
-				stroke="currentColor"
-				stroke-width="2"
-				stroke-linecap="round"
-				stroke-linejoin="round"
+			<div
+				class="filters-toggle"
+				on:click={toggleFilters}
+				on:keydown={(e) => e.key === 'Enter' && toggleFilters()}
+				tabindex="0"
+				role="button"
+				aria-expanded={filtersExpanded}
+				aria-label={filtersExpanded ? 'Colapsar filtros' : 'Expandir filtros'}
 			>
-				<polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
-			</svg>
-			<span class="filter-count">
-				{#if activeFilterCount}
-					<span class="filter-badge">{activeFilterCount}</span>
-				{/if}
-				Filtros
-			</span>
-			<svg
-				class:rotate={filtersExpanded}
-				xmlns="http://www.w3.org/2000/svg"
-				width="16"
-				height="16"
-				viewBox="0 0 24 24"
-				fill="none"
-				stroke="currentColor"
-				stroke-width="2"
-				stroke-linecap="round"
-				stroke-linejoin="round"
-			>
-				<polyline points="6 9 12 15 18 9" />
-			</svg>
-		</div>
+				<svg
+					xmlns="http://www.w3.org/2000/svg"
+					width="18"
+					height="18"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="2"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+				>
+					<polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+				</svg>
+				<span class="filter-count">
+					{#if activeFilterCount}
+						<span class="filter-badge">{activeFilterCount}</span>
+					{/if}
+					Filtros
+				</span>
+				<svg
+					class:rotate={filtersExpanded}
+					xmlns="http://www.w3.org/2000/svg"
+					width="16"
+					height="16"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="2"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+				>
+					<polyline points="6 9 12 15 18 9" />
+				</svg>
+			</div>
 		</Sparkles>
 	</div>
 
@@ -445,13 +452,13 @@
 				</div>
 			{/each}
 			<Sparkles>
-			<button
-				class="clear-all-chip"
-				on:click={limpiarFiltros}
-				aria-label="Limpiar todos los filtros"
-			>
-				Limpiar todo
-			</button>
+				<button
+					class="clear-all-chip"
+					on:click={limpiarFiltros}
+					aria-label="Limpiar todos los filtros"
+				>
+					Limpiar todo
+				</button>
 			</Sparkles>
 		</div>
 	{/if}
@@ -476,24 +483,24 @@
 							<polyline points="9 22 9 12 15 12 15 22" />
 						</svg>
 						{#if mapLevel === 'faculty'}
-    Facultad / Entidad
-  {:else}
-    Institución
-  {/if}
+							Facultad / Entidad
+						{:else}
+							Institución
+						{/if}
 					</label>
 					<select id="facultad" bind:value={filtroFacultad}>
-  {#if mapLevel === 'faculty'}
-    <option value="">Todas las facultades</option>
-    {#each facultades as facultad}
-      <option value={facultad}>{facultad}</option>
-    {/each}
-  {:else}
-    <option value="">Todas las instituciones</option>
-    {#each instituciones as institucion}
-      <option value={institucion}>{institucion}</option>
-    {/each}
-  {/if}
-</select>
+						{#if mapLevel === 'faculty'}
+							<option value="">Todas las facultades</option>
+							{#each facultades as facultad}
+								<option value={facultad}>{facultad}</option>
+							{/each}
+						{:else}
+							<option value="">Todas las instituciones</option>
+							{#each instituciones as institucion}
+								<option value={institucion}>{institucion}</option>
+							{/each}
+						{/if}
+					</select>
 				</div>
 
 				<div class="filter-group">
@@ -597,7 +604,6 @@
 						Fuente Financiamiento
 					</label>
 					<select id="financiamiento" bind:value={filtroFuenteFinanciamiento}>
-
 						<option value="">Todas las fuentes</option>
 						{#each fuentesFinanciamiento as fuente}
 							<option value={fuente}>
@@ -610,7 +616,7 @@
 						{/each}
 					</select>
 				</div>
-								<div class="filter-group">
+				<div class="filter-group">
 					<label for="acreditados">
 						<svg
 							xmlns="http://www.w3.org/2000/svg"
@@ -705,7 +711,7 @@
 					Limpiar filtros
 				</button>
 				<Sparkles>
-				<ButtonSvelte on:click={aplicarFiltros} color="secondary"> Aplicar </ButtonSvelte>
+					<ButtonSvelte on:click={aplicarFiltros} color="secondary">Aplicar</ButtonSvelte>
 				</Sparkles>
 				<div class="filter-stats">
 					<span class="results-count">
@@ -1021,7 +1027,7 @@
 				background: color-mix(in srgb, var(--color--primary) 30%, transparent);
 			}
 		}
-				.year-range {
+		.year-range {
 			display: flex;
 			align-items: center;
 			gap: 8px;
@@ -1038,8 +1044,7 @@
 				&:focus {
 					border-color: var(--color--primary);
 					outline: none;
-					box-shadow: 0 0 0 2px
-							color-mix(in srgb, var(--color--primary) 20%, transparent),
+					box-shadow: 0 0 0 2px color-mix(in srgb, var(--color--primary) 20%, transparent),
 						0 3px 8px rgba(0, 0, 0, 0.08);
 				}
 			}

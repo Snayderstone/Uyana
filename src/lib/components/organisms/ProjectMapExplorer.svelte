@@ -12,6 +12,7 @@
 	import ProjectsDashboard from '$lib/components/molecules/ProjectsDashboard.svelte';
 	import type { MapLevel } from '$lib/models/map.model';
 	import type { Map, LatLngTuple } from 'leaflet';
+	import { ProjectService } from '$lib/services/project.service';
 	// Props para el mapa
 	export let center: LatLngTuple = [-0.1992, -78.5059]; // Quito - UCE por defecto
 	export let zoom = 16;
@@ -48,6 +49,11 @@
 	let facultadesConProyectos = 0;
 	// Indica si hay filtros activos (lista filtrada distinta de la lista completa)
 	let hasActiveFilters = false;
+	let nombresInstituciones: string[] = [];
+	onMount(async () => {
+		const rows = await ProjectService.getProjectsByInstitutionForMap();
+		nombresInstituciones = [...new Set(rows.map((r) => r.titulo))].sort();
+	});
 
 	// Cuando cambia el nivel del mapa (facultad/institución), limpiamos selección y filtros actuales
 	$: if (mapLevel !== lastMapLevel) {
@@ -56,9 +62,8 @@
 		selectedFacultad = null;
 		highlightedFacultad = null;
 	}
-	$: hasActiveFilters =
-		filteredProyectos.length > 0 && filteredProyectos.length < proyectos.length;
-		// Recalcular estadísticas para la leyenda y el resumen según el nivel del mapa
+	$: hasActiveFilters = filteredProyectos.length > 0 && filteredProyectos.length < proyectos.length;
+	// Recalcular estadísticas para la leyenda y el resumen según el nivel del mapa
 	$: {
 		if (!proyectos || proyectos.length === 0) {
 			minProyectos = 0;
@@ -106,10 +111,9 @@
 			proyectos = await obtenerProyectos();
 			filteredProyectos = proyectos;
 			console.log('[ProjectMapExplorer] proyectos cargados:', {
-  				total: proyectos.length,
-  				ejemplo: proyectos[0] ?? null
+				total: proyectos.length,
+				ejemplo: proyectos[0] ?? null
 			});
-			
 		} catch (err) {
 			console.error('Error al cargar proyectos:', err);
 			error = 'Error al cargar los datos de proyectos';
@@ -120,42 +124,41 @@
 
 	// Manejar filtros
 	function handleFilter(event: CustomEvent<Proyecto[]>) {
-  filteredProyectos = event.detail;
+		filteredProyectos = event.detail;
 
-  // Determinar si hay una sola facultad/institución según el nivel
-  const regionesUnicas = [
-    ...new Set(
-      filteredProyectos
-        .map((p) =>
-          mapLevel === 'faculty'
-            ? p.facultad_o_entidad_o_area_responsable || 'No especificado'
-            : p.institucion || 'Sin institución'
-        )
-        .filter(Boolean)
-    )
-  ];
+		// Determinar si hay una sola facultad/institución según el nivel
+		const regionesUnicas = [
+			...new Set(
+				filteredProyectos
+					.map((p) =>
+						mapLevel === 'faculty'
+							? p.facultad_o_entidad_o_area_responsable || 'No especificado'
+							: p.institucion || 'Sin institución'
+					)
+					.filter(Boolean)
+			)
+		];
 
-  if (regionesUnicas.length === 1) {
-    highlightedFacultad = regionesUnicas[0];
-    selectedFacultad = regionesUnicas[0];
-  } else {
-    highlightedFacultad = null;
-  }
+		if (regionesUnicas.length === 1) {
+			highlightedFacultad = regionesUnicas[0];
+			selectedFacultad = regionesUnicas[0];
+		} else {
+			highlightedFacultad = null;
+		}
 
-  // Si hay filtros aplicados, mostrar automáticamente el panel de resultados
-  if (filteredProyectos.length < proyectos.length) {
-    showResultsPanel = true;
-    showFiltersPanel = false;
-    activePanelTab = 'results';
+		// Si hay filtros aplicados, mostrar automáticamente el panel de resultados
+		if (filteredProyectos.length < proyectos.length) {
+			showResultsPanel = true;
+			showFiltersPanel = false;
+			activePanelTab = 'results';
 
-    setTimeout(() => {
-      if (map) {
-        map.invalidateSize();
-      }
-    }, 300);
-  }
-}
-
+			setTimeout(() => {
+				if (map) {
+					map.invalidateSize();
+				}
+			}, 300);
+		}
+	}
 
 	// Manejar selección de facultad específica desde el filtro
 	function handleFacultadSelected(event: CustomEvent<string>) {
@@ -184,28 +187,28 @@
 		}
 	}
 	// Manejar selección de institución específica desde el filtro (cuando mapLevel === 'institution')
-function handleInstitutionSelected(event: CustomEvent<string>) {
-  const institucion = event.detail;
-  if (institucion) {
-    highlightedFacultad = institucion; // usamos el mismo string como “región” seleccionada
-    selectedFacultad = institucion;
+	function handleInstitutionSelected(event: CustomEvent<string>) {
+		const institucion = event.detail;
+		if (institucion) {
+			highlightedFacultad = institucion; // usamos el mismo string como “región” seleccionada
+			selectedFacultad = institucion;
 
-    showFiltersPanel = false;
-    showResultsPanel = true;
-    activePanelTab = 'results';
+			showFiltersPanel = false;
+			showResultsPanel = true;
+			activePanelTab = 'results';
 
-    setTimeout(() => {
-      showResultsPanel = true;
-      activePanelTab = 'results';
-      if (map) {
-        map.invalidateSize();
-      }
-    }, 500);
-  } else {
-    highlightedFacultad = null;
-    selectedFacultad = null;
-  }
-}
+			setTimeout(() => {
+				showResultsPanel = true;
+				activePanelTab = 'results';
+				if (map) {
+					map.invalidateSize();
+				}
+			}, 500);
+		} else {
+			highlightedFacultad = null;
+			selectedFacultad = null;
+		}
+	}
 
 	// Manejar selección de facultad desde el mapa
 	function handleViewFacultyProjects(event: CustomEvent<string>) {
@@ -412,7 +415,7 @@ function handleInstitutionSelected(event: CustomEvent<string>) {
 					{mapLevel}
 					{filteredProyectos}
 					{highlightedFacultad}
-					hasActiveFilters={hasActiveFilters}
+					{hasActiveFilters}
 					on:viewFacultyProjects={handleViewFacultyProjects}
 					on:mapClick={handleMapClick}
 					on:resetHighlights={() => (highlightedFacultad = null)}
@@ -420,14 +423,14 @@ function handleInstitutionSelected(event: CustomEvent<string>) {
 			{/if}
 
 			<div class="map-legend-container">
-  <ProjectsMapLegend
-    title={mapLevel === 'faculty'
-      ? 'Proyectos por Facultad/Entidad'
-      : 'Proyectos por Institución'}
-    minValue={minProyectos}
-    maxValue={maxProyectos}
-  />
-</div>
+				<ProjectsMapLegend
+					title={mapLevel === 'faculty'
+						? 'Proyectos por Facultad/Entidad'
+						: 'Proyectos por Institución'}
+					minValue={minProyectos}
+					maxValue={maxProyectos}
+				/>
+			</div>
 
 			<!-- Controles de mapa integrados -->
 			<div class="map-controls">
@@ -685,12 +688,13 @@ function handleInstitutionSelected(event: CustomEvent<string>) {
 					</div>
 					<div class="panel-content filters-panel">
 						<ProjectFilters
-  {proyectos}
-  {mapLevel}
-  on:filter={handleFilter}
-  on:facultadSelected={handleFacultadSelected}
-  on:institucionSelected={handleInstitutionSelected}
-/>
+							{proyectos}
+							{mapLevel}
+							institucionesDisponibles={nombresInstituciones}
+							on:filter={handleFilter}
+							on:facultadSelected={handleFacultadSelected}
+							on:institucionSelected={handleInstitutionSelected}
+						/>
 					</div>
 				{/if}
 

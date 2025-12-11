@@ -64,6 +64,11 @@ export const ProjectsRepository = {
    * Devuelve:
    *   { institucion_id: number, count: number }
    */
+  /**
+ * @deprecated
+ * Ya no se usa en mapas. El conteo ahora se hace en ProjectService
+ * para que coincida con ProyectoFlat (institución principal).
+ */
   async getProjectCountByInstitution() {
     const { data, error } = await supabase
       .from('proyecto_institucion')
@@ -179,22 +184,22 @@ export const ProjectsRepository = {
 
     return data;
   },
-    /**
-   * Mapea cada facultad a los IDs de proyectos relacionados.
-   *
-   * Recorre:
-   *  facultades → carreras → participantes → proyecto_participante → proyectos
-   *
-   * Devuelve:
-   *  [
-   *    {
-   *      facultadId: number;
-   *      facultadNombre: string;
-   *      projectIds: number[];
-   *    },
-   *    ...
-   *  ]
-   */
+  /**
+ * Mapea cada facultad a los IDs de proyectos relacionados.
+ *
+ * Recorre:
+ *  facultades → carreras → participantes → proyecto_participante → proyectos
+ *
+ * Devuelve:
+ *  [
+ *    {
+ *      facultadId: number;
+ *      facultadNombre: string;
+ *      projectIds: number[];
+ *    },
+ *    ...
+ *  ]
+ */
   async getProjectIdsByFaculty() {
     const { data, error } = await supabase
       .from('facultades')
@@ -234,7 +239,7 @@ export const ProjectsRepository = {
       return {
         facultadId: fac.id as number,
         facultadNombre: fac.nombre as string,
-        geometry: fac.geometry ?? null,          
+        geometry: fac.geometry ?? null,
         projectIds: Array.from(projectIdsSet)
       };
     });

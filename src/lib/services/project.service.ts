@@ -165,6 +165,225 @@ function esRolLider(cargoNombre?: string | null): boolean {
   );
 }
 // =========================
+// 🔹 Helper interno para construir ProyectoFlat[]
+// =========================
+async function buildFlatProjects(): Promise<ProyectoFlat[]> {
+  // 1) Traemos todos los datasets necesarios en paralelo
+  const [
+    projects,
+    projectTypes,
+    projectAreas,
+    fundingRows,
+    participantsDetails,
+    participantsAcreditado,
+    institutions,
+    projectInstitutionPairs
+  ] = await Promise.all([
+    RelacionesSQLRepository.getAllProjectsWithEstado(),
+    RelacionesSQLRepository.getProjectTypesWithNames(),
+    RelacionesSQLRepository.getProjectAreasWithNames(),
+    RelacionesSQLRepository.getProjectFundingWithNames(),
+    RelacionesSQLRepository.getProjectParticipantsWithDetails(),
+    RelacionesSQLRepository.getProjectParticipantsWithAcreditado(),
+    ProjectsRepository.getAllInstitutions(),          // ya lo usas en el mapa
+    ProjectsRepository.getProjectInstitutionPairs()   // también ya existe
+  ]);
+
+
+  console.log('[ProjectService.getFlatProjectsForUI] datasets cargados:', {
+    projects: projects.length,
+    projectTypes: projectTypes.length,
+    projectAreas: projectAreas.length,
+    fundingRows: fundingRows.length,
+    participantsDetails: participantsDetails.length,
+    participantsAcreditado: participantsAcreditado.length,
+    institutions: institutions.length,
+    projectInstitutionPairs: projectInstitutionPairs.length
+  });
+
+
+  // 2) Índices auxiliares por proyecto_id ==========================
+
+  // Tipo de proyecto (tomamos el primero como “principal”)
+  const tipoByProject = new Map<number, string>();
+  projectTypes.forEach((row: any) => {
+    const projectId = row.proyecto_id as number;
+    const nombreTipo: string = row.tipos?.nombre ?? '';
+    if (!projectId || !nombreTipo) return;
+    if (!tipoByProject.has(projectId)) {
+      tipoByProject.set(projectId, nombreTipo);
+    }
+  });
+
+  // Área de conocimiento (la usamos como campo_amplio)
+  const areaByProject = new Map<number, string>();
+  projectAreas.forEach((row: any) => {
+    const projectId = row.proyecto_id as number;
+    const nombreArea: string = row.area?.nombre ?? '';
+    if (!projectId || !nombreArea) return;
+    if (!areaByProject.has(projectId)) {
+      areaByProject.set(projectId, nombreArea);
+    }
+  });
+
+  // Fuente(s) de financiamiento (posible lista separada por comas)
+  const fundingByProject = new Map<number, string>();
+  fundingRows.forEach((row: any) => {
+    const projectId = row.proyecto_id as number;
+    const nombreFuente: string = row.fuente?.nombre ?? '';
+    if (!projectId || !nombreFuente) return;
+
+    const prev = fundingByProject.get(projectId);
+    if (!prev) {
+      fundingByProject.set(projectId, nombreFuente);
+    } else if (!prev.split(', ').includes(nombreFuente)) {
+      fundingByProject.set(projectId, `${prev}, ${nombreFuente}`);
+    }
+  });
+
+  // Facultad responsable y coordinador/director
+  const facultadByProject = new Map<number, string>();
+  const coordinadorByProject = new Map<number, { nombre: string; email: string }>();
+
+  participantsDetails.forEach((row: any) => {
+    const projectId = row.proyecto_id as number;
+    if (!projectId) return;
+
+    const facultad: string = row.facultad ?? '';
+    const esLider = esRolLider(row.cargo_nombre);
+
+    if (esLider) {
+      // Preferimos facultad del líder
+      if (facultad) {
+        facultadByProject.set(projectId, facultad);
+      }
+      const nombre: string = row.participante_nombre ?? '';
+      const email: string = row.participante_email ?? '';
+      if (nombre) {
+        coordinadorByProject.set(projectId, { nombre, email });
+      }
+    } else {
+      // Si aún no hay facultad asignada, usamos la primera que aparezca
+      if (facultad && !facultadByProject.has(projectId)) {
+        facultadByProject.set(projectId, facultad);
+      }
+    }
+  });
+
+  // Nº de participantes acreditados por proyecto
+  const acreditadosByProject = new Map<number, number>();
+  participantsAcreditado.forEach((row: any) => {
+    if (row.acreditado === true) {
+      const projectId = row.proyecto_id as number;
+      if (!projectId) return;
+      acreditadosByProject.set(
+        projectId,
+        (acreditadosByProject.get(projectId) ?? 0) + 1
+      );
+    }
+  });
+  // Instituciones: id -> { nombre, pais }
+  const institutionById = new Map<number, { nombre: string; pais: string | null }>();
+  (institutions ?? []).forEach((inst: any) => {
+    const id = inst.id as number;
+    if (!id) return;
+    institutionById.set(id, {
+      nombre: inst.nombre ?? '',
+      pais: inst.pais ?? null
+    });
+  });
+
+  // Institución principal por proyecto (tomamos la primera relación)
+  const institutionByProject = new Map<number, { nombre: string; pais: string | null }>();
+  (projectInstitutionPairs ?? []).forEach((row: any) => {
+    const projectId = row.proyecto_id as number;
+    const instId = row.institucion_id as number;
+    if (!projectId || !instId) return;
+
+    // Si un proyecto tiene varias instituciones, usamos la primera que aparezca.
+    if (institutionByProject.has(projectId)) return;
+
+    const instInfo = institutionById.get(instId);
+    if (!instInfo) return;
+
+    institutionByProject.set(projectId, instInfo);
+  });
+
+  // 3) Construimos el array “plano” de ProyectoFlat ====================
+  const proyectos: ProyectoFlat[] = projects.map((p: any) => {
+    const projectId = p.id as number;
+
+    const tipo = tipoByProject.get(projectId) ?? 'No especificado';
+    const area = areaByProject.get(projectId) ?? 'No especificado';
+    const fuente = fundingByProject.get(projectId) ?? 'Sin fuente';
+    const facultad = facultadByProject.get(projectId) ?? 'Sin facultad';
+    const coord = coordinadorByProject.get(projectId) ?? { nombre: '', email: '' };
+    const acreditadosCount = acreditadosByProject.get(projectId) ?? 0;
+    const instInfo = institutionByProject.get(projectId);
+    const institucionNombre = instInfo?.nombre ?? 'Sin institución';
+    const institucionPais = instInfo?.pais ?? 'Sin país';
+
+    // Año de inicio (derivado de fecha_inicio_planeada)
+    const fechaInicioPlaneada: string | null = p.fecha_inicio_planeada ?? null;
+    let anioInicio: number | null = null;
+    if (fechaInicioPlaneada) {
+      const fecha = new Date(fechaInicioPlaneada);
+      if (!Number.isNaN(fecha.getTime())) {
+        anioInicio = fecha.getFullYear();
+      }
+    }
+
+    const tieneAcreditados = acreditadosCount > 0;
+
+    return {
+      id: projectId,
+      codigo: p.codigo ?? '',
+      titulo: p.titulo ?? '',
+      objetivo: p.objetivo ?? '',
+
+      tipo_proyecto: tipo,
+      estado: p.estado?.nombre ?? 'Sin estado',
+      facultad_o_entidad_o_area_responsable: facultad,
+
+      fecha_inicio: fechaInicioPlaneada ?? '',
+      fecha_fin_planeado: p.fecha_fin_planeada ?? '',
+
+      coordinador_director: coord.nombre,
+      correo_electronico_coordinador: coord.email,
+
+      campo_amplio: area,
+      campo_especifico: '',
+      campo_detallado: '',
+
+      // Se mantiene vacío porque no hay datos en la BD
+      alcance_territorial: '',
+
+      // Texto legible para la UI
+      investigadores_acreditados_senescyt: tieneAcreditados
+        ? `Sí (${acreditadosCount})`
+        : 'No',
+
+      fuente_financiamiento: fuente,
+
+      // Nuevos campos para filtros
+      anio_inicio: anioInicio,
+      tiene_investigadores_acreditados: tieneAcreditados,
+      numero_investigadores_acreditados: acreditadosCount,
+      para_siies: !!p.para_siies,
+      // Datos de institución (para filtros a nivel institución)
+      institucion: institucionNombre,
+      pais_institucion: institucionPais
+    };
+  });
+
+  console.log('[ProjectService.getFlatProjectsForUI] proyectos normalizados:', {
+    total: proyectos.length,
+    ejemplo: proyectos[0]
+  });
+
+  return proyectos;
+}
+// =========================
 export const ProjectService = {
   /**
  * Mapa de proyectos por INSTITUCIÓN (con soporte de filtros)
@@ -172,33 +391,37 @@ export const ProjectService = {
   async getProjectsByInstitutionForMap(
     filters?: ProjectFilters
   ): Promise<ProjectMapModel[]> {
-    // 1. Instituciones con geometry
+    // 1) Traemos instituciones y pares proyecto–institución
     const institutions = await ProjectsRepository.getAllInstitutions();
+    const pairs = await ProjectsRepository.getProjectInstitutionPairs();
+
+    // 2) Mapa proyecto_id -> institución principal (la primera que aparezca)
+    const mainInstitutionByProject = new Map<number, number>();
+
+    (pairs ?? []).forEach((row: any) => {
+      const projectId = row.proyecto_id as number;
+      const instId = row.institucion_id as number;
+      if (!projectId || !instId) return;
+
+      // Solo asignamos la PRIMERA que aparece como "principal"
+      if (!mainInstitutionByProject.has(projectId)) {
+        mainInstitutionByProject.set(projectId, instId);
+      }
+    });
+
+    // 3) IDs permitidos según filtros (mismo helper que ya usas en el servicio)
+    const allowedIds = await getFilteredProjectIds(filters);
+
+    // 4) Conteo por institución usando SOLO la institución principal del proyecto
     const countMap = new Map<number, number>();
 
-    if (isEmptyFilters(filters)) {
-      // 🔹 Caso sin filtros → usamos el agregador rápido existente
-      const counts = await ProjectsRepository.getProjectCountByInstitution();
+    for (const [projectId, instId] of mainInstitutionByProject.entries()) {
+      if (allowedIds && !allowedIds.has(projectId)) continue;
 
-      counts.forEach((item: any) => {
-        countMap.set(item.institucion_id, item.count);
-      });
-    } else {
-      // 🔹 Caso con filtros → contamos solo proyectos permitidos
-      const allowedIds = await getFilteredProjectIds(filters);
-      const pairs = await ProjectsRepository.getProjectInstitutionPairs();
-
-      pairs.forEach((row: any) => {
-        const projectId = row.proyecto_id as number;
-        const instId = row.institucion_id as number;
-
-        if (allowedIds && !allowedIds.has(projectId)) return;
-
-        countMap.set(instId, (countMap.get(instId) || 0) + 1);
-      });
+      countMap.set(instId, (countMap.get(instId) || 0) + 1);
     }
 
-    // 3. Construimos el modelo unificado para el mapa
+    // 5) Construimos el modelo para el mapa
     const result: ProjectMapModel[] = (institutions ?? []).map((inst: any) => ({
       id: inst.id,
       titulo: inst.nombre,
@@ -224,33 +447,41 @@ export const ProjectService = {
   async getProjectsByFacultyForMap(
     filters?: ProjectFilters
   ): Promise<ProjectMapModel[]> {
-    // Sin filtros → usamos el método actual del repositorio
-    if (isEmptyFilters(filters)) {
-      return ProjectsRepository.getProjectCountByFacultyForMap();
-    }
+    // 1) Todas las facultades con geometry
+    const faculties = await ProjectDatasource.getFacultiesFull();
 
-    // Con filtros → usamos el mapeo facultad → proyectos
+    // 2) Modelo plano que ya define la facultad responsable (líder + fallback)
+    const flatProjects = await buildFlatProjects();
+
+    // 3) IDs permitidos por filtros (puede ser null = sin filtros)
     const allowedIds = await getFilteredProjectIds(filters);
-    const rows = await ProjectsRepository.getProjectIdsByFaculty();
 
-    const result: ProjectMapModel[] = rows.map((row: any) => {
-      const projectIds: number[] = row.projectIds ?? [];
-      const filteredCount = allowedIds
-        ? projectIds.filter((id) => allowedIds.has(id)).length
-        : projectIds.length;
+    // 4) Para cada facultad, contamos SOLO los proyectos donde
+    //    facultad_o_entidad_o_area_responsable === nombre de esa facultad
+    const result: ProjectMapModel[] = (faculties ?? []).map((fac: any) => {
+      const facultadNombre: string = fac.nombre ?? '';
+
+      const count = flatProjects.filter((p) => {
+        if (!facultadNombre) return false;
+
+        // Si hay filtros, respetamos el subconjunto permitido
+        if (allowedIds && !allowedIds.has(p.id)) return false;
+
+        // 👇 Clave: usamos la misma lógica que ProyectoFlat
+        return p.facultad_o_entidad_o_area_responsable === facultadNombre;
+      }).length;
 
       return {
-        id: row.facultadId,
-        titulo: row.facultadNombre,
-        geometry: row.geometry ?? null,
-        projectCount: filteredCount,
-        level: 'faculty' as const
+        id: fac.id as number,
+        titulo: facultadNombre,
+        geometry: fac.geometry ?? null,
+        projectCount: count,
+        level: 'faculty'
       };
     });
 
     return result;
   },
-
   /**
    * getProjectsForMap
    * -----------------
@@ -275,223 +506,8 @@ export const ProjectService = {
   },
   /**
  * 🔹 Modelo "plano" de proyectos para la UI
- *     (equivalente al antiguo `obtenerProyectos` de proyectosService.ts)
  */
   async getFlatProjectsForUI(): Promise<ProyectoFlat[]> {
-    // 1) Traemos todos los datasets necesarios en paralelo
-    const [
-      projects,
-      projectTypes,
-      projectAreas,
-      fundingRows,
-      participantsDetails,
-      participantsAcreditado,
-      institutions,
-      projectInstitutionPairs
-    ] = await Promise.all([
-      RelacionesSQLRepository.getAllProjectsWithEstado(),
-      RelacionesSQLRepository.getProjectTypesWithNames(),
-      RelacionesSQLRepository.getProjectAreasWithNames(),
-      RelacionesSQLRepository.getProjectFundingWithNames(),
-      RelacionesSQLRepository.getProjectParticipantsWithDetails(),
-      RelacionesSQLRepository.getProjectParticipantsWithAcreditado(),
-      ProjectsRepository.getAllInstitutions(),          // ya lo usas en el mapa
-      ProjectsRepository.getProjectInstitutionPairs()   // también ya existe
-    ]);
-
-
-    console.log('[ProjectService.getFlatProjectsForUI] datasets cargados:', {
-      projects: projects.length,
-      projectTypes: projectTypes.length,
-      projectAreas: projectAreas.length,
-      fundingRows: fundingRows.length,
-      participantsDetails: participantsDetails.length,
-      participantsAcreditado: participantsAcreditado.length,
-      institutions: institutions.length,
-      projectInstitutionPairs: projectInstitutionPairs.length
-    });
-
-
-    // 2) Índices auxiliares por proyecto_id ==========================
-
-    // Tipo de proyecto (tomamos el primero como “principal”)
-    const tipoByProject = new Map<number, string>();
-    projectTypes.forEach((row: any) => {
-      const projectId = row.proyecto_id as number;
-      const nombreTipo: string = row.tipos?.nombre ?? '';
-      if (!projectId || !nombreTipo) return;
-      if (!tipoByProject.has(projectId)) {
-        tipoByProject.set(projectId, nombreTipo);
-      }
-    });
-
-    // Área de conocimiento (la usamos como campo_amplio)
-    const areaByProject = new Map<number, string>();
-    projectAreas.forEach((row: any) => {
-      const projectId = row.proyecto_id as number;
-      const nombreArea: string = row.area?.nombre ?? '';
-      if (!projectId || !nombreArea) return;
-      if (!areaByProject.has(projectId)) {
-        areaByProject.set(projectId, nombreArea);
-      }
-    });
-
-    // Fuente(s) de financiamiento (posible lista separada por comas)
-    const fundingByProject = new Map<number, string>();
-    fundingRows.forEach((row: any) => {
-      const projectId = row.proyecto_id as number;
-      const nombreFuente: string = row.fuente?.nombre ?? '';
-      if (!projectId || !nombreFuente) return;
-
-      const prev = fundingByProject.get(projectId);
-      if (!prev) {
-        fundingByProject.set(projectId, nombreFuente);
-      } else if (!prev.split(', ').includes(nombreFuente)) {
-        fundingByProject.set(projectId, `${prev}, ${nombreFuente}`);
-      }
-    });
-
-    // Facultad responsable y coordinador/director
-    const facultadByProject = new Map<number, string>();
-    const coordinadorByProject = new Map<number, { nombre: string; email: string }>();
-
-    participantsDetails.forEach((row: any) => {
-      const projectId = row.proyecto_id as number;
-      if (!projectId) return;
-
-      const facultad: string = row.facultad ?? '';
-      const esLider = esRolLider(row.cargo_nombre);
-
-      if (esLider) {
-        // Preferimos facultad del líder
-        if (facultad) {
-          facultadByProject.set(projectId, facultad);
-        }
-        const nombre: string = row.participante_nombre ?? '';
-        const email: string = row.participante_email ?? '';
-        if (nombre) {
-          coordinadorByProject.set(projectId, { nombre, email });
-        }
-      } else {
-        // Si aún no hay facultad asignada, usamos la primera que aparezca
-        if (facultad && !facultadByProject.has(projectId)) {
-          facultadByProject.set(projectId, facultad);
-        }
-      }
-    });
-
-    // Nº de participantes acreditados por proyecto
-    const acreditadosByProject = new Map<number, number>();
-    participantsAcreditado.forEach((row: any) => {
-      if (row.acreditado === true) {
-        const projectId = row.proyecto_id as number;
-        if (!projectId) return;
-        acreditadosByProject.set(
-          projectId,
-          (acreditadosByProject.get(projectId) ?? 0) + 1
-        );
-      }
-    });
-    // Instituciones: id -> { nombre, pais }
-    const institutionById = new Map<number, { nombre: string; pais: string | null }>();
-    (institutions ?? []).forEach((inst: any) => {
-      const id = inst.id as number;
-      if (!id) return;
-      institutionById.set(id, {
-        nombre: inst.nombre ?? '',
-        pais: inst.pais ?? null
-      });
-    });
-
-    // Institución principal por proyecto (tomamos la primera relación)
-    const institutionByProject = new Map<number, { nombre: string; pais: string | null }>();
-    (projectInstitutionPairs ?? []).forEach((row: any) => {
-      const projectId = row.proyecto_id as number;
-      const instId = row.institucion_id as number;
-      if (!projectId || !instId) return;
-
-      // Si un proyecto tiene varias instituciones, usamos la primera que aparezca.
-      if (institutionByProject.has(projectId)) return;
-
-      const instInfo = institutionById.get(instId);
-      if (!instInfo) return;
-
-      institutionByProject.set(projectId, instInfo);
-    });
-
-    // 3) Construimos el array “plano” de ProyectoFlat ====================
-    const proyectos: ProyectoFlat[] = projects.map((p: any) => {
-      const projectId = p.id as number;
-
-      const tipo = tipoByProject.get(projectId) ?? 'No especificado';
-      const area = areaByProject.get(projectId) ?? 'No especificado';
-      const fuente = fundingByProject.get(projectId) ?? 'Sin fuente';
-      const facultad = facultadByProject.get(projectId) ?? 'Sin facultad';
-      const coord = coordinadorByProject.get(projectId) ?? { nombre: '', email: '' };
-      const acreditadosCount = acreditadosByProject.get(projectId) ?? 0;
-      const instInfo = institutionByProject.get(projectId);
-      const institucionNombre = instInfo?.nombre ?? 'Sin institución';
-      const institucionPais = instInfo?.pais ?? 'Sin país';
-
-      // Año de inicio (derivado de fecha_inicio_planeada)
-      const fechaInicioPlaneada: string | null = p.fecha_inicio_planeada ?? null;
-      let anioInicio: number | null = null;
-      if (fechaInicioPlaneada) {
-        const fecha = new Date(fechaInicioPlaneada);
-        if (!Number.isNaN(fecha.getTime())) {
-          anioInicio = fecha.getFullYear();
-        }
-      }
-
-      const tieneAcreditados = acreditadosCount > 0;
-
-      return {
-        id: projectId,
-        codigo: p.codigo ?? '',
-        titulo: p.titulo ?? '',
-        objetivo: p.objetivo ?? '',
-
-        tipo_proyecto: tipo,
-        estado: p.estado?.nombre ?? 'Sin estado',
-        facultad_o_entidad_o_area_responsable: facultad,
-
-        fecha_inicio: fechaInicioPlaneada ?? '',
-        fecha_fin_planeado: p.fecha_fin_planeada ?? '',
-
-        coordinador_director: coord.nombre,
-        correo_electronico_coordinador: coord.email,
-
-        campo_amplio: area,
-        campo_especifico: '',
-        campo_detallado: '',
-
-        // Se mantiene vacío porque no hay datos en la BD
-        alcance_territorial: '',
-
-        // Texto legible para la UI
-        investigadores_acreditados_senescyt: tieneAcreditados
-          ? `Sí (${acreditadosCount})`
-          : 'No',
-
-        fuente_financiamiento: fuente,
-
-        // Nuevos campos para filtros
-        anio_inicio: anioInicio,
-        tiene_investigadores_acreditados: tieneAcreditados,
-        numero_investigadores_acreditados: acreditadosCount,
-        para_siies: !!p.para_siies,
-        // Datos de institución (para filtros a nivel institución)
-        institucion: institucionNombre,
-        pais_institucion: institucionPais
-      };
-    });
-
-    console.log('[ProjectService.getFlatProjectsForUI] proyectos normalizados:', {
-      total: proyectos.length,
-      ejemplo: proyectos[0]
-    });
-
-    return proyectos;
+    return buildFlatProjects();
   }
-
 };
