@@ -10,67 +10,17 @@
  *  - NO lógica de negocio
  *  - NO agregaciones complejas
  *  - SOLO "SELECTs" a Supabase
- *
- * Archivo: src/lib/db/relations.repository.ts
  */
 
 import { supabase } from './supabase.client';
 
 export const RelacionesSQLRepository = {
   // =========================================================
-  // ⚠️ PLACEHOLDERS ORIGINALES (los dejo como están, sin usar)
-  // =========================================================
-
-  // TODO: obtener RelacionesSQL por id (si algún día existe esa entidad)
-  async getById(id: number) {
-    // Por ahora no hay una tabla "RelacionesSQL" como tal,
-    // así que este método queda como placeholder.
-    console.warn('RelacionesSQLRepository.getById() aún no está implementado');
-    return null;
-  },
-
-  // TODO: obtener todos los RelacionesSQL
-  async getAll() {
-    console.warn('RelacionesSQLRepository.getAll() aún no está implementado');
-    return [];
-  },
-
-  // TODO: obtener RelacionesSQL con filtros básicos
-  async getWithFilters(_filters: any) {
-    console.warn('RelacionesSQLRepository.getWithFilters() aún no está implementado');
-    return [];
-  },
-
-  // =========================================================
-  // CONSULTAS REALES PARA ANALYTICS
+  // PROYECTOS + ESTADO
   // =========================================================
 
   /**
    * Devuelve TODOS los proyectos con la info básica + el estado (JOIN a tabla estado).
-   *
-   * Estructura aproximada:
-   *  {
-   *    id,
-   *    codigo,
-   *    titulo,
-   *    objetivo,
-   *    estado_id,
-   *    fecha_inicio_planeada,
-   *    fecha_fin_planeada,
-   *    fecha_fin_real,
-   *    cantidad_meses,
-   *    porcentaje_avance,
-   *    monto_presupuesto_total,
-   *    requiere_aval,
-   *    impacto_cientifico,
-   *    impacto_economico,
-   *    impacto_social,
-   *    otros_impactos,
-   *    estado: {
-   *      id,
-   *      nombre
-   *    } | null
-   *  }
    */
   async getAllProjectsWithEstado() {
     const { data, error } = await supabase
@@ -110,6 +60,10 @@ export const RelacionesSQLRepository = {
     return data ?? [];
   },
 
+  // =========================================================
+  // PROYECTO ↔ TIPOS
+  // =========================================================
+
   /**
    * Devuelve relaciones proyecto ↔ tipos de proyecto, con nombre de tipo.
    *
@@ -121,10 +75,6 @@ export const RelacionesSQLRepository = {
    *      nombre: string
    *    } | null
    *  }[]
-   *
-   * NOTA:
-   *  - Un proyecto puede aparecer varias veces si tiene varios tipos.
-   *  - Para muchos análisis nos sirven tal cual (después agregamos en el servicio).
    */
   async getProjectTypesWithNames() {
     const { data, error } = await supabase
@@ -147,45 +97,11 @@ export const RelacionesSQLRepository = {
     return data ?? [];
   },
 
+  // =========================================================
+  // PROYECTO ↔ ÁREAS DE CONOCIMIENTO
+  // =========================================================
+
   /**
-   * Devuelve relaciones proyecto ↔ participante, incluyendo si el participante es acreditado.
-   *
-   * Estructura:
-   *  {
-   *    proyecto_id: number,
-   *    participante_id: number | null,
-   *    acreditado: boolean | null
-   *  }[]
-   *
-   * Usos típicos:
-   *  - Saber cuántos proyectos tienen al menos 1 participante acreditado.
-   */
-  async getProjectParticipantsWithAcreditado() {
-    const { data, error } = await supabase
-      .from('proyecto_participante')
-      .select(
-        `
-        proyecto_id,
-        participantes (
-          id,
-          acreditado
-        )
-      `
-      );
-
-    if (error) {
-      console.error('❌ RelacionesSQLRepository.getProjectParticipantsWithAcreditado():', error);
-      return [];
-    }
-
-    // Normalizamos la forma de los datos para que el servicio no tenga que pelear
-    return (data ?? []).map((row: any) => ({
-      proyecto_id: row.proyecto_id as number,
-      participante_id: row.participantes?.id ?? null,
-      acreditado: row.participantes?.acreditado ?? null
-    }));
-  },
-    /**
    * Devuelve relaciones proyecto ↔ área de conocimiento, con nombre de área.
    *
    * Tabla puente:
@@ -212,6 +128,10 @@ export const RelacionesSQLRepository = {
 
     return data ?? [];
   },
+
+  // =========================================================
+  // PROYECTO ↔ FUENTE DE FINANCIAMIENTO
+  // =========================================================
 
   /**
    * Devuelve relaciones proyecto ↔ fuente de financiamiento, con nombre de fuente.
@@ -241,8 +161,51 @@ export const RelacionesSQLRepository = {
     return data ?? [];
   },
 
+  // =========================================================
+  // PROYECTO ↔ PARTICIPANTES (ACREDITADO)
+  // =========================================================
+
   /**
-   * 🔹 NUEVO:
+   * Devuelve relaciones proyecto ↔ participante, incluyendo si el participante es acreditado.
+   *
+   * Estructura normalizada:
+   *  {
+   *    proyecto_id: number,
+   *    participante_id: number | null,
+   *    acreditado: boolean | null
+   *  }[]
+   */
+  async getProjectParticipantsWithAcreditado() {
+    const { data, error } = await supabase
+      .from('proyecto_participante')
+      .select(
+        `
+        proyecto_id,
+        participantes (
+          id,
+          acreditado
+        )
+      `
+      );
+
+    if (error) {
+      console.error('❌ RelacionesSQLRepository.getProjectParticipantsWithAcreditado():', error);
+      return [];
+    }
+
+    // Normalizamos la forma de los datos para que el servicio no tenga que pelear
+    return (data ?? []).map((row: any) => ({
+      proyecto_id: row.proyecto_id as number,
+      participante_id: row.participantes?.id ?? null,
+      acreditado: row.participantes?.acreditado ?? null
+    }));
+  },
+
+  // =========================================================
+  // PROYECTO ↔ PARTICIPANTES (DETALLES COMPLETOS)
+  // =========================================================
+
+  /**
    * Devuelve relaciones proyecto ↔ participante ↔ carrera ↔ facultad,
    * incluyendo datos básicos del proyecto y su estado.
    *
@@ -262,61 +225,82 @@ export const RelacionesSQLRepository = {
    *  }[]
    */
   async getProjectParticipantsWithDetails() {
-  const { data, error } = await supabase
-    .from('proyecto_participante')
-    .select(
-      `
-      proyecto_id,
-      participantes (
-        id,
-        nombre,
-        email,
-        carreras (
-          facultades (
+    const { data, error } = await supabase
+      .from('proyecto_participante')
+      .select(
+        `
+        proyecto_id,
+        participantes (
+          id,
+          nombre,
+          email,
+          carreras (
+            facultades (
+              nombre
+            )
+          )
+        ),
+        cargos (
+          nombre
+        ),
+        proyectos (
+          codigo,
+          titulo,
+          fecha_inicio_planeada,
+          fecha_fin_planeada,
+          estado:estado (
             nombre
           )
         )
-      ),
-      cargos (
-        nombre
-      ),
-      proyectos (
-        codigo,
-        titulo,
-        fecha_inicio_planeada,
-        fecha_fin_planeada,
-        estado:estado (
-          nombre
-        )
-      )
-    `
-    );
+      `
+      );
 
-  if (error) {
-    console.error('❌ RelacionesSQLRepository.getProjectParticipantsWithDetails():', error);
+    if (error) {
+      console.error('❌ RelacionesSQLRepository.getProjectParticipantsWithDetails():', error);
+      return [];
+    }
+
+    return (data ?? []).map((row: any) => {
+      const participante = row.participantes ?? null;
+      const carrera = participante?.carreras ?? null;
+      const facultad = carrera?.facultades ?? null;
+      const proyecto = row.proyectos ?? null;
+
+      return {
+        proyecto_id: row.proyecto_id as number,
+        codigo: proyecto?.codigo ?? '',
+        titulo: proyecto?.titulo ?? '',
+        estado: proyecto?.estado?.nombre ?? 'Sin estado',
+        facultad: facultad?.nombre ?? 'Sin facultad',
+        participante_id: participante?.id ?? null,
+        participante_nombre: participante?.nombre ?? '',
+        participante_email: participante?.email ?? '',
+        cargo_nombre: row.cargos?.nombre ?? null,
+        fecha_inicio_planeada: proyecto?.fecha_inicio_planeada ?? null,
+        fecha_fin_planeada: proyecto?.fecha_fin_planeada ?? null
+      };
+    });
+  },
+
+  // =========================================================
+  // PLACEHOLDERS (SE MANTIENEN POR COMPATIBILIDAD)
+  // =========================================================
+
+  /** @deprecated Placeholder, no hay entidad "RelacionesSQL" como tal. */
+  async getById(id: number) {
+    console.warn('RelacionesSQLRepository.getById() aún no está implementado, id =', id);
+    return null;
+  },
+
+  /** @deprecated Placeholder genérico, sin uso actual. */
+  async getAll() {
+    console.warn('RelacionesSQLRepository.getAll() aún no está implementado');
+    return [];
+  },
+
+  /** @deprecated Placeholder con filtros genéricos, sin uso actual. */
+  async getWithFilters(_filters: any) {
+    console.warn('RelacionesSQLRepository.getWithFilters() aún no está implementado');
     return [];
   }
-
-  return (data ?? []).map((row: any) => {
-    const participante = row.participantes ?? null;
-    const carrera = participante?.carreras ?? null;
-    const facultad = carrera?.facultades ?? null;
-    const proyecto = row.proyectos ?? null;
-
-    return {
-      proyecto_id: row.proyecto_id as number,
-      codigo: proyecto?.codigo ?? '',
-      titulo: proyecto?.titulo ?? '',
-      estado: proyecto?.estado?.nombre ?? 'Sin estado',
-      facultad: facultad?.nombre ?? 'Sin facultad',
-      participante_id: participante?.id ?? null,
-      participante_nombre: participante?.nombre ?? '',
-      participante_email: participante?.email ?? '',
-      cargo_nombre: row.cargos?.nombre ?? null,
-      fecha_inicio_planeada: proyecto?.fecha_inicio_planeada ?? null,
-      fecha_fin_planeada: proyecto?.fecha_fin_planeada ?? null
-    };
-  });
-}
-
 };

@@ -26,6 +26,44 @@ export interface GlobalStats {
   proyectosPorTipoPrincipal: { tipo: string; cantidad: number } | null;
 }
 
+// =========================================================
+// 🔹 HELPERS INTERNOS (no exportados)
+// =========================================================
+
+/**
+ * Agrupa proyectos por estado (usando p.estado?.nombre).
+ */
+function buildEstadoCounts(projects: any[]): { estado: string; cantidad: number }[] {
+  const counts: Record<string, number> = {};
+
+  projects.forEach((p: any) => {
+    const nombreEstado: string = p.estado?.nombre ?? 'Sin estado';
+    counts[nombreEstado] = (counts[nombreEstado] || 0) + 1;
+  });
+
+  return Object.entries(counts).map(([estado, cantidad]) => ({ estado, cantidad }));
+}
+
+/**
+ * Agrupa relaciones proyecto_tipo por nombre de tipo.
+ */
+function buildTipoCounts(projectTypes: any[]): { tipo: string; cantidad: number }[] {
+  const tipoCount: Record<string, number> = {};
+
+  projectTypes.forEach((row: any) => {
+    const nombreTipo: string = row.tipos?.nombre ?? 'Sin tipo';
+    tipoCount[nombreTipo] = (tipoCount[nombreTipo] || 0) + 1;
+  });
+
+  return Object.entries(tipoCount)
+    .map(([tipo, cantidad]) => ({ tipo, cantidad }))
+    .sort((a, b) => b.cantidad - a.cantidad);
+}
+
+// =========================================================
+// 🔹 SERVICIO PRINCIPAL
+// =========================================================
+
 export const AnalyticsService = {
   /**
    * Estadísticas globales a partir de la BD normalizada:
@@ -42,30 +80,13 @@ export const AnalyticsService = {
       RelacionesSQLRepository.getProjectParticipantsWithAcreditado()
     ]);
 
-    // =====================================================
     // A) Conteo básico de proyectos
-    // =====================================================
     const totalProyectos = projects.length;
 
-    // =====================================================
     // B) Proyectos por estado
-    // =====================================================
-    const estadoCount: Record<string, number> = {};
+    const proyectosPorEstado = buildEstadoCounts(projects);
 
-    projects.forEach((p: any) => {
-      const nombreEstado: string = p.estado?.nombre ?? 'Sin estado';
-      estadoCount[nombreEstado] = (estadoCount[nombreEstado] || 0) + 1;
-    });
-
-    const proyectosPorEstado = Object.entries(estadoCount).map(([estado, cantidad]) => ({
-      estado,
-      cantidad
-    }));
-
-    // =====================================================
-    // C) Proyectos activos / cerrados
-    //    (basado en el nombre del estado, como antes)
-    // =====================================================
+    // C) Proyectos activos / cerrados (basado en el nombre del estado)
     const ESTADOS_ACTIVOS = new Set(['En ejecución', 'En cierre', 'En proceso']);
     const ESTADOS_CERRADOS = new Set(['Cerrado', 'Finalizado']);
 
@@ -82,27 +103,12 @@ export const AnalyticsService = {
       }
     });
 
-    // =====================================================
     // D) Proyectos por tipo (usando proyecto_tipo + tipos)
-    // =====================================================
-    const tipoCount: Record<string, number> = {};
-
-    projectTypes.forEach((row: any) => {
-      const nombreTipo: string = row.tipos?.nombre ?? 'Sin tipo';
-      tipoCount[nombreTipo] = (tipoCount[nombreTipo] || 0) + 1;
-    });
-
-    const proyectosPorTipo = Object.entries(tipoCount)
-      .map(([tipo, cantidad]) => ({ tipo, cantidad }))
-      .sort((a, b) => b.cantidad - a.cantidad);
-
+    const proyectosPorTipo = buildTipoCounts(projectTypes);
     const proyectosPorTipoPrincipal =
       proyectosPorTipo.length > 0 ? proyectosPorTipo[0] : { tipo: 'No hay datos', cantidad: 0 };
 
-    // =====================================================
     // E) Proyectos con al menos 1 participante acreditado
-    //    (versión nueva de tu "investigadoresAcreditados")
-    // =====================================================
     const proyectosConAcreditados = new Set<number>();
 
     projectParticipants.forEach((row: any) => {
@@ -113,9 +119,7 @@ export const AnalyticsService = {
 
     const investigadoresAcreditados = proyectosConAcreditados.size;
 
-    // =====================================================
     // Resultado final
-    // =====================================================
     return {
       totalProyectos,
       proyectosActivos,
@@ -126,85 +130,43 @@ export const AnalyticsService = {
       proyectosPorTipoPrincipal
     };
   },
+
   /**
- * Proyectos agrupados por estado.
- *
- * Devuelve:
- *  [
- *    { estado: 'En ejecución', cantidad: 120 },
- *    { estado: 'Cerrado', cantidad: 30 },
- *    ...
- *  ]
- *
- * Usa la BD normalizada:
- *  - proyectos + join a estado (a través de RelacionesSQLRepository)
- */
+   * Proyectos agrupados por estado.
+   *
+   * Usa la BD normalizada:
+   *  - proyectos + join a estado (a través de RelacionesSQLRepository)
+   */
   async getProjectsByState(): Promise<{ estado: string; cantidad: number }[]> {
-    // Traemos proyectos con su objeto `estado`
     const projects = await RelacionesSQLRepository.getAllProjectsWithEstado();
 
-    if (!projects.length) {
-      return [];
-    }
+    if (!projects.length) return [];
 
-    const counts: Record<string, number> = {};
-
-    projects.forEach((p: any) => {
-      const nombreEstado: string = p.estado?.nombre ?? 'Sin estado';
-      counts[nombreEstado] = (counts[nombreEstado] || 0) + 1;
-    });
-
-    return Object.entries(counts).map(([estado, cantidad]) => ({
-      estado,
-      cantidad
-    }));
+    return buildEstadoCounts(projects);
   },
+
   /**
- * Proyectos agrupados por tipo de proyecto.
- *
- * Devuelve:
- *  [
- *    { tipo: 'Investigación', cantidad: 200 },
- *    { tipo: 'Vinculación', cantidad: 80 },
- *    ...
- *  ]
- *
- * Usa la relación:
- *  - proyecto_tipo
- *  - tipos (catálogo, campo `nombre`)
- */
+   * Proyectos agrupados por tipo de proyecto.
+   *
+   * Usa la relación:
+   *  - proyecto_tipo
+   *  - tipos (catálogo, campo `nombre`)
+   */
   async getProjectsByType(): Promise<{ tipo: string; cantidad: number }[]> {
     const projectTypes = await RelacionesSQLRepository.getProjectTypesWithNames();
 
-    if (!projectTypes.length) {
-      return [];
-    }
+    if (!projectTypes.length) return [];
 
-    const tipoCount: Record<string, number> = {};
-
-    projectTypes.forEach((row: any) => {
-      const nombreTipo: string = row.tipos?.nombre ?? 'Sin tipo';
-      tipoCount[nombreTipo] = (tipoCount[nombreTipo] || 0) + 1;
-    });
-
-    return Object.entries(tipoCount)
-      .map(([tipo, cantidad]) => ({ tipo, cantidad }))
-      .sort((a, b) => b.cantidad - a.cantidad);
+    return buildTipoCounts(projectTypes);
   },
+
   /**
- * Proyectos agrupados por facultad (BD normalizada).
- *
- * Usa la relación:
- *  facultades → carreras → participantes → proyecto_participante
- * a través de `ProjectsRepository.getProjectCountByFacultyForMap()`.
- *
- * Devuelve:
- *  [
- *    { facultad: 'Facultad de Ingeniería...', cantidad: 42 },
- *    { facultad: 'Facultad de Ciencias...', cantidad: 30 },
- *    ...
- *  ]
- */
+   * Proyectos agrupados por facultad (BD normalizada).
+   *
+   * Usa la relación:
+   *  facultades → carreras → participantes → proyecto_participante
+   * a través de `ProjectsRepository.getProjectCountByFacultyForMap()`.
+   */
   async getProjectsByFaculty(): Promise<{ facultad: string; cantidad: number }[]> {
     const facultiesForMap = await ProjectsRepository.getProjectCountByFacultyForMap();
 
@@ -214,24 +176,21 @@ export const AnalyticsService = {
 
     return facultiesForMap
       .map((fac) => ({
-        facultad: fac.titulo,       // usamos el nombre que ya viene del mapa
-        cantidad: fac.projectCount  // número de proyectos únicos por facultad
+        facultad: fac.titulo,      // usamos el nombre que ya viene del mapa
+        cantidad: fac.projectCount // número de proyectos únicos por facultad
       }))
       .sort((a, b) => b.cantidad - a.cantidad);
   },
+
   /**
- * Proyectos agrupados por facultad.
- *
- * Devuelve:
- *  [
- *    { facultad: 'Facultad de Ingeniería', cantidad: 120 },
- *    { facultad: 'Facultad de Medicina',  cantidad: 80 },
- *    ...
- *  ]
- *
- * Usa la BD normalizada:
- *  - facultades → carreras → participantes → proyecto_participante
- */
+   * Proyectos agrupados por facultad (overview simple).
+   *
+   * Usa la BD normalizada:
+   *  - facultades → carreras → participantes → proyecto_participante
+   *
+   * ⚠️ Se mantiene separado de getProjectsByFaculty()
+   *    por compatibilidad con código existente.
+   */
   async getProjectsByFacultyOverview(): Promise<{ facultad: string; cantidad: number }[]> {
     const facultyProjects = await ProjectsRepository.getProjectIdsByFaculty();
 
@@ -246,28 +205,27 @@ export const AnalyticsService = {
       }))
       .sort((a, b) => b.cantidad - a.cantidad);
   },
-  // TODO: estadísticas por institución
+
+  // TODO: estadísticas por institución (placeholder)
   async getInstitutionStats() {
     console.warn('AnalyticsService.getInstitutionStats() aún no está implementado');
     return null;
   },
+
   /**
- * Estadísticas por facultad (versión normalizada)
- *
- * Devuelve:
- *  {
- *    totalProyectos: number;      // total global en la BD
- *    cantidadFacultad: number;    // proyectos asociados a esa facultad
- *    estados: {
- *      ejecucion: number;
- *      cierre: number;
- *      cerrados: number;
- *    }
- *  }
- *
- * La asociación proyecto ↔ facultad se hace vía:
- *  facultades → carreras → participantes → proyecto_participante → proyectos
- */
+   * Estadísticas por facultad (versión normalizada)
+   *
+   * Devuelve:
+   *  {
+   *    totalProyectos: number;      // total global en la BD
+   *    cantidadFacultad: number;    // proyectos asociados a esa facultad
+   *    estados: {
+   *      ejecucion: number;
+   *      cierre: number;
+   *      cerrados: number;
+   *    }
+   *  }
+   */
   async getFacultyStats(nombreFacultad: string): Promise<{
     totalProyectos: number;
     cantidadFacultad: number;
@@ -332,7 +290,8 @@ export const AnalyticsService = {
       estados
     };
   },
-  /** 🔹 NUEVO: proyectos agrupados por área de conocimiento */
+
+  /** Proyectos agrupados por área de conocimiento */
   async getProjectsByArea(): Promise<{ area: string; cantidad: number }[]> {
     const projectAreas = await RelacionesSQLRepository.getProjectAreasWithNames();
     if (!projectAreas.length) return [];
@@ -348,7 +307,7 @@ export const AnalyticsService = {
       .sort((a, b) => b.cantidad - a.cantidad);
   },
 
-  /** 🔹 NUEVO: proyectos agrupados por fuente de financiamiento */
+  /** Proyectos agrupados por fuente de financiamiento */
   async getProjectsByFundingSource(): Promise<{ fuente: string; cantidad: number }[]> {
     const fundingRows = await RelacionesSQLRepository.getProjectFundingWithNames();
     if (!fundingRows.length) return [];
@@ -362,5 +321,5 @@ export const AnalyticsService = {
     return Object.entries(fuenteCount)
       .map(([fuente, cantidad]) => ({ fuente, cantidad }))
       .sort((a, b) => b.cantidad - a.cantidad);
-  },
+  }
 };

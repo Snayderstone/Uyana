@@ -45,6 +45,12 @@
 	// Estadísticas calculadas
 	let totalFacultades = 0;
 	let facultadesConProyectos = 0;
+	// Indica si hay filtros activos (lista filtrada distinta de la lista completa)
+	let hasActiveFilters = false;
+
+	$: hasActiveFilters =
+		filteredProyectos.length > 0 && filteredProyectos.length < proyectos.length;
+
 
 	// Cargar datos de proyectos
 	async function cargarProyectos() {
@@ -355,6 +361,7 @@
 					{mapLevel}
 					{filteredProyectos}
 					{highlightedFacultad}
+					hasActiveFilters={hasActiveFilters}
 					on:viewFacultyProjects={handleViewFacultyProjects}
 					on:mapClick={handleMapClick}
 					on:resetHighlights={() => (highlightedFacultad = null)}

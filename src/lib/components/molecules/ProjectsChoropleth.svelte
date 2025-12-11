@@ -21,6 +21,9 @@
 
 	// Nivel actual del mapa (por ahora siempre facultad)
 	export let mapLevel: MapLevel = 'faculty';
+	// Indica si el padre tiene filtros activos (filteredProyectos != todos)
+	export let hasActiveFilters: boolean = false;
+	// Mapa de centroides de facultades
 	let centroides: Record<string, [number, number]> = {};
 	let rankingData: { facultad: string; cantidad: number; center: [number, number] }[] = [];
 
@@ -39,14 +42,18 @@
 		key: '',
 		data: {} as Record<string, number>
 	};
+	centroides = {};
+	rankingData = [];
+
 	$: {
-		// Cada vez que cambie valueById, recalculamos rankingData
-		rankingData = Object.entries(valueById).map(([facultad, cantidad]) => ({
-			facultad,
-			cantidad,
-			center: centroides[facultad] || [0, 0]
-		}));
-	}
+	rankingData = Object.entries(valueById)
+		.map(([facultad, cantidad]) => {
+			const center = centroides[facultad];
+			if (!center) return null; // si no hay centro, no dibujamos marcador
+			return { facultad, cantidad, center };
+		})
+		.filter((d): d is { facultad: string; cantidad: number; center: [number, number] } => d !== null);
+}
 
 	// Cargamos los datos al iniciar
 	onMount(async () => {
@@ -599,10 +606,10 @@
 
 		return datos;
 	}
-
-	// Actualizar los valores cuando cambien los proyectos filtrados
+		// Actualizar los valores cuando cambien los proyectos filtrados
 	$: {
-		if (filteredProyectos.length > 0) {
+		// 🔹 Solo usamos los filtrados si REALMENTE hay filtros activos
+		if (hasActiveFilters && filteredProyectos.length > 0) {
 			// Crear una clave única basada en los IDs de los proyectos filtrados
 			const key = JSON.stringify(filteredProyectos.map((p) => p.id || p.titulo).sort());
 
@@ -628,7 +635,7 @@
 				valueById = facultadCount;
 			}
 		} else if (proyectosPorFacultad.length > 0) {
-			// Si no hay filtros activos, usar todos los proyectos
+			// 🔹 Sin filtros activos → usamos los agregados globales (ranking completo)
 			if (memoizedFilteredProyectos.key !== 'all') {
 				console.info('Usando datos completos de proyectos por facultad');
 
@@ -645,6 +652,7 @@
 			}
 		}
 	}
+
 </script>
 
 {#if map}
