@@ -124,11 +124,16 @@ export type ProyectoFlat = {
   // Fuente(s) de financiamiento formateada
   fuente_financiamiento: string;
 
-  // 🔹 Nuevos campos de filtros
+    // 🔹 Nuevos campos de filtros
   anio_inicio: number | null;
   tiene_investigadores_acreditados: boolean;
   numero_investigadores_acreditados: number;
   para_siies: boolean;
+
+  // 🔹 Datos de institución (para filtros a nivel institución)
+  // Los dejo opcionales para no romper nada si alguna cosa no se llena.
+  institucion?: string;
+  pais_institucion?: string;
 };
 
 

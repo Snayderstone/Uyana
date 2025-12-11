@@ -17,6 +17,7 @@
 	export let zoom = 16;
 
 	let mapLevel: MapLevel = 'faculty';
+	let lastMapLevel: MapLevel = mapLevel;
 	let showDashboard = false;
 	// Referencias
 	let map: Map | null = null;
@@ -48,9 +49,53 @@
 	// Indica si hay filtros activos (lista filtrada distinta de la lista completa)
 	let hasActiveFilters = false;
 
+	// Cuando cambia el nivel del mapa (facultad/institución), limpiamos selección y filtros actuales
+	$: if (mapLevel !== lastMapLevel) {
+		lastMapLevel = mapLevel;
+		filteredProyectos = proyectos;
+		selectedFacultad = null;
+		highlightedFacultad = null;
+	}
 	$: hasActiveFilters =
 		filteredProyectos.length > 0 && filteredProyectos.length < proyectos.length;
+		// Recalcular estadísticas para la leyenda y el resumen según el nivel del mapa
+	$: {
+		if (!proyectos || proyectos.length === 0) {
+			minProyectos = 0;
+			maxProyectos = 0;
+			facultadConMasProyectos = '';
+			totalFacultades = 0;
+			facultadesConProyectos = 0;
+		} else {
+			const countByRegion: Record<string, number> = {};
 
+			proyectos.forEach((p) => {
+				const key =
+					mapLevel === 'faculty'
+						? p.facultad_o_entidad_o_area_responsable || 'No especificado'
+						: p.institucion || 'Sin institución';
+
+				countByRegion[key] = (countByRegion[key] || 0) + 1;
+			});
+
+			const valores = Object.values(countByRegion);
+
+			if (valores.length > 0) {
+				minProyectos = Math.min(...valores);
+				maxProyectos = Math.max(...valores);
+				facultadConMasProyectos = Object.keys(countByRegion).reduce((a, b) =>
+					countByRegion[a] > countByRegion[b] ? a : b
+				);
+			} else {
+				minProyectos = 0;
+				maxProyectos = 0;
+				facultadConMasProyectos = '';
+			}
+
+			totalFacultades = new Set(Object.keys(countByRegion)).size;
+			facultadesConProyectos = Object.keys(countByRegion).length;
+		}
+	}
 
 	// Cargar datos de proyectos
 	async function cargarProyectos() {
@@ -64,28 +109,7 @@
   				total: proyectos.length,
   				ejemplo: proyectos[0] ?? null
 			});
-			// Calcular min y max para la leyenda
-			const proyectosPorFacultad: Record<string, number> = {};
-			proyectos.forEach((proyecto) => {
-				const facultad = proyecto.facultad_o_entidad_o_area_responsable || 'No especificado';
-				proyectosPorFacultad[facultad] = (proyectosPorFacultad[facultad] || 0) + 1;
-			});
-
-			const cantidades = Object.values(proyectosPorFacultad);
-			if (cantidades.length > 0) {
-				minProyectos = Math.min(...cantidades);
-				maxProyectos = Math.max(...cantidades);
-
-				// Determinar qué facultad tiene más proyectos
-				facultadConMasProyectos = Object.keys(proyectosPorFacultad).reduce(
-					(a, b) => (proyectosPorFacultad[a] > proyectosPorFacultad[b] ? a : b),
-					''
-				);
-			}
-
-			// Calcular estadísticas adicionales
-			totalFacultades = new Set(proyectos.map((p) => p.facultad_o_entidad_o_area_responsable)).size;
-			facultadesConProyectos = Object.keys(proyectosPorFacultad).length;
+			
 		} catch (err) {
 			console.error('Error al cargar proyectos:', err);
 			error = 'Error al cargar los datos de proyectos';
@@ -96,38 +120,42 @@
 
 	// Manejar filtros
 	function handleFilter(event: CustomEvent<Proyecto[]>) {
-		filteredProyectos = event.detail;
+  filteredProyectos = event.detail;
 
-		// Determinar si hay una sola facultad seleccionada
-		const facultadesUnicas = [
-			...new Set(
-				filteredProyectos.map((p) => p.facultad_o_entidad_o_area_responsable).filter(Boolean)
-			)
-		];
+  // Determinar si hay una sola facultad/institución según el nivel
+  const regionesUnicas = [
+    ...new Set(
+      filteredProyectos
+        .map((p) =>
+          mapLevel === 'faculty'
+            ? p.facultad_o_entidad_o_area_responsable || 'No especificado'
+            : p.institucion || 'Sin institución'
+        )
+        .filter(Boolean)
+    )
+  ];
 
-		if (facultadesUnicas.length === 1) {
-			// Si hay una sola facultad en los resultados, la destacamos
-			highlightedFacultad = facultadesUnicas[0];
-			selectedFacultad = facultadesUnicas[0];
-		} else {
-			// Si hay varias facultades o ninguna, eliminamos el resaltado
-			highlightedFacultad = null;
-		}
+  if (regionesUnicas.length === 1) {
+    highlightedFacultad = regionesUnicas[0];
+    selectedFacultad = regionesUnicas[0];
+  } else {
+    highlightedFacultad = null;
+  }
 
-		// Si hay filtros aplicados, mostrar automáticamente el panel de resultados
-		if (filteredProyectos.length < proyectos.length) {
-			showResultsPanel = true;
-			showFiltersPanel = false; // Cerrar el panel de filtros para evitar conflictos
-			activePanelTab = 'results';
+  // Si hay filtros aplicados, mostrar automáticamente el panel de resultados
+  if (filteredProyectos.length < proyectos.length) {
+    showResultsPanel = true;
+    showFiltersPanel = false;
+    activePanelTab = 'results';
 
-			// Dar tiempo para que los cambios se apliquen antes de invalidar el mapa
-			setTimeout(() => {
-				if (map) {
-					map.invalidateSize();
-				}
-			}, 300);
-		}
-	}
+    setTimeout(() => {
+      if (map) {
+        map.invalidateSize();
+      }
+    }, 300);
+  }
+}
+
 
 	// Manejar selección de facultad específica desde el filtro
 	function handleFacultadSelected(event: CustomEvent<string>) {
@@ -155,6 +183,29 @@
 			selectedFacultad = null;
 		}
 	}
+	// Manejar selección de institución específica desde el filtro (cuando mapLevel === 'institution')
+function handleInstitutionSelected(event: CustomEvent<string>) {
+  const institucion = event.detail;
+  if (institucion) {
+    highlightedFacultad = institucion; // usamos el mismo string como “región” seleccionada
+    selectedFacultad = institucion;
+
+    showFiltersPanel = false;
+    showResultsPanel = true;
+    activePanelTab = 'results';
+
+    setTimeout(() => {
+      showResultsPanel = true;
+      activePanelTab = 'results';
+      if (map) {
+        map.invalidateSize();
+      }
+    }, 500);
+  } else {
+    highlightedFacultad = null;
+    selectedFacultad = null;
+  }
+}
 
 	// Manejar selección de facultad desde el mapa
 	function handleViewFacultyProjects(event: CustomEvent<string>) {
@@ -369,12 +420,14 @@
 			{/if}
 
 			<div class="map-legend-container">
-				<ProjectsMapLegend
-					title="Proyectos por Facultad/Entidad"
-					minValue={minProyectos}
-					maxValue={maxProyectos}
-				/>
-			</div>
+  <ProjectsMapLegend
+    title={mapLevel === 'faculty'
+      ? 'Proyectos por Facultad/Entidad'
+      : 'Proyectos por Institución'}
+    minValue={minProyectos}
+    maxValue={maxProyectos}
+  />
+</div>
 
 			<!-- Controles de mapa integrados -->
 			<div class="map-controls">
@@ -632,10 +685,12 @@
 					</div>
 					<div class="panel-content filters-panel">
 						<ProjectFilters
-							{proyectos}
-							on:filter={handleFilter}
-							on:facultadSelected={handleFacultadSelected}
-						/>
+  {proyectos}
+  {mapLevel}
+  on:filter={handleFilter}
+  on:facultadSelected={handleFacultadSelected}
+  on:institucionSelected={handleInstitutionSelected}
+/>
 					</div>
 				{/if}
 

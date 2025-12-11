@@ -5,8 +5,10 @@
 	import { fly, fade } from 'svelte/transition';
 	import ButtonSvelte from '$lib/components/atoms/Button.svelte';
 	import Sparkles from '$lib/components/atoms/Sparkles.svelte';
+	import type { MapLevel } from '$lib/models/map.model'; // o desde project.model si ahí definiste MapLevel
 
 	export let proyectos: Proyecto[] = [];
+	export let mapLevel: MapLevel = 'faculty';
 
 	const dispatch = createEventDispatcher();
 
@@ -16,6 +18,7 @@
 	let camposAmplios: string[] = [];
 	let tiposProyecto: string[] = [];
 	let fuentesFinanciamiento: string[] = [];
+	let instituciones: string[] = [];
 
 	// Filtros seleccionados
 	let filtroFacultad: string = '';
@@ -54,12 +57,19 @@
 	let showClearSuccess = false;
 	let filteredProyectos: Proyecto[] = [];
 
+	// 🔹 Cuando cambia mapLevel (faculty ↔ institution), limpiamos el filtro principal
+	$: if (mapLevel) {
+		filtroFacultad = '';
+	}
 	$: console.log('[ProjectFilters] prop proyectos cambió, length =', proyectos.length);
 	// Extraer opciones únicas de los datos de proyectos
 		$: {
 		if (proyectos.length > 0) {
 			facultades = [
 				...new Set(proyectos.map((p) => p.facultad_o_entidad_o_area_responsable).filter(Boolean))
+			].sort();
+			instituciones = [
+				...new Set(proyectos.map((p) => p.institucion).filter(Boolean))
 			].sort();
 			estados = [...new Set(proyectos.map((p) => p.estado).filter(Boolean))].sort();
 			camposAmplios = [...new Set(proyectos.map((p) => p.campo_amplio).filter(Boolean))].sort();
@@ -94,19 +104,22 @@
 		function aplicarFiltros() {
 		// Aplicar filtros a los proyectos
 		filteredProyectos = proyectos.filter((proyecto) => {
+			const query = filtroTexto.toLowerCase();
 			// 🔎 Filtro de texto (búsqueda en título, objetivo, coordinador, facultad)
 			const textMatch =
 				!filtroTexto ||
-				proyecto.titulo?.toLowerCase().includes(filtroTexto.toLowerCase()) ||
-				proyecto.objetivo?.toLowerCase().includes(filtroTexto.toLowerCase()) ||
-				proyecto.coordinador_director?.toLowerCase().includes(filtroTexto.toLowerCase()) ||
-				proyecto.facultad_o_entidad_o_area_responsable
-					?.toLowerCase()
-					.includes(filtroTexto.toLowerCase());
+				proyecto.titulo?.toLowerCase().includes(query) ||
+				proyecto.objetivo?.toLowerCase().includes(query) ||
+				proyecto.coordinador_director?.toLowerCase().includes(query) ||
+				proyecto.facultad_o_entidad_o_area_responsable?.toLowerCase().includes(query) ||
+				proyecto.institucion?.toLowerCase().includes(query);
 
 			// 🎓 Filtros de selección básicos
 			const facultadMatch =
-				!filtroFacultad || proyecto.facultad_o_entidad_o_area_responsable === filtroFacultad;
+				!filtroFacultad ||
+				(mapLevel === 'faculty'
+					? proyecto.facultad_o_entidad_o_area_responsable === filtroFacultad
+					: proyecto.institucion === filtroFacultad);
 
 			const estadoMatch = !filtroEstado || proyecto.estado === filtroEstado;
 
@@ -150,12 +163,22 @@
 		});
 
 		// Emitir evento cuando cambian los proyectos filtrados
-		{
+				{
 			dispatch('filter', filteredProyectos);
 
-			// Si hay una facultad seleccionada, emitir evento específico
 			if (filtroFacultad) {
-				dispatch('facultadSelected', filtroFacultad);
+				if (mapLevel === 'faculty') {
+					dispatch('facultadSelected', filtroFacultad);
+				} else {
+					dispatch('institucionSelected', filtroFacultad);
+				}
+			} else {
+				// Si se limpió la selección, notificamos al padre también
+				if (mapLevel === 'faculty') {
+					dispatch('facultadSelected', '');
+				} else {
+					dispatch('institucionSelected', '');
+				}
 			}
 		}
 	}
@@ -201,7 +224,11 @@
 
 		activeFilters = [
 			{ name: 'Texto', value: filtroTexto, clear: () => (filtroTexto = '') },
-			{ name: 'Facultad', value: filtroFacultad, clear: () => (filtroFacultad = '') },
+			{
+				name: mapLevel === 'faculty' ? 'Facultad' : 'Institución',
+				value: filtroFacultad,
+				clear: () => (filtroFacultad = '')
+			},
 			{ name: 'Estado', value: filtroEstado, clear: () => (filtroEstado = '') },
 			{
 				name: 'Área de conocimiento',
@@ -263,8 +290,12 @@
 			filtroAnioInicioHasta = '';
 		}
 
-		// Notificar que se ha eliminado la selección de facultad
-		dispatch('facultadSelected', '');
+		// Notificar que se ha eliminado la selección de facultad/institución
+		if (mapLevel === 'faculty') {
+			dispatch('facultadSelected', '');
+		} else {
+			dispatch('institucionSelected', '');
+		}
 
 		// Mostrar mensaje de éxito
 		showClearSuccess = true;
@@ -291,7 +322,7 @@
 		<div class="search-container">
 			<input
 				type="text"
-				placeholder="Buscar proyectos por título, coordinador, objetivo o facultad..."
+				placeholder="Buscar proyectos por título, coordinador, objetivo, facultad o institución..."
 				class="search-input"
 				bind:value={filtroTexto}
 				on:keydown={handleSearchEnter}
@@ -444,14 +475,25 @@
 							<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
 							<polyline points="9 22 9 12 15 12 15 22" />
 						</svg>
-						Facultad / Entidad
+						{#if mapLevel === 'faculty'}
+    Facultad / Entidad
+  {:else}
+    Institución
+  {/if}
 					</label>
 					<select id="facultad" bind:value={filtroFacultad}>
-						<option value="">Todas las facultades</option>
-						{#each facultades as facultad}
-							<option value={facultad}>{facultad}</option>
-						{/each}
-					</select>
+  {#if mapLevel === 'faculty'}
+    <option value="">Todas las facultades</option>
+    {#each facultades as facultad}
+      <option value={facultad}>{facultad}</option>
+    {/each}
+  {:else}
+    <option value="">Todas las instituciones</option>
+    {#each instituciones as institucion}
+      <option value={institucion}>{institucion}</option>
+    {/each}
+  {/if}
+</select>
 				</div>
 
 				<div class="filter-group">

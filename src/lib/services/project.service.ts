@@ -273,10 +273,10 @@ export const ProjectService = {
     // Por defecto, usamos facultad
     return this.getProjectsByFacultyForMap(filters);
   },
-    /**
-   * 🔹 Modelo "plano" de proyectos para la UI
-   *     (equivalente al antiguo `obtenerProyectos` de proyectosService.ts)
-   */
+  /**
+ * 🔹 Modelo "plano" de proyectos para la UI
+ *     (equivalente al antiguo `obtenerProyectos` de proyectosService.ts)
+ */
   async getFlatProjectsForUI(): Promise<ProyectoFlat[]> {
     // 1) Traemos todos los datasets necesarios en paralelo
     const [
@@ -285,15 +285,20 @@ export const ProjectService = {
       projectAreas,
       fundingRows,
       participantsDetails,
-      participantsAcreditado
+      participantsAcreditado,
+      institutions,
+      projectInstitutionPairs
     ] = await Promise.all([
       RelacionesSQLRepository.getAllProjectsWithEstado(),
       RelacionesSQLRepository.getProjectTypesWithNames(),
       RelacionesSQLRepository.getProjectAreasWithNames(),
       RelacionesSQLRepository.getProjectFundingWithNames(),
       RelacionesSQLRepository.getProjectParticipantsWithDetails(),
-      RelacionesSQLRepository.getProjectParticipantsWithAcreditado()
+      RelacionesSQLRepository.getProjectParticipantsWithAcreditado(),
+      ProjectsRepository.getAllInstitutions(),          // ya lo usas en el mapa
+      ProjectsRepository.getProjectInstitutionPairs()   // también ya existe
     ]);
+
 
     console.log('[ProjectService.getFlatProjectsForUI] datasets cargados:', {
       projects: projects.length,
@@ -301,8 +306,11 @@ export const ProjectService = {
       projectAreas: projectAreas.length,
       fundingRows: fundingRows.length,
       participantsDetails: participantsDetails.length,
-      participantsAcreditado: participantsAcreditado.length
+      participantsAcreditado: participantsAcreditado.length,
+      institutions: institutions.length,
+      projectInstitutionPairs: projectInstitutionPairs.length
     });
+
 
     // 2) Índices auxiliares por proyecto_id ==========================
 
@@ -384,6 +392,32 @@ export const ProjectService = {
         );
       }
     });
+    // Instituciones: id -> { nombre, pais }
+    const institutionById = new Map<number, { nombre: string; pais: string | null }>();
+    (institutions ?? []).forEach((inst: any) => {
+      const id = inst.id as number;
+      if (!id) return;
+      institutionById.set(id, {
+        nombre: inst.nombre ?? '',
+        pais: inst.pais ?? null
+      });
+    });
+
+    // Institución principal por proyecto (tomamos la primera relación)
+    const institutionByProject = new Map<number, { nombre: string; pais: string | null }>();
+    (projectInstitutionPairs ?? []).forEach((row: any) => {
+      const projectId = row.proyecto_id as number;
+      const instId = row.institucion_id as number;
+      if (!projectId || !instId) return;
+
+      // Si un proyecto tiene varias instituciones, usamos la primera que aparezca.
+      if (institutionByProject.has(projectId)) return;
+
+      const instInfo = institutionById.get(instId);
+      if (!instInfo) return;
+
+      institutionByProject.set(projectId, instInfo);
+    });
 
     // 3) Construimos el array “plano” de ProyectoFlat ====================
     const proyectos: ProyectoFlat[] = projects.map((p: any) => {
@@ -395,6 +429,9 @@ export const ProjectService = {
       const facultad = facultadByProject.get(projectId) ?? 'Sin facultad';
       const coord = coordinadorByProject.get(projectId) ?? { nombre: '', email: '' };
       const acreditadosCount = acreditadosByProject.get(projectId) ?? 0;
+      const instInfo = institutionByProject.get(projectId);
+      const institucionNombre = instInfo?.nombre ?? 'Sin institución';
+      const institucionPais = instInfo?.pais ?? 'Sin país';
 
       // Año de inicio (derivado de fecha_inicio_planeada)
       const fechaInicioPlaneada: string | null = p.fecha_inicio_planeada ?? null;
@@ -442,7 +479,10 @@ export const ProjectService = {
         anio_inicio: anioInicio,
         tiene_investigadores_acreditados: tieneAcreditados,
         numero_investigadores_acreditados: acreditadosCount,
-        para_siies: !!p.para_siies
+        para_siies: !!p.para_siies,
+        // Datos de institución (para filtros a nivel institución)
+        institucion: institucionNombre,
+        pais_institucion: institucionPais
       };
     });
 
