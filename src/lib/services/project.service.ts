@@ -295,19 +295,32 @@ async function buildFlatProjects(): Promise<ProyectoFlat[]> {
 
   // Institución principal por proyecto (tomamos la primera relación)
   const institutionByProject = new Map<number, { nombre: string; pais: string | null }>();
+
+  // 🔹 TODAS las instituciones relacionadas por proyecto (nombres)
+  const institucionesByProject = new Map<number, Set<string>>();
+
   (projectInstitutionPairs ?? []).forEach((row: any) => {
     const projectId = row.proyecto_id as number;
     const instId = row.institucion_id as number;
     if (!projectId || !instId) return;
 
-    // Si un proyecto tiene varias instituciones, usamos la primera que aparezca.
-    if (institutionByProject.has(projectId)) return;
-
     const instInfo = institutionById.get(instId);
     if (!instInfo) return;
 
-    institutionByProject.set(projectId, instInfo);
+    // Principal (primera que aparece)
+    if (!institutionByProject.has(projectId)) {
+      institutionByProject.set(projectId, instInfo);
+    }
+
+    // Todas las instituciones relacionadas
+    if (!institucionesByProject.has(projectId)) {
+      institucionesByProject.set(projectId, new Set<string>());
+    }
+    if (instInfo.nombre) {
+      institucionesByProject.get(projectId)!.add(instInfo.nombre);
+    }
   });
+
 
   // 3) Construimos el array “plano” de ProyectoFlat ====================
   const proyectos: ProyectoFlat[] = projects.map((p: any) => {
@@ -322,6 +335,13 @@ async function buildFlatProjects(): Promise<ProyectoFlat[]> {
     const instInfo = institutionByProject.get(projectId);
     const institucionNombre = instInfo?.nombre ?? 'Sin institución';
     const institucionPais = instInfo?.pais ?? 'Sin país';
+    const institucionesSet = institucionesByProject.get(projectId);
+    const institucionesRelacionadas = institucionesSet
+      ? Array.from(institucionesSet).filter(Boolean).sort()
+      : (institucionNombre && institucionNombre !== 'Sin institución'
+        ? [institucionNombre]
+        : []);
+
 
     // Año de inicio (derivado de fecha_inicio_planeada)
     const fechaInicioPlaneada: string | null = p.fecha_inicio_planeada ?? null;
@@ -372,7 +392,9 @@ async function buildFlatProjects(): Promise<ProyectoFlat[]> {
       para_siies: !!p.para_siies,
       // Datos de institución (para filtros a nivel institución)
       institucion: institucionNombre,
-      pais_institucion: institucionPais
+      pais_institucion: institucionPais,
+      // TODAS las instituciones relacionadas (para filtros y mapa)
+      instituciones_relacionadas: institucionesRelacionadas
     };
   });
 
@@ -388,40 +410,30 @@ export const ProjectService = {
   /**
  * Mapa de proyectos por INSTITUCIÓN (con soporte de filtros)
  */
-  async getProjectsByInstitutionForMap(
+    async getProjectsByInstitutionForMap(
     filters?: ProjectFilters
   ): Promise<ProjectMapModel[]> {
-    // 1) Traemos instituciones y pares proyecto–institución
+    // 1) Traemos instituciones y todas las relaciones proyecto–institución
     const institutions = await ProjectsRepository.getAllInstitutions();
     const pairs = await ProjectsRepository.getProjectInstitutionPairs();
 
-    // 2) Mapa proyecto_id -> institución principal (la primera que aparezca)
-    const mainInstitutionByProject = new Map<number, number>();
+    // 2) IDs permitidos según filtros (puede ser null = sin filtros)
+    const allowedIds = await getFilteredProjectIds(filters);
+
+    // 3) Conteo por institución usando TODAS las relaciones
+    const countMap = new Map<number, number>();
 
     (pairs ?? []).forEach((row: any) => {
       const projectId = row.proyecto_id as number;
       const instId = row.institucion_id as number;
       if (!projectId || !instId) return;
 
-      // Solo asignamos la PRIMERA que aparece como "principal"
-      if (!mainInstitutionByProject.has(projectId)) {
-        mainInstitutionByProject.set(projectId, instId);
-      }
-    });
-
-    // 3) IDs permitidos según filtros (mismo helper que ya usas en el servicio)
-    const allowedIds = await getFilteredProjectIds(filters);
-
-    // 4) Conteo por institución usando SOLO la institución principal del proyecto
-    const countMap = new Map<number, number>();
-
-    for (const [projectId, instId] of mainInstitutionByProject.entries()) {
-      if (allowedIds && !allowedIds.has(projectId)) continue;
+      if (allowedIds && !allowedIds.has(projectId)) return;
 
       countMap.set(instId, (countMap.get(instId) || 0) + 1);
-    }
+    });
 
-    // 5) Construimos el modelo para el mapa
+    // 4) Construimos el modelo para el mapa
     const result: ProjectMapModel[] = (institutions ?? []).map((inst: any) => ({
       id: inst.id,
       titulo: inst.nombre,

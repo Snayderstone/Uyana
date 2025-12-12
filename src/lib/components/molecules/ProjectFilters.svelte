@@ -74,7 +74,21 @@
 			if (institucionesDisponibles.length > 0) {
 				instituciones = [...institucionesDisponibles].sort();
 			} else {
-				instituciones = [...new Set(proyectos.map((p) => p.institucion).filter(Boolean))].sort();
+				// 🔹 Tomar en cuenta institución principal + todas las relacionadas
+				const instSet = new Set<string>();
+
+				proyectos.forEach((p: any) => {
+					if (p.institucion) {
+						instSet.add(p.institucion);
+					}
+					if (Array.isArray(p.instituciones_relacionadas)) {
+						p.instituciones_relacionadas
+							.filter(Boolean)
+							.forEach((nombre: string) => instSet.add(nombre));
+					}
+				});
+
+				instituciones = [...instSet].sort();
 			}
 
 			estados = [...new Set(proyectos.map((p) => p.estado).filter(Boolean))].sort();
@@ -111,7 +125,7 @@
 		// Aplicar filtros a los proyectos
 		filteredProyectos = proyectos.filter((proyecto) => {
 			const query = filtroTexto.toLowerCase();
-			// 🔎 Filtro de texto (búsqueda en título, objetivo, coordinador, facultad)
+			// Filtro de texto (búsqueda en título, objetivo, coordinador, facultad)
 			const textMatch =
 				!filtroTexto ||
 				proyecto.titulo?.toLowerCase().includes(query) ||
@@ -125,6 +139,10 @@
 				!filtroFacultad ||
 				(mapLevel === 'faculty'
 					? proyecto.facultad_o_entidad_o_area_responsable === filtroFacultad
+					: // 🔹 A nivel institución: cualquier institución relacionada cuenta
+					Array.isArray((proyecto as any).instituciones_relacionadas) &&
+					  (proyecto as any).instituciones_relacionadas.length > 0
+					? (proyecto as any).instituciones_relacionadas.includes(filtroFacultad)
 					: proyecto.institucion === filtroFacultad);
 
 			const estadoMatch = !filtroEstado || proyecto.estado === filtroEstado;

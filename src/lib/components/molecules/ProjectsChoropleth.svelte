@@ -316,9 +316,13 @@
 				});
 			} else {
 				const keyPopup = getEntityKey('institution', facultad);
-				proyectosEntidad = listaBase.filter((p) => {
-					const raw = p.institucion || '';
-					return getEntityKey('institution', raw) === keyPopup;
+				proyectosEntidad = listaBase.filter((p: any) => {
+					const nombres: string[] =
+						Array.isArray(p.instituciones_relacionadas) && p.instituciones_relacionadas.length > 0
+							? p.instituciones_relacionadas
+							: [p.institucion || ''];
+
+					return nombres.some((nombre) => getEntityKey('institution', nombre) === keyPopup);
 				});
 			}
 		}
@@ -646,14 +650,24 @@
 
 				const counts: Record<string, number> = {};
 
-				filteredProyectos.forEach((proyecto) => {
-					const rawName =
-						mapLevel === 'faculty'
-							? proyecto.facultad_o_entidad_o_area_responsable
-							: proyecto.institucion;
+				filteredProyectos.forEach((proyecto: any) => {
+					if (mapLevel === 'faculty') {
+						const rawName = proyecto.facultad_o_entidad_o_area_responsable;
+						const entityKey = getEntityKey('faculty', rawName || 'No especificado');
+						counts[entityKey] = (counts[entityKey] || 0) + 1;
+					} else {
+						// 🔹 A nivel institución: contar TODAS las instituciones relacionadas
+						const nombres: string[] =
+							Array.isArray(proyecto.instituciones_relacionadas) &&
+							proyecto.instituciones_relacionadas.length > 0
+								? proyecto.instituciones_relacionadas
+								: [proyecto.institucion];
 
-					const entityKey = getEntityKey(mapLevel, rawName || 'No especificado');
-					counts[entityKey] = (counts[entityKey] || 0) + 1;
+						nombres.filter(Boolean).forEach((nombre: string) => {
+							const entityKey = getEntityKey('institution', nombre);
+							counts[entityKey] = (counts[entityKey] || 0) + 1;
+						});
+					}
 				});
 
 				memoizedFilteredProyectos.key = key;
