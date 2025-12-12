@@ -13,6 +13,45 @@
 	import type { MapLevel } from '$lib/models/map.model';
 	import type { Map, LatLngTuple } from 'leaflet';
 	import { ProjectService } from '$lib/services/project.service';
+
+	// 🔹 Mismas funciones de normalización que usa ProjectsChoropleth
+	function normalizarNombreFacultad(nombre: string): string {
+		if (!nombre) return 'No especificada';
+
+		// Pasamos todo a minúsculas para normalizar
+		let s = nombre.trim().toLowerCase();
+
+		// Quitamos prefijos "facultad de" o "facultad"
+		s = s.replace(/^facultad\s+de\s+/, '');
+		s = s.replace(/^facultad\s+/, '');
+
+		// Normalizamos espacios
+		s = s.replace(/\s+/g, ' ');
+
+		// Capitalizamos cada palabra ("ciencias agrícolas" → "Ciencias Agrícolas")
+		const title = s
+			.split(' ')
+			.map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+			.join(' ');
+
+		// Formato final que coincide con el GeoJSON:
+		// "Facultad De Ciencias Agrícolas"
+		return `Facultad De ${title}`;
+	}
+
+	function getEntityKey(level: MapLevel, rawName?: string | null): string {
+		if (!rawName) return 'No especificado';
+
+		const trimmed = rawName.trim();
+
+		if (level === 'faculty') {
+			return normalizarNombreFacultad(trimmed);
+		}
+
+		// Para instituciones, por ahora solo recortamos espacios
+		return trimmed;
+	}
+
 	// Props para el mapa
 	export let center: LatLngTuple = [-0.1992, -78.5059]; // Quito - UCE por defecto
 	export let zoom = 16;
@@ -126,24 +165,38 @@
 	function handleFilter(event: CustomEvent<Proyecto[]>) {
 		filteredProyectos = event.detail;
 
-		// Determinar si hay una sola facultad/institución según el nivel
-		const regionesUnicas = [
-			...new Set(
-				filteredProyectos
-					.map((p) =>
-						mapLevel === 'faculty'
-							? p.facultad_o_entidad_o_area_responsable || 'No especificado'
-							: p.institucion || 'Sin institución'
-					)
-					.filter(Boolean)
-			)
-		];
+		// 🔹 Cuando hay UNA sola región filtrada, centramos/zoom como antes
+		if (mapLevel === 'faculty') {
+			// Usamos el nombre original para mostrar en UI
+			const rawFacultades = [
+				...new Set(
+					filteredProyectos
+						.map((p) => p.facultad_o_entidad_o_area_responsable || 'No especificado')
+						.filter(Boolean)
+				)
+			];
 
-		if (regionesUnicas.length === 1) {
-			highlightedFacultad = regionesUnicas[0];
-			selectedFacultad = regionesUnicas[0];
+			if (rawFacultades.length === 1) {
+				// Etiqueta bonita en el panel
+				selectedFacultad = rawFacultades[0];
+				// Nombre normalizado para que coincida con el id del GeoJSON
+				highlightedFacultad = getEntityKey('faculty', rawFacultades[0]);
+			} else {
+				highlightedFacultad = null;
+			}
 		} else {
-			highlightedFacultad = null;
+			// Nivel institución
+			const rawInsts = [
+				...new Set(filteredProyectos.map((p) => p.institucion || 'Sin institución').filter(Boolean))
+			];
+
+			if (rawInsts.length === 1) {
+				selectedFacultad = rawInsts[0];
+				// Para instituciones casi no cambia, pero lo pasamos por getEntityKey para ser consistentes
+				highlightedFacultad = getEntityKey('institution', rawInsts[0]);
+			} else {
+				highlightedFacultad = null;
+			}
 		}
 
 		// Si hay filtros aplicados, mostrar automáticamente el panel de resultados
@@ -164,19 +217,19 @@
 	function handleFacultadSelected(event: CustomEvent<string>) {
 		const facultad = event.detail;
 		if (facultad) {
-			highlightedFacultad = facultad;
+			// Texto original para mostrar en el título del panel
 			selectedFacultad = facultad;
+			// Nombre normalizado para que el mapa pueda encontrar la feature y hacer zoom
+			highlightedFacultad = getEntityKey('faculty', facultad);
 
 			// Mostrar los resultados cuando se selecciona una facultad específica
-			showFiltersPanel = false; // Asegurarse de que el panel de filtros está cerrado
+			showFiltersPanel = false;
 			showResultsPanel = true;
 			activePanelTab = 'results';
 
-			// Dar tiempo para que el sistema pueda aplicar el resaltado antes de mostrar resultados
 			setTimeout(() => {
 				showResultsPanel = true;
 				activePanelTab = 'results';
-				// También invalidar el tamaño del mapa para asegurar que se renderiza correctamente
 				if (map) {
 					map.invalidateSize();
 				}
@@ -190,8 +243,9 @@
 	function handleInstitutionSelected(event: CustomEvent<string>) {
 		const institucion = event.detail;
 		if (institucion) {
-			highlightedFacultad = institucion; // usamos el mismo string como “región” seleccionada
 			selectedFacultad = institucion;
+			// Por si acaso en futuro normalizas instituciones también
+			highlightedFacultad = getEntityKey('institution', institucion);
 
 			showFiltersPanel = false;
 			showResultsPanel = true;
