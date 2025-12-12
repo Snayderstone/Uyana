@@ -752,7 +752,12 @@
 						{#if showDashboard}
 							<ProjectsDashboard proyectos={filteredProyectos} />
 						{:else}
-							<ProjectsDetail proyectos={filteredProyectos} isVisible={true} {selectedFacultad} />
+							<ProjectsDetail
+								proyectos={filteredProyectos}
+								isVisible={true}
+								{selectedFacultad}
+								{mapLevel}
+							/>
 						{/if}
 					</div>
 				{/if}

@@ -1,30 +1,55 @@
 <!-- src/lib/components/molecules/ProjectsDetail.svelte -->
 <script lang="ts">
 	import type { Proyecto } from '$lib/services/proyectosService';
+	import type { MapLevel } from '$lib/models/map.model';
 	import { fly } from 'svelte/transition';
 
 	export let proyectos: Proyecto[] = [];
 	export let isVisible: boolean = false;
 	export let selectedFacultad: string | null = null;
+	export let mapLevel: MapLevel = 'faculty';
 
 	// Paginación
 	let itemsPerPage = 5;
 	let currentPage = 1;
 
-	// Proyectos filtrados por facultad seleccionada (si existe)
-	$: filteredProjects = selectedFacultad
-		? proyectos.filter((p) => p.facultad_o_entidad_o_area_responsable === selectedFacultad)
-		: proyectos;
+	function normalize(text?: string | null): string {
+		return (text ?? '').trim().toLowerCase();
+	}
+
+	// Proyectos filtrados por entidad seleccionada (facultad o institución)
+	$: filteredProjects = (() => {
+		if (!selectedFacultad) return proyectos;
+
+		const selected = normalize(selectedFacultad);
+		if (!selected) return proyectos;
+
+		return proyectos.filter((p) => {
+			if (mapLevel === 'faculty') {
+				// 🔹 Nivel facultad: comparamos contra el campo de facultad
+				return normalize(p.facultad_o_entidad_o_area_responsable) === selected;
+			}
+
+			// 🔹 Nivel institución: comparamos contra institución principal y relacionadas
+			const mainInst = normalize(p.institucion);
+			if (mainInst === selected) return true;
+
+			const related = p.instituciones_relacionadas ?? [];
+			return related.some((nombre) => normalize(nombre) === selected);
+		});
+	})();
 
 	// Proyectos paginados
 	$: paginatedProjects = filteredProjects.slice(
 		(currentPage - 1) * itemsPerPage,
 		currentPage * itemsPerPage
 	);
-
 	// Total de páginas
 	$: totalPages = Math.ceil(filteredProjects.length / itemsPerPage);
-
+	// Si el filtro cambia y la página actual queda fuera de rango, volvemos a la 1
+	$: if (currentPage > totalPages) {
+		currentPage = 1;
+	}
 	// Navegar a la página siguiente
 	function nextPage() {
 		if (currentPage < totalPages) {
