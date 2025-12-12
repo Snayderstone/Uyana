@@ -1,10 +1,9 @@
 <script lang="ts">
 	import BlogPostCard from '$lib/components/molecules/BlogPostCard.svelte';
 	import ContentSection from '$lib/components/organisms/ContentSection.svelte';
-	import type { BlogPost } from '$lib/utils/types';
 
 	export let data: {
-		posts: BlogPost[];
+		posts: any[];
 	};
 
 	let { posts } = data;
@@ -15,12 +14,12 @@
 		<div class="grid">
 			{#each posts as post}
 				<BlogPostCard
-					title={post.title}
-					coverImage={post.coverImage}
-					excerpt={post.excerpt}
-					readingTime={post.readingTime}
+					title={post.titulo}
+					coverImage={post.imagen_portada}
+					excerpt={post.resumen}
+					readingTime={undefined}
 					slug={post.slug}
-					tags={post.tags}
+					tags={undefined}
 				/>
 			{/each}
 		</div>
