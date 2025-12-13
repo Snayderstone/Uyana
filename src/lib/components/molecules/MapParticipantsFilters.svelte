@@ -31,6 +31,13 @@
 	let selectedGenero = '';
 	let selectedPais = '';
 	let acreditadoFilter: '' | 'true' | 'false' = '';
+	// Nuevos filtros de proyectos
+	let selectedCargo = '';
+	let selectedRegimen = '';
+	let selectedArea = '';
+	let selectedLinea = '';
+	let selectedTipoProyecto = '';
+	let selectedEstadoProyecto = '';
 
 	// UI
 	let filtersExpanded = false;
@@ -88,7 +95,25 @@
 		if (selectedPais) {
 			state.paisesInstitucion = [selectedPais];
 		}
-
+		// Filtros de proyectos
+		if (selectedCargo) {
+			state.cargos = [selectedCargo];
+		}
+		if (selectedRegimen) {
+			state.regimenesDedicacion = [selectedRegimen];
+		}
+		if (selectedArea) {
+			state.areasConocimiento = [selectedArea];
+		}
+		if (selectedLinea) {
+			state.lineasInvestigacion = [selectedLinea];
+		}
+		if (selectedTipoProyecto) {
+			state.tiposProyecto = [selectedTipoProyecto];
+		}
+		if (selectedEstadoProyecto) {
+			state.estadosProyecto = [selectedEstadoProyecto];
+		}
 		return state;
 	}
 
@@ -106,6 +131,13 @@
 		selectedGenero = '';
 		selectedPais = '';
 		acreditadoFilter = '';
+		// Nuevos filtros
+		selectedCargo = '';
+		selectedRegimen = '';
+		selectedArea = '';
+		selectedLinea = '';
+		selectedTipoProyecto = '';
+		selectedEstadoProyecto = '';
 
 		activeFilters = [];
 		activeFilterCount = 0;
@@ -181,9 +213,7 @@
 		}
 
 		if (state.generos && state.generos.length) {
-			const generoLabel = options.generos.find((o) =>
-				state.generos!.includes(o.value)
-			)?.label;
+			const generoLabel = options.generos.find((o) => state.generos!.includes(o.value))?.label;
 			if (generoLabel) {
 				chips.push({
 					name: 'Género',
@@ -209,6 +239,71 @@
 				name: 'País institución',
 				value: opt?.label ?? value,
 				clear: () => (selectedPais = '')
+			});
+		}
+		// Cargos
+		if (state.cargos && state.cargos.length) {
+			const value = state.cargos[0];
+			const opt = options.cargos.find((o) => o.value === value);
+			chips.push({
+				name: 'Cargo',
+				value: opt?.label ?? value,
+				clear: () => (selectedCargo = '')
+			});
+		}
+
+		// Regímenes de dedicación
+		if (state.regimenesDedicacion && state.regimenesDedicacion.length) {
+			const value = state.regimenesDedicacion[0];
+			const opt = options.regimenesDedicacion.find((o) => o.value === value);
+			chips.push({
+				name: 'Régimen',
+				value: opt?.label ?? value,
+				clear: () => (selectedRegimen = '')
+			});
+		}
+
+		// Áreas de conocimiento
+		if (state.areasConocimiento && state.areasConocimiento.length) {
+			const value = state.areasConocimiento[0];
+			const opt = options.areasConocimiento.find((o) => o.value === value);
+			chips.push({
+				name: 'Área',
+				value: opt?.label ?? value,
+				clear: () => (selectedArea = '')
+			});
+		}
+
+		// Líneas de investigación
+		if (state.lineasInvestigacion && state.lineasInvestigacion.length) {
+			const value = state.lineasInvestigacion[0];
+			const opt = options.lineasInvestigacion.find((o) => o.value === value);
+			chips.push({
+				name: 'Línea',
+				value: opt?.label ?? value,
+				clear: () => (selectedLinea = '')
+			});
+		}
+
+		// Tipos de proyecto
+		if (state.tiposProyecto && state.tiposProyecto.length) {
+			const value = state.tiposProyecto[0];
+			const opt = options.tiposProyecto.find((o) => o.value === value);
+			chips.push({
+				name: 'Tipo proyecto',
+				value: opt?.label ?? value,
+				clear: () => (selectedTipoProyecto = '')
+			});
+		}
+
+		// Estados de proyecto
+		if (state.estadosProyecto && state.estadosProyecto.length) {
+			const value = state.estadosProyecto[0];
+			const opt = options.estadosProyecto.find((o) => o.value === value);
+			chips.push({
+				name: 'Estado proyecto',
+				value: opt?.label ?? value,
+				clear: () => (selectedEstadoProyecto = '')
 			});
 		}
 
@@ -385,7 +480,8 @@
 							<option value="">Todas las facultades</option>
 							{#each options.facultades as opt}
 								<option value={opt.value}>
-									{opt.label} {#if opt.count}({opt.count}){/if}
+									{opt.label}
+									{#if opt.count}({opt.count}){/if}
 								</option>
 							{/each}
 						</select>
@@ -394,7 +490,8 @@
 							<option value="">Todas las instituciones</option>
 							{#each options.instituciones as opt}
 								<option value={opt.value}>
-									{opt.label} {#if opt.count}({opt.count}){/if}
+									{opt.label}
+									{#if opt.count}({opt.count}){/if}
 								</option>
 							{/each}
 						</select>
@@ -425,7 +522,8 @@
 						<option value="">Todas las carreras</option>
 						{#each options.carreras as opt}
 							<option value={opt.value}>
-								{opt.label} {#if opt.count}({opt.count}){/if}
+								{opt.label}
+								{#if opt.count}({opt.count}){/if}
 							</option>
 						{/each}
 					</select>
@@ -454,7 +552,8 @@
 						<option value="">Todos</option>
 						{#each options.generos as opt}
 							<option value={opt.value}>
-								{opt.label} {#if opt.count}({opt.count}){/if}
+								{opt.label}
+								{#if opt.count}({opt.count}){/if}
 							</option>
 						{/each}
 					</select>
@@ -475,9 +574,7 @@
 							stroke-linejoin="round"
 						>
 							<path d="M9 11l3 3L22 4" />
-							<path
-								d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"
-							/>
+							<path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
 						</svg>
 						Acreditación
 					</label>
@@ -504,7 +601,9 @@
 						>
 							<circle cx="12" cy="12" r="10" />
 							<path d="M2 12h20" />
-							<path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+							<path
+								d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"
+							/>
 						</svg>
 						País de institución
 					</label>
@@ -512,7 +611,189 @@
 						<option value="">Todos los países</option>
 						{#each options.paisesInstitucion as opt}
 							<option value={opt.value}>
-								{opt.label} {#if opt.count}({opt.count}){/if}
+								{opt.label}
+								{#if opt.count}({opt.count}){/if}
+							</option>
+						{/each}
+					</select>
+				</div>
+				<!-- Cargo -->
+				<div class="filter-group">
+					<label for="cargo">
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							width="16"
+							height="16"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						>
+							<path d="M12 12c2.21 0 4-1.79 4-4S14.21 4 12 4 8 5.79 8 8s1.79 4 4 4z" />
+							<path d="M5.5 20a6.5 6.5 0 0 1 13 0" />
+						</svg>
+						Cargo en proyectos
+					</label>
+					<select id="cargo" bind:value={selectedCargo}>
+						<option value="">Todos</option>
+						{#each options.cargos as opt}
+							<option value={opt.value}>
+								{opt.label}
+								{#if opt.count}({opt.count}){/if}
+							</option>
+						{/each}
+					</select>
+				</div>
+
+				<!-- Régimen de dedicación -->
+				<div class="filter-group">
+					<label for="regimen">
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							width="16"
+							height="16"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						>
+							<circle cx="12" cy="12" r="10" />
+							<path d="M12 6v6l3 3" />
+						</svg>
+						Régimen de dedicación
+					</label>
+					<select id="regimen" bind:value={selectedRegimen}>
+						<option value="">Todos</option>
+						{#each options.regimenesDedicacion as opt}
+							<option value={opt.value}>
+								{opt.label}
+								{#if opt.count}({opt.count}){/if}
+							</option>
+						{/each}
+					</select>
+				</div>
+
+				<!-- Área de conocimiento -->
+				<div class="filter-group">
+					<label for="area">
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							width="16"
+							height="16"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						>
+							<rect x="3" y="3" width="18" height="18" rx="2" />
+							<path d="M3 9h18" />
+							<path d="M9 21V9" />
+						</svg>
+						Área de conocimiento
+					</label>
+					<select id="area" bind:value={selectedArea}>
+						<option value="">Todas</option>
+						{#each options.areasConocimiento as opt}
+							<option value={opt.value}>
+								{opt.label}
+								{#if opt.count}({opt.count}){/if}
+							</option>
+						{/each}
+					</select>
+				</div>
+
+				<!-- Línea de investigación -->
+				<div class="filter-group">
+					<label for="linea">
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							width="16"
+							height="16"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						>
+							<polyline points="3 17 9 11 13 15 21 7" />
+							<polyline points="14 7 21 7 21 14" />
+						</svg>
+						Línea de investigación
+					</label>
+					<select id="linea" bind:value={selectedLinea}>
+						<option value="">Todas</option>
+						{#each options.lineasInvestigacion as opt}
+							<option value={opt.value}>
+								{opt.label}
+								{#if opt.count}({opt.count}){/if}
+							</option>
+						{/each}
+					</select>
+				</div>
+
+				<!-- Tipo de proyecto -->
+				<div class="filter-group">
+					<label for="tipoProyecto">
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							width="16"
+							height="16"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						>
+							<path d="M12 2l4 4-4 4-4-4 4-4z" />
+							<path d="M6 10l-4 4 4 4 4-4-4-4z" />
+							<path d="M18 10l-4 4 4 4 4-4-4-4z" />
+						</svg>
+						Tipo de proyecto
+					</label>
+					<select id="tipoProyecto" bind:value={selectedTipoProyecto}>
+						<option value="">Todos</option>
+						{#each options.tiposProyecto as opt}
+							<option value={opt.value}>
+								{opt.label}
+								{#if opt.count}({opt.count}){/if}
+							</option>
+						{/each}
+					</select>
+				</div>
+
+				<!-- Estado de proyecto -->
+				<div class="filter-group">
+					<label for="estadoProyecto">
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							width="16"
+							height="16"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						>
+							<circle cx="12" cy="12" r="10" />
+							<path d="M9 12l2 2 4-4" />
+						</svg>
+						Estado de proyecto
+					</label>
+					<select id="estadoProyecto" bind:value={selectedEstadoProyecto}>
+						<option value="">Todos</option>
+						{#each options.estadosProyecto as opt}
+							<option value={opt.value}>
+								{opt.label}
+								{#if opt.count}({opt.count}){/if}
 							</option>
 						{/each}
 					</select>
@@ -520,11 +801,7 @@
 			</div>
 
 			<div class="filters-actions">
-				<button
-					class="clear-btn"
-					on:click={limpiarFiltros}
-					disabled={activeFilterCount === 0}
-				>
+				<button class="clear-btn" on:click={limpiarFiltros} disabled={activeFilterCount === 0}>
 					Limpiar filtros
 				</button>
 				<Sparkles>

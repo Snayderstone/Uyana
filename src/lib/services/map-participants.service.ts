@@ -43,8 +43,13 @@ export class MapParticipantsService {
 	static async getMapParticipantsData(
 		filterState: MapParticipantsFilterState = {}
 	): Promise<MapParticipantsDataResult> {
-		// 1) Cargamos todos los participantes con su ubicación académica + dimensiones de proyectos
-		const baseRows = await MapParticipantsRepository.getParticipantsWithLocation();
+		// 1) Cargamos participantes + instituciones en paralelo
+		const [baseRows, allInstitutions] = await Promise.all([
+			MapParticipantsRepository.getParticipantsWithLocation(),
+			MapParticipantsRepository.getInstitutionsWithGeometry()
+		]);
+
+		console.log('[MapParticipantsService] baseRows =', baseRows.length, 'instituciones =', allInstitutions.length);
 
 		// 2) Construimos opciones de filtros a partir del dataset completo
 		const filterOptions = this.buildFilterOptions(baseRows);
@@ -57,7 +62,11 @@ export class MapParticipantsService {
 
 		// 5) Agregaciones para el coropleta
 		const byFaculty = this.aggregateByFaculty(filteredParticipantsRows);
-		const byInstitution = this.aggregateByInstitution(filteredParticipantsRows);
+		const byInstitutionRaw = this.aggregateByInstitution(filteredParticipantsRows);
+
+		// 👇 nuevo: rellenar con instituciones sin participantes (totalParticipants = 0)
+		const byInstitution = this.mergeInstitutionsWithZeroParticipants(byInstitutionRaw, allInstitutions);
+
 
 		// 6) Stats globales
 		const stats = this.buildStatsSummary(baseRows, byFaculty, byInstitution);
@@ -69,6 +78,39 @@ export class MapParticipantsService {
 			stats,
 			filterOptions
 		};
+	}
+	private static mergeInstitutionsWithZeroParticipants(
+		aggregations: MapParticipantsRegionAggregation[],
+		allInstitutions: { id: number; nombre: string; sigla: string | null; pais: string | null; geometry: unknown | null }[]
+	): MapParticipantsRegionAggregation[] {
+		const map = new Map<number, MapParticipantsRegionAggregation>();
+
+		// Primero las instituciones que sí tienen participantes (según filtros)
+		for (const agg of aggregations) {
+			map.set(agg.regionId, { ...agg });
+		}
+
+		// Luego añadimos TODAS las instituciones del catálogo
+		for (const inst of allInstitutions) {
+			if (!map.has(inst.id)) {
+				map.set(inst.id, {
+					level: 'institution',
+					regionId: inst.id,
+					regionName: inst.nombre,
+					regionSigla: inst.sigla ?? undefined,
+					totalParticipants: 0,
+					geometry: inst.geometry
+				});
+			} else {
+				// Si ya existe por participantes, aseguramos que tenga geometry
+				const agg = map.get(inst.id)!;
+				if (agg.geometry == null) {
+					agg.geometry = inst.geometry;
+				}
+			}
+		}
+
+		return Array.from(map.values());
 	}
 
 	// ---------------------------------------------------------------------
@@ -448,7 +490,8 @@ export class MapParticipantsService {
 					totalParticipants: 0,
 					totalFemale: 0,
 					totalMale: 0,
-					totalAccredited: 0
+					totalAccredited: 0,
+					geometry: row.facultadGeometry
 				});
 			}
 
@@ -472,7 +515,8 @@ export class MapParticipantsService {
 			totalParticipants: agg.totalParticipants,
 			totalFemale: agg.totalFemale,
 			totalMale: agg.totalMale,
-			totalAccredited: agg.totalAccredited
+			totalAccredited: agg.totalAccredited,
+			geometry: agg.geometry
 		}));
 	}
 
@@ -496,7 +540,8 @@ export class MapParticipantsService {
 					totalParticipants: 0,
 					totalFemale: 0,
 					totalMale: 0,
-					totalAccredited: 0
+					totalAccredited: 0,
+					geometry: row.institucionGeometry
 				});
 			}
 
@@ -520,7 +565,8 @@ export class MapParticipantsService {
 			totalParticipants: agg.totalParticipants,
 			totalFemale: agg.totalFemale,
 			totalMale: agg.totalMale,
-			totalAccredited: agg.totalAccredited
+			totalAccredited: agg.totalAccredited,
+			geometry: agg.geometry
 		}));
 	}
 
@@ -537,6 +583,7 @@ export class MapParticipantsService {
 
 		const totalFacultadesConParticipantes = byFaculty.length;
 		const totalInstitucionesConParticipantes = byInstitution.length;
+		//const totalInstitucionesConParticipantes = byInstitution.filter((i) => i.totalParticipants > 0).length;
 
 		const facultadCounts = byFaculty.map((f) => f.totalParticipants);
 		const institucionCounts = byInstitution.map((i) => i.totalParticipants);

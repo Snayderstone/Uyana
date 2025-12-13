@@ -67,6 +67,8 @@ export interface MapParticipantsRegionAggregation {
 	totalFemale?: number;
 	totalMale?: number;
 	totalAccredited?: number;
+	
+	geometry?: unknown | null;
 }
 
 /**
