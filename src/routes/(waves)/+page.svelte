@@ -3,13 +3,13 @@
 	import About from '$lib/components/organisms/About.svelte';
 	import RecentPosts from '$lib/components/organisms/RecentPosts.svelte';
 	import Features from '$lib/components/organisms/Features.svelte';
-	import type { Feature, BlogPost } from '$lib/utils/types';
+	import type { Feature } from '$lib/utils/types';
 	import Button from '$lib/components/atoms/Button.svelte';
 	import Sparkles from '$lib/components/atoms/Sparkles.svelte';
 
 	export let data: {
 		features: Feature[];
-		posts: BlogPost[];
+		posts: any[];
 	};
 
 	let { features, posts } = data;

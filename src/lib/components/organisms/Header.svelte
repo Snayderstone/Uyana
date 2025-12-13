@@ -8,9 +8,9 @@
 
 <header class:has-background={showBackground}>
 	<nav class="container">
-		<div class="logo" aria-label="Uyana - Página principal">
+		<a href="/" class="logo" aria-label="Uyana - Página principal">
 			<Logo />
-		</div>
+		</a>
 
 		<div class="links">
 			<a href="/map">Mapa(Proyectos)</a>
@@ -83,6 +83,9 @@
 			flex: 1;
 			display: flex;
 			align-items: center;
+			text-decoration: none;
+			color: var(--color--text);
+			cursor: pointer;
 		}
 
 		a {
