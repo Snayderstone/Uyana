@@ -5,7 +5,7 @@
  */
 
 import { supabase } from '../supabase.client';
-import type { BlogPost, BlogCategoria, BlogPostCategoria } from '$lib/models/admin/entities';
+import type { BlogPost, BlogCategoria, BlogPostCategoria } from '$lib/models/admin';
 
 export const AdminBlogRepository = {
 	// =====================================
@@ -310,21 +310,113 @@ export const AdminBlogRepository = {
 	// Etiquetas
 	// =====================================
 
-	async getTagById(id: number): Promise<any | null> {
+	async createEtiqueta(etiqueta: {
+		nombre: string;
+		slug: string;
+		color?: string;
+	}): Promise<any | null> {
+		const { data, error } = await supabase
+			.from('blog_etiquetas')
+			.insert({
+				...etiqueta,
+				color: etiqueta.color || '#8b5cf6'
+			})
+			.select()
+			.single();
+
+		if (error) {
+			console.error('Error al crear etiqueta [REPOSITORY]:', error);
+			throw new Error(`Error Supabase: ${error.message} (${error.code})`);
+		}
+
+		return data;
+	},
+
+	async listEtiquetas(): Promise<any[]> {
+		const { data, error } = await supabase
+			.from('blog_etiquetas')
+			.select('id, nombre, slug, color, uso_count')
+			.order('uso_count', { ascending: false });
+
+		if (error) {
+			console.error('Error al listar etiquetas:', error);
+			return [];
+		}
+
+		return data || [];
+	},
+
+	async getEtiquetaById(id: number): Promise<any | null> {
 		const { data, error } = await supabase.from('blog_etiquetas').select('*').eq('id', id).single();
 
 		if (error) return null;
 		return data;
 	},
 
-	async getAllTags(): Promise<any[]> {
-		const { data, error } = await supabase.from('blog_etiquetas').select('*').order('nombre');
+	async getEtiquetaBySlug(slug: string): Promise<any | null> {
+		const { data, error } = await supabase
+			.from('blog_etiquetas')
+			.select('*')
+			.eq('slug', slug)
+			.single();
 
 		if (error) {
-			console.error('Error al obtener etiquetas:', error);
-			return [];
+			if (error.code === 'PGRST116') return null;
+			console.error('Error al obtener etiqueta por slug:', error);
+			return null;
 		}
 
-		return data || [];
+		return data;
+	},
+
+	async updateEtiqueta(
+		id: number,
+		etiqueta: { nombre?: string; slug?: string; color?: string }
+	): Promise<any | null> {
+		const { data, error } = await supabase
+			.from('blog_etiquetas')
+			.update(etiqueta)
+			.eq('id', id)
+			.select()
+			.single();
+
+		if (error) {
+			console.error('Error al actualizar etiqueta:', error);
+			return null;
+		}
+
+		return data;
+	},
+
+	async deleteEtiqueta(id: number): Promise<boolean> {
+		// Primero eliminar relaciones
+		const { error: junctionError } = await supabase
+			.from('blog_post_etiqueta')
+			.delete()
+			.eq('etiqueta_id', id);
+
+		if (junctionError) {
+			console.error('Error al eliminar relaciones de etiqueta:', junctionError);
+			return false;
+		}
+
+		// Luego eliminar la etiqueta
+		const { error } = await supabase.from('blog_etiquetas').delete().eq('id', id);
+
+		if (error) {
+			console.error('Error al eliminar etiqueta:', error);
+			return false;
+		}
+
+		return true;
+	},
+
+	// Alias para compatibilidad
+	async getTagById(id: number): Promise<any | null> {
+		return this.getEtiquetaById(id);
+	},
+
+	async getAllTags(): Promise<any[]> {
+		return this.listEtiquetas();
 	}
 };

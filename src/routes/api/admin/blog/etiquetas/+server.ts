@@ -1,79 +1,87 @@
-import { supabaseServer } from '$lib/db/supabase.server';
-import { json } from '@sveltejs/kit';
+/**
+ * Admin API - Blog Etiquetas Endpoints
+ * -------------------------------------
+ * GET  /api/admin/blog/etiquetas     - Listar etiquetas
+ * POST /api/admin/blog/etiquetas     - Crear etiqueta
+ */
 
-export async function GET() {
+import { json, type RequestHandler } from '@sveltejs/kit';
+import { AdminBlogService } from '$lib/services/admin/blog.service';
+
+/**
+ * GET - Listar todas las etiquetas
+ */
+export const GET: RequestHandler = async () => {
 	try {
-		const { data: etiquetas, error } = await supabaseServer
-			.from('blog_etiquetas')
-			.select('id, nombre, slug, color, uso_count')
-			.order('uso_count', { ascending: false });
-
-		if (error) throw error;
+		const etiquetas = await AdminBlogService.listEtiquetas();
 
 		return json({
 			success: true,
-			data: etiquetas || []
+			data: etiquetas
 		});
 	} catch (error) {
-		console.error('Error loading tags:', error);
+		console.error('Error al listar etiquetas:', error);
 		return json(
 			{
 				success: false,
-				error: 'Error al cargar etiquetas',
-				message: error instanceof Error ? error.message : 'Error desconocido'
+				message: 'Error al listar etiquetas'
 			},
 			{ status: 500 }
 		);
 	}
-}
+};
 
-export async function POST({ request }) {
+/**
+ * POST - Crear una nueva etiqueta
+ */
+export const POST: RequestHandler = async ({ request }) => {
 	try {
-		const { nombre, color } = await request.json();
+		const body = await request.json();
 
-		if (!nombre) {
+		// Validar campos obligatorios
+		if (!body.nombre) {
 			return json(
 				{
 					success: false,
-					error: 'El nombre es obligatorio'
+					message: 'El nombre es obligatorio',
+					errors: [{ field: 'nombre', message: 'El nombre es obligatorio' }]
 				},
 				{ status: 400 }
 			);
 		}
 
-		// Generar slug
-		const slug = nombre
-			.toLowerCase()
-			.normalize('NFD')
-			.replace(/[\u0300-\u036f]/g, '')
-			.replace(/[^a-z0-9\s-]/g, '')
-			.replace(/\s+/g, '-');
-
-		const { data: etiqueta, error } = await supabaseServer
-			.from('blog_etiquetas')
-			.insert({
-				nombre,
-				slug,
-				color: color || '#8b5cf6'
-			})
-			.select()
-			.single();
-
-		if (error) throw error;
-
-		return json({
-			success: true,
-			data: etiqueta
+		const etiqueta = await AdminBlogService.createEtiqueta({
+			nombre: body.nombre,
+			color: body.color
 		});
+
+		if (!etiqueta) {
+			return json(
+				{
+					success: false,
+					message: 'Error al crear la etiqueta'
+				},
+				{ status: 500 }
+			);
+		}
+
+		return json(
+			{
+				success: true,
+				data: etiqueta,
+				message: 'Etiqueta creada exitosamente'
+			},
+			{ status: 201 }
+		);
 	} catch (error) {
-		console.error('Error creating tag:', error);
+		console.error('Error al crear etiqueta:', error);
 		return json(
 			{
 				success: false,
-				error: 'Error al crear etiqueta',
-				message: error instanceof Error ? error.message : 'Error desconocido'
+				message: 'Error al crear la etiqueta',
+				error: error instanceof Error ? error.message : String(error)
 			},
 			{ status: 500 }
 		);
 	}
-}
+};

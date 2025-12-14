@@ -9,9 +9,9 @@ import type {
 	CreateBlogPostDTO,
 	UpdateBlogPostDTO,
 	BlogPostResponseDTO,
-	ValidationErrorDTO
-} from '$lib/models/admin/dtos';
-import type { BlogPost } from '$lib/models/admin/entities';
+	ValidationErrorDTO,
+	BlogPost
+} from '$lib/models/admin';
 
 export const AdminBlogService = {
 	/**
@@ -290,5 +290,84 @@ export const AdminBlogService = {
 	 */
 	async deleteCategory(id: number) {
 		return await AdminBlogRepository.deleteCategory(id);
+	},
+
+	// =====================================
+	// Categorías (alias en español)
+	// =====================================
+
+	async listCategorias() {
+		return await AdminBlogRepository.listCategorias();
+	},
+
+	async getCategoriaById(id: number) {
+		return await AdminBlogRepository.getCategoriaById(id);
+	},
+
+	async getCategoriaBySlug(slug: string) {
+		return await AdminBlogRepository.getCategoriaBySlug(slug);
+	},
+
+	async createCategoria(data: { nombre: string; slug: string }) {
+		return await AdminBlogRepository.createCategoria(data);
+	},
+
+	async updateCategoria(
+		id: number,
+		data: { nombre?: string; slug?: string; descripcion?: string }
+	) {
+		return await AdminBlogRepository.updateCategoria(id, data);
+	},
+
+	async deleteCategoria(id: number) {
+		return await AdminBlogRepository.deleteCategoria(id);
+	},
+
+	// =====================================
+	// Etiquetas
+	// =====================================
+
+	/**
+	 * Generar slug desde nombre de etiqueta
+	 */
+	generateSlugFromName(nombre: string): string {
+		return nombre
+			.toLowerCase()
+			.normalize('NFD')
+			.replace(/[\u0300-\u036f]/g, '')
+			.replace(/[^a-z0-9\s-]/g, '')
+			.replace(/\s+/g, '-')
+			.replace(/^-+|-+$/g, '');
+	},
+
+	async listEtiquetas() {
+		return await AdminBlogRepository.listEtiquetas();
+	},
+
+	async getEtiquetaById(id: number) {
+		return await AdminBlogRepository.getEtiquetaById(id);
+	},
+
+	async createEtiqueta(data: { nombre: string; color?: string }) {
+		const slug = this.generateSlugFromName(data.nombre);
+		return await AdminBlogRepository.createEtiqueta({
+			nombre: data.nombre,
+			slug,
+			color: data.color || '#8b5cf6'
+		});
+	},
+
+	async updateEtiqueta(id: number, data: { nombre?: string; color?: string }) {
+		const updateData: { nombre?: string; slug?: string; color?: string } = {};
+		if (data.nombre) {
+			updateData.nombre = data.nombre;
+			updateData.slug = this.generateSlugFromName(data.nombre);
+		}
+		if (data.color) updateData.color = data.color;
+		return await AdminBlogRepository.updateEtiqueta(id, updateData);
+	},
+
+	async deleteEtiqueta(id: number) {
+		return await AdminBlogRepository.deleteEtiqueta(id);
 	}
 };

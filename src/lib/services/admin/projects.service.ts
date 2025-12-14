@@ -22,9 +22,9 @@ import type {
 	ProyectoResponseDTO,
 	ProyectoFiltersDTO,
 	ListProyectosResponseDTO,
-	ValidationErrorDTO
-} from '$lib/models/admin/dtos';
-import type { Proyecto } from '$lib/models/admin/entities';
+	ValidationErrorDTO,
+	Proyecto
+} from '$lib/models/admin';
 
 export const AdminProjectsService = {
 	// =====================================
@@ -135,7 +135,7 @@ export const AdminProjectsService = {
 			fecha_fin_real: dto.fecha_fin_real ? new Date(dto.fecha_fin_real) : undefined,
 			cantidad_meses: dto.cantidad_meses,
 			porcentaje_avance: dto.porcentaje_avance,
-			monto_presupuesto_total: dto.monto_presupuesto_total,
+			monto_presupuesto_total: Number(dto.monto_presupuesto_total),
 			impacto_cientifico: dto.impacto_cientifico.trim(),
 			impacto_economico: dto.impacto_economico.trim(),
 			impacto_social: dto.impacto_social.trim(),
@@ -189,7 +189,7 @@ export const AdminProjectsService = {
 		if (dto.cantidad_meses) updateData.cantidad_meses = dto.cantidad_meses;
 		if (dto.porcentaje_avance !== undefined) updateData.porcentaje_avance = dto.porcentaje_avance;
 		if (dto.monto_presupuesto_total !== undefined)
-			updateData.monto_presupuesto_total = dto.monto_presupuesto_total;
+			updateData.monto_presupuesto_total = Number(dto.monto_presupuesto_total);
 		if (dto.impacto_cientifico) updateData.impacto_cientifico = dto.impacto_cientifico.trim();
 		if (dto.impacto_economico) updateData.impacto_economico = dto.impacto_economico.trim();
 		if (dto.impacto_social) updateData.impacto_social = dto.impacto_social.trim();
@@ -313,7 +313,7 @@ export const AdminProjectsService = {
 				: undefined,
 			cantidad_meses: proyecto.cantidad_meses,
 			porcentaje_avance: proyecto.porcentaje_avance,
-			monto_presupuesto_total: proyecto.monto_presupuesto_total,
+			monto_presupuesto_total: Number(proyecto.monto_presupuesto_total),
 			impacto_cientifico: proyecto.impacto_cientifico,
 			impacto_economico: proyecto.impacto_economico,
 			impacto_social: proyecto.impacto_social,
@@ -357,19 +357,90 @@ export const AdminProjectsService = {
 			fecha_inicio_hasta: filters?.fecha_inicio_hasta
 		});
 
-		// Convertir cada proyecto a DTO
-		const proyectos = await Promise.all(
-			data.map(async (proyecto) => await this.getProjectById(proyecto.id))
-		);
+		// Obtener estados de todos los proyectos en una sola pasada
+		const estadoIds = [...new Set(data.map((p) => p.estado_id))];
+		const estadosPromises = estadoIds.map((id) => AdminEstadosRepository.getById(id));
+		const estadosResults = await Promise.all(estadosPromises);
+		const estadosMap = new Map(estadoIds.map((id, index) => [id, estadosResults[index]]));
+
+		// Construir DTOs optimizados (sin hacer queries individuales por cada proyecto)
+		const proyectos: ProyectoResponseDTO[] = data.map((proyecto) => {
+			const estado = estadosMap.get(proyecto.estado_id);
+
+			return {
+				id: proyecto.id,
+				codigo: proyecto.codigo,
+				titulo: proyecto.titulo,
+				objetivo: proyecto.objetivo,
+				estado: {
+					id: estado?.id || 0,
+					nombre: estado?.nombre || ''
+				},
+				requiere_aval: proyecto.requiere_aval || false,
+				fecha_inicio_planeada:
+					typeof proyecto.fecha_inicio_planeada === 'string'
+						? proyecto.fecha_inicio_planeada
+						: proyecto.fecha_inicio_planeada.toISOString(),
+				fecha_fin_planeada:
+					typeof proyecto.fecha_fin_planeada === 'string'
+						? proyecto.fecha_fin_planeada
+						: proyecto.fecha_fin_planeada.toISOString(),
+				fecha_fin_real: proyecto.fecha_fin_real
+					? typeof proyecto.fecha_fin_real === 'string'
+						? proyecto.fecha_fin_real
+						: proyecto.fecha_fin_real.toISOString()
+					: undefined,
+				cantidad_meses: proyecto.cantidad_meses,
+				porcentaje_avance: proyecto.porcentaje_avance,
+				monto_presupuesto_total: Number(proyecto.monto_presupuesto_total),
+				impacto_cientifico: proyecto.impacto_cientifico,
+				impacto_economico: proyecto.impacto_economico,
+				impacto_social: proyecto.impacto_social,
+				otros_impactos: proyecto.otros_impactos,
+				para_siies: proyecto.para_siies || false,
+				creado_en: proyecto.creado_en
+					? typeof proyecto.creado_en === 'string'
+						? proyecto.creado_en
+						: proyecto.creado_en.toISOString()
+					: new Date().toISOString(),
+				// Listado simplificado - sin relaciones pesadas
+				instituciones: [],
+				tipos: [],
+				areas_conocimiento: [],
+				lineas_investigacion: [],
+				fuentes_financiamiento: [],
+				participantes: []
+			};
+		});
 
 		return {
-			data: proyectos.filter((p) => p !== null) as ProyectoResponseDTO[],
+			data: proyectos,
 			pagination: {
 				page,
 				limit,
 				total,
 				total_pages: Math.ceil(total / limit)
 			}
+		};
+	},
+
+	/**
+	 * Obtener estadísticas globales de proyectos
+	 * OPTIMIZADO: Solo 4 queries eficientes a la BD
+	 */
+	async getProjectStats(): Promise<{
+		total_projects: number;
+		total_budget: number;
+		completed_count: number;
+		in_progress_count: number;
+	}> {
+		const stats = await AdminProjectsRepository.getProjectStatsOptimized();
+
+		return {
+			total_projects: stats.total,
+			total_budget: stats.totalBudget,
+			completed_count: stats.completedCount,
+			in_progress_count: stats.inProgressCount
 		};
 	},
 

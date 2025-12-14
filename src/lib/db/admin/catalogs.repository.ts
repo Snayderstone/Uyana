@@ -16,7 +16,7 @@ import type {
 	Institucion,
 	Facultad,
 	Carrera
-} from '$lib/models/admin/entities';
+} from '$lib/models/admin';
 
 // =====================================
 // Estados

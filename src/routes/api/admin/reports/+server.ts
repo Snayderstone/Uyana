@@ -1,93 +1,158 @@
 /**
  * Admin API - Reports Endpoint
  * -----------------------------
- * POST   /api/admin/reports           - Generar informe de proyectos
+ * GET /api/admin/reports - Generar informes de proyectos en PDF o DOCX
  *
- * Body:
- * {
- *   "format": "pdf" | "doc",
- *   "projectIds": number[] (opcional, si no se envía se exportan todos)
- * }
- *
- * NOTA: Para la generación de PDF y DOC se requieren librerías adicionales:
- * - PDF: pdfkit, @pdfme/generator, jspdf, etc.
- * - DOC: docx, officegen, etc.
- *
- * Por ahora, este endpoint retorna los datos en JSON que pueden ser
- * procesados por el cliente para generar los documentos.
+ * Query params:
+ * - format: 'pdf' | 'docx' (default: 'pdf')
+ * - type: 'single' | 'consolidated' (default: 'consolidated')
+ * - id: number (requerido si type='single')
+ * - ids: string (comma-separated project IDs para consolidated, opcional)
  */
 
 import { json, type RequestHandler } from '@sveltejs/kit';
-import { AdminProjectsService } from '$lib/services/admin/projects.service';
-import type { ApiResponseDTO } from '$lib/models/admin/dtos';
+import { AdminReportsService } from '$lib/services/admin/reports.service';
 
 /**
- * POST - Generar informe de proyectos
+ * GET - Generar informe de proyecto(s)
  */
-export const POST: RequestHandler = async ({ request }) => {
+export const GET: RequestHandler = async ({ url }) => {
 	try {
-		const body = await request.json();
-		const { format, projectIds } = body as {
-			format: 'pdf' | 'doc' | 'json';
-			projectIds?: number[];
-		};
+		const format = url.searchParams.get('format') || 'pdf';
+		const type = url.searchParams.get('type') || 'consolidated';
+		const idParam = url.searchParams.get('id');
+		const idsParam = url.searchParams.get('ids');
 
-		if (!format || !['pdf', 'doc', 'json'].includes(format)) {
+		// Validar formato
+		if (!['pdf', 'docx'].includes(format)) {
 			return json(
 				{
 					success: false,
-					message: 'Formato inválido. Use "pdf", "doc" o "json"'
+					message: 'Formato no válido. Use: pdf o docx'
 				},
 				{ status: 400 }
 			);
 		}
 
-		// Obtener proyectos
-		let projects;
-		if (projectIds && projectIds.length > 0) {
-			projects = await Promise.all(projectIds.map((id) => AdminProjectsService.getProjectById(id)));
-			projects = projects.filter((p) => p !== null);
-		} else {
-			const result = await AdminProjectsService.listProjects(1, 10000);
-			projects = result.data;
+		// Validar tipo
+		if (!['single', 'consolidated'].includes(type)) {
+			return json(
+				{
+					success: false,
+					message: 'Tipo no válido. Use: single o consolidated'
+				},
+				{ status: 400 }
+			);
 		}
 
-		// Por ahora retornar datos en JSON
-		// TODO: Implementar generación real de PDF/DOC
-		const reportData = {
-			metadata: {
-				generated_at: new Date().toISOString(),
-				format: format,
-				total_projects: projects.length
-			},
-			projects: projects.map((p) => ({
-				codigo: p.codigo,
-				titulo: p.titulo,
-				estado: p.estado.nombre,
-				fecha_inicio: p.fecha_inicio_planeada,
-				fecha_fin: p.fecha_fin_planeada,
-				avance: `${p.porcentaje_avance}%`,
-				presupuesto: p.monto_presupuesto_total,
-				instituciones: p.instituciones.map((i) => i.nombre).join(', '),
-				participantes_count: p.participantes.length,
-				objetivo: p.objetivo,
-				impacto_cientifico: p.impacto_cientifico,
-				impacto_economico: p.impacto_economico,
-				impacto_social: p.impacto_social
-			}))
-		};
+		// Informe individual
+		if (type === 'single') {
+			if (!idParam) {
+				return json(
+					{
+						success: false,
+						message: 'Se requiere el parámetro "id" para informes individuales'
+					},
+					{ status: 400 }
+				);
+			}
 
-		return json({
-			success: true,
-			data: reportData,
-			message: `Informe generado con ${projects.length} proyectos`
-		});
+			const projectId = parseInt(idParam);
+			if (isNaN(projectId)) {
+				return json(
+					{
+						success: false,
+						message: 'ID de proyecto inválido'
+					},
+					{ status: 400 }
+				);
+			}
+
+			let buffer: Buffer;
+			let contentType: string;
+			let filename: string;
+
+			if (format === 'pdf') {
+				buffer = await AdminReportsService.generateProjectPDF(projectId);
+				contentType = 'application/pdf';
+				filename = `informe_proyecto_${projectId}_${new Date().toISOString().split('T')[0]}.pdf`;
+			} else {
+				buffer = await AdminReportsService.generateProjectDOCX(projectId);
+				contentType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+				filename = `informe_proyecto_${projectId}_${new Date().toISOString().split('T')[0]}.docx`;
+			}
+
+			return new Response(buffer, {
+				headers: {
+					'Content-Type': contentType,
+					'Content-Disposition': `attachment; filename="${filename}"`,
+					'Content-Length': buffer.length.toString()
+				}
+			});
+		}
+		// Informe consolidado
+		else {
+			// Solo PDF para consolidados
+			if (format === 'docx') {
+				return json(
+					{
+						success: false,
+						message: 'El formato DOCX no está disponible para informes consolidados. Use PDF.'
+					},
+					{ status: 400 }
+				);
+			}
+
+			let projectIds: number[] | undefined = undefined;
+
+			// Procesar IDs si se proporcionan
+			if (idsParam) {
+				try {
+					projectIds = idsParam.split(',').map((id) => parseInt(id.trim()));
+
+					if (projectIds.some((id) => isNaN(id))) {
+						return json(
+							{
+								success: false,
+								message: 'IDs de proyectos inválidos'
+							},
+							{ status: 400 }
+						);
+					}
+				} catch (error) {
+					return json(
+						{
+							success: false,
+							message: 'Error al procesar los IDs de proyectos'
+						},
+						{ status: 400 }
+					);
+				}
+			}
+
+			const buffer = await AdminReportsService.generateConsolidatedPDF(projectIds);
+			const filename = `informe_consolidado_proyectos_${
+				new Date().toISOString().split('T')[0]
+			}.pdf`;
+
+			return new Response(buffer, {
+				headers: {
+					'Content-Type': 'application/pdf',
+					'Content-Disposition': `attachment; filename="${filename}"`,
+					'Content-Length': buffer.length.toString()
+				}
+			});
+		}
 	} catch (error) {
 		console.error('Error al generar informe:', error);
+
+		const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+
 		return json(
 			{
 				success: false,
-				message: 'Error al generar el informe'
+				message: 'Error al generar el informe',
+				error: errorMessage
 			},
 			{ status: 500 }
 		);

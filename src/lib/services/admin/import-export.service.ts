@@ -4,7 +4,7 @@
  * Servicio para importar y exportar proyectos desde/hacia Excel y CSV.
  */
 
-import type { ImportProyectoRowDTO, ImportResultDTO } from '$lib/models/admin/dtos';
+import type { ImportProyectoRowDTO, ImportResultDTO } from '$lib/models/admin';
 import { AdminProjectsService } from './projects.service';
 import { AdminParticipantsService } from './participants.service';
 import {

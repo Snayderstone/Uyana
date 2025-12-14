@@ -10,9 +10,9 @@ import type {
 	CreateParticipanteDTO,
 	UpdateParticipanteDTO,
 	ParticipanteResponseDTO,
-	ValidationErrorDTO
-} from '$lib/models/admin/dtos';
-import type { Participante } from '$lib/models/admin/entities';
+	ValidationErrorDTO,
+	Participante
+} from '$lib/models/admin';
 
 export const AdminParticipantsService = {
 	/**

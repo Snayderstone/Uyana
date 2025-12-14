@@ -5,7 +5,7 @@
  */
 
 import { supabase } from '../supabase.client';
-import type { Participante } from '$lib/models/admin/entities';
+import type { Participante } from '$lib/models/admin';
 
 export const AdminParticipantsRepository = {
 	/**

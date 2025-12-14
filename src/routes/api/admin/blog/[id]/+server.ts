@@ -8,7 +8,7 @@
 
 import { json, type RequestHandler } from '@sveltejs/kit';
 import { AdminBlogService } from '$lib/services/admin/blog.service';
-import type { UpdateBlogPostDTO, ApiResponseDTO } from '$lib/models/admin/dtos';
+import type { UpdateBlogPostDTO, ApiResponseDTO } from '$lib/models/admin';
 
 /**
  * GET - Obtener un post por ID

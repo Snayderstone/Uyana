@@ -6,8 +6,8 @@
  */
 
 import { json, type RequestHandler } from '@sveltejs/kit';
-import { AdminParticipantsService } from '$lib/services/admin/participants.service';
-import type { CreateParticipanteDTO, ApiResponseDTO } from '$lib/models/admin/dtos';
+import { AdminParticipantesService } from '$lib/services/admin/participants.service';
+import type { CreateParticipanteDTO, ApiResponseDTO } from '$lib/models/admin';
 
 /**
  * GET - Listar participantes con paginación y filtros

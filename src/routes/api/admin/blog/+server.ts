@@ -7,7 +7,7 @@
 
 import { json, type RequestHandler } from '@sveltejs/kit';
 import { AdminBlogService } from '$lib/services/admin/blog.service';
-import type { CreateBlogPostDTO, ApiResponseDTO } from '$lib/models/admin/dtos';
+import type { CreateBlogPostDTO, ApiResponseDTO } from '$lib/models/admin';
 
 /**
  * GET - Listar posts con paginación y filtros

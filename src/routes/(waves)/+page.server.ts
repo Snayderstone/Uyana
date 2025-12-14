@@ -1,25 +1,21 @@
 import features from '$lib/data/features';
-import { supabaseServer } from '$lib/db/supabase.server';
+import { blogService } from '$lib/services/public/blog.service';
 
 export async function load() {
-	// Cargar los últimos 4 posts publicados
-	const { data: posts } = await supabaseServer
-		.from('blog_posts')
-		.select('id, titulo, slug, resumen, imagen_portada, fecha_publicacion')
-		.eq('publicado', true)
-		.order('fecha_publicacion', { ascending: false })
-		.limit(4);
+	try {
+		// Cargar los últimos 4 posts publicados usando el servicio
+		const allPosts = await blogService.getPublishedPosts();
+		const posts = allPosts.slice(0, 4);
 
-	const formattedPosts = (posts || []).map((post) => ({
-		titulo: post.titulo,
-		slug: post.slug,
-		resumen: post.resumen || '',
-		imagen_portada: post.imagen_portada || '/images/posts/placeholder.jpg',
-		fecha_publicacion: post.fecha_publicacion
-	}));
-
-	return {
-		features,
-		posts: formattedPosts
-	};
+		return {
+			features,
+			posts
+		};
+	} catch (error) {
+		console.error('Error cargando posts en homepage:', error);
+		return {
+			features,
+			posts: []
+		};
+	}
 }

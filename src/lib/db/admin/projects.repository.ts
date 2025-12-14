@@ -14,7 +14,7 @@ import type {
 	ProyectoLineaInvestigacion,
 	ProyectoParticipante,
 	ProyectoFuenteFinanciamiento
-} from '$lib/models/admin/entities';
+} from '$lib/models/admin';
 
 export const AdminProjectsRepository = {
 	// =====================================
@@ -46,6 +46,14 @@ export const AdminProjectsRepository = {
 			return null;
 		}
 
+		// Convertir numeric a number (PostgreSQL devuelve numeric como string)
+		if (data && data.monto_presupuesto_total) {
+			data.monto_presupuesto_total = parseFloat(data.monto_presupuesto_total);
+		}
+		if (data && data.porcentaje_avance) {
+			data.porcentaje_avance = parseFloat(data.porcentaje_avance);
+		}
+
 		return data;
 	},
 
@@ -68,13 +76,21 @@ export const AdminProjectsRepository = {
 			return null;
 		}
 
+		// Convertir numeric a number (PostgreSQL devuelve numeric como string)
+		if (data) {
+			if (data.monto_presupuesto_total) {
+				data.monto_presupuesto_total = parseFloat(data.monto_presupuesto_total);
+			}
+			if (data.porcentaje_avance) {
+				data.porcentaje_avance = parseFloat(data.porcentaje_avance);
+			}
+		}
+
 		return data;
 	},
-
 	/**
 	 * Actualizar un proyecto
-	 */
-	async updateProject(id: number, proyecto: Partial<Proyecto>): Promise<Proyecto | null> {
+	 */ async updateProject(id: number, proyecto: Partial<Proyecto>): Promise<Proyecto | null> {
 		const { data, error } = await supabase
 			.from('proyectos')
 			.update(proyecto)
@@ -148,7 +164,126 @@ export const AdminProjectsRepository = {
 			return { data: [], total: 0 };
 		}
 
-		return { data: data || [], total: count || 0 };
+		// Convertir numeric a number en cada proyecto (PostgreSQL devuelve numeric como string)
+		const proyectos = (data || []).map((proyecto) => ({
+			...proyecto,
+			monto_presupuesto_total: proyecto.monto_presupuesto_total
+				? parseFloat(proyecto.monto_presupuesto_total)
+				: 0,
+			porcentaje_avance: proyecto.porcentaje_avance ? parseFloat(proyecto.porcentaje_avance) : 0
+		}));
+
+		return { data: proyectos, total: count || 0 };
+	},
+
+	/**
+	 * Obtener estadísticas optimizadas sin traer todos los datos
+	 *
+	 * OPCIÓN 1 (ACTUAL): 4-5 queries directas - Funciona bien hasta ~1000 proyectos
+	 * OPCIÓN 2 (OPCIONAL): Vista materializada - Para +1000 proyectos
+	 *
+	 * Para usar OPCIÓN 2:
+	 * 1. Ejecuta database/optimizations.sql en Supabase
+	 * 2. Descomenta el código de "Opción 2" abajo
+	 * 3. Comenta la "Opción 1"
+	 */
+	async getProjectStatsOptimized(): Promise<{
+		total: number;
+		totalBudget: number;
+		completedCount: number;
+		inProgressCount: number;
+	}> {
+		// ============ OPCIÓN 1: Queries directas (ACTUAL) ============
+		// Usa esto si tienes < 1000 proyectos
+
+		// Query 1: Total count
+		const { count: total } = await supabase
+			.from('proyectos')
+			.select('*', { count: 'exact', head: true });
+
+		// Query 2: Sum de presupuestos
+		const { data: budgetData } = await supabase.from('proyectos').select('monto_presupuesto_total');
+
+		// Query 3: Count de completados
+		const { count: completedCount } = await supabase
+			.from('proyectos')
+			.select('*', { count: 'exact', head: true })
+			.eq('porcentaje_avance', 100);
+
+		// Query 4: Count de en progreso
+		const { count: inProgressCount } = await supabase
+			.from('proyectos')
+			.select('*', { count: 'exact', head: true })
+			.gt('porcentaje_avance', 0)
+			.lt('porcentaje_avance', 100);
+
+		const totalBudget = (budgetData || []).reduce(
+			(sum, p) => sum + parseFloat(p.monto_presupuesto_total || '0'),
+			0
+		);
+
+		return {
+			total: total || 0,
+			totalBudget,
+			completedCount: completedCount || 0,
+			inProgressCount: inProgressCount || 0
+		};
+
+		// ============ OPCIÓN 2: Vista Materializada (OPCIONAL) ============
+		// Usa esto si tienes +1000 proyectos y ejecutaste database/optimizations.sql
+		/*
+		const { data, error } = await supabase.rpc('get_project_stats_fast');
+		
+		if (error || !data || data.length === 0) {
+			console.error('Error al obtener stats desde vista materializada:', error);
+			// Fallback a queries directas si falla
+			return this.getProjectStatsOptimizedFallback();
+		}
+
+		const stats = data[0];
+		return {
+			total: Number(stats.total_projects) || 0,
+			totalBudget: Number(stats.total_budget) || 0,
+			completedCount: Number(stats.completed_count) || 0,
+			inProgressCount: Number(stats.in_progress_count) || 0
+		};
+		*/
+	},
+
+	/**
+	 * Fallback para estadísticas (si falla la vista materializada)
+	 */
+	async getProjectStatsOptimizedFallback(): Promise<{
+		total: number;
+		totalBudget: number;
+		completedCount: number;
+		inProgressCount: number;
+	}> {
+		const { count: total } = await supabase
+			.from('proyectos')
+			.select('*', { count: 'exact', head: true });
+
+		return {
+			total: total || 0,
+			totalBudget: 0,
+			completedCount: 0,
+			inProgressCount: 0
+		};
+	},
+
+	/**
+	 * Obtener datos completos del dashboard en UNA sola query
+	 * Requiere ejecutar database/optimizations.sql primero
+	 */
+	async getDashboardDataComplete(): Promise<any> {
+		const { data, error } = await supabase.rpc('get_dashboard_data');
+
+		if (error) {
+			console.error('Error al obtener datos del dashboard:', error);
+			return null;
+		}
+
+		return data;
 	},
 
 	// =====================================

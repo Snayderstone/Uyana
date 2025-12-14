@@ -29,7 +29,7 @@ import {
 	AdminFacultadesRepository,
 	AdminCarrerasRepository
 } from '$lib/db/admin/catalogs.repository';
-import type { ApiResponseDTO } from '$lib/models/admin/dtos';
+import type { ApiResponseDTO } from '$lib/models/admin';
 
 const catalogRepositories: Record<string, any> = {
 	estados: AdminEstadosRepository,
