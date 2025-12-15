@@ -64,11 +64,52 @@
 		'LineString',
 		'MultiLineString'
 	];
+	function hasValidCoordinates(geomRaw: any): boolean {
+		if (!geomRaw || !geomRaw.type || !geomRaw.coordinates) return false;
 
+		// GeoJSON básico: según tipo, la estructura cambia
+		const type = geomRaw.type;
+
+		try {
+			if (type === 'Point') {
+				const [lng, lat] = geomRaw.coordinates;
+				return isFinite(lat) && isFinite(lng);
+			}
+
+			if (type === 'MultiPoint' || type === 'LineString') {
+				return Array.isArray(geomRaw.coordinates) && geomRaw.coordinates.length > 0;
+			}
+
+			if (type === 'MultiLineString' || type === 'Polygon') {
+				return (
+					Array.isArray(geomRaw.coordinates) &&
+					geomRaw.coordinates.length > 0 &&
+					Array.isArray(geomRaw.coordinates[0]) &&
+					geomRaw.coordinates[0].length > 0
+				);
+			}
+
+			if (type === 'MultiPolygon') {
+				return (
+					Array.isArray(geomRaw.coordinates) &&
+					geomRaw.coordinates.length > 0 &&
+					Array.isArray(geomRaw.coordinates[0]) &&
+					geomRaw.coordinates[0].length > 0 &&
+					Array.isArray(geomRaw.coordinates[0][0]) &&
+					geomRaw.coordinates[0][0].length > 0
+				);
+			}
+		} catch {
+			return false;
+		}
+
+		return true;
+	}
 	// Recalcular GeoJSON cuando cambien las agregaciones o el nivel
 	$: buildGeoJson();
 
 	function buildGeoJson() {
+		console.log('[AGG TEST] Ejemplo aggregated:', aggregations[0]);
 		if (!aggregations || aggregations.length === 0) {
 			geoJsonData = null;
 			valueById = {};
@@ -83,34 +124,55 @@
 			if (!anyAgg || !anyAgg.geometry) continue;
 
 			let geomRaw: any = anyAgg.geometry;
-			// ...
 
-			// Puede venir como string JSON
+			if (!geomRaw) {
+				console.warn(
+					'[MapParticipantsChoropleth] Institución sin geometry, se ignora:',
+					agg.regionName
+				);
+				continue;
+			}
+
+			// Caso 1: viene como string JSON
 			if (typeof geomRaw === 'string') {
 				try {
 					geomRaw = JSON.parse(geomRaw);
 				} catch (e) {
-					console.error(
-						'[MapParticipantsChoropleth] No se pudo parsear geometry JSON:',
-						geomRaw,
-						e
-					);
+					console.error('[MapParticipantsChoropleth] Error parseando geometry string:', e);
 					continue;
 				}
 			}
 
-			// Compatibilidad con diferentes formatos
-			if (geomRaw.type && geomRaw.coordinates) {
-				// ok
-			} else if (geomRaw.geometry && geomRaw.geometry.type && geomRaw.geometry.coordinates) {
+			// Caso 2: viene como Feature completo (type: 'Feature')
+			if (geomRaw.type === 'Feature' && geomRaw.geometry) {
+				console.debug(
+					'[MapParticipantsChoropleth] Geometry era un Feature → extraída la geometry interna',
+					agg.regionName
+				);
 				geomRaw = geomRaw.geometry;
-			} else {
+			}
+
+			// Caso 3: viene envuelto como { geometry: { ... } }
+			if (geomRaw.geometry && geomRaw.geometry.type && geomRaw.geometry.coordinates) {
+				console.debug(
+					'[MapParticipantsChoropleth] Geometry estaba envuelta → desenvuelta',
+					agg.regionName
+				);
+				geomRaw = geomRaw.geometry;
+			}
+
+			// Caso 4: ya es geometry pura → verificar que tenga type y coordinates
+			if (!geomRaw.type || !geomRaw.coordinates) {
 				console.warn(
-					'[MapParticipantsChoropleth] Geometry con formato inesperado, se ignora:',
+					'[MapParticipantsChoropleth] Geometry con formato irreconocible después de normalizar:',
+					agg.regionName,
 					geomRaw
 				);
 				continue;
 			}
+
+			// Normalizar el tipo (Polygon, MultiPolygon, etc.)
+			geomRaw.type = geomRaw.type.charAt(0).toUpperCase() + geomRaw.type.slice(1).toLowerCase();
 
 			// Normalizar type a formato estándar GeoJSON
 			if (typeof geomRaw.type === 'string') {
@@ -129,6 +191,15 @@
 				);
 				continue;
 			}
+			// 👉 NUEVO: validar coordenadas
+			if (!hasValidCoordinates(geomRaw)) {
+				console.warn(
+					'[MapParticipantsChoropleth] Geometry con coordenadas inválidas, se ignora. region=',
+					agg.regionName,
+					geomRaw
+				);
+				continue;
+			}
 
 			const level = agg.level ?? mapLevel;
 			const regionKey = getEntityKey(level, agg.regionName);
@@ -140,21 +211,29 @@
 				type: 'Feature',
 				geometry: geomRaw,
 				properties: {
-					id: (agg as any).regionId ?? (agg as any).id ?? regionKey,
+					id: agg.regionId ?? regionKey,
 					regionKey,
 					regionName: agg.regionName,
 					totalParticipants: total,
-					level,
-					// dejamos pasar otras props numéricas/auxiliares que vengan del backend
-					...agg
+					totalMale: agg.totalMale,
+					totalFemale: agg.totalFemale,
+					totalAccredited: agg.totalAccredited,
+					level
 				}
 			});
 		}
+		const validFeatures = features.filter((feature) => {
+			const geom = feature.geometry;
+			if (!geom || !geom.type || !geom.coordinates) return false;
 
+			// Reutiliza tu función existente
+			return hasValidCoordinates(geom);
+		});
 		geoJsonData = {
 			type: 'FeatureCollection',
-			features
+			features: validFeatures // ← solo los válidos
 		};
+		console.log('[GEOJSON TEST] first feature:', geoJsonData.features[0]);
 		valueById = newValueById;
 
 		console.debug('[MapParticipantsChoropleth] GeoJSON generado', {
@@ -302,26 +381,30 @@
 
 {#if map && geoJsonData}
 	<div aria-label="Mapa de participantes por región">
-		<GeoJsonChoropleth
-			{map}
-			data={geoJsonData}
-			idProperty="regionKey"
-			{valueById}
-			popupFormatter={formatPopup}
-			baseFillOpacity={0.85}
-			hoverEnabled={true}
-			popupEnabled={true}
-			highlightedFacultad={highlightedRegionKey}
-			highlightStyle={{
-				color: '#ff00ff',
-				weight: 4,
-				opacity: 1,
-				fillOpacity: 0.9,
-				dashArray: '5, 10',
-				className: 'highlighted-feature'
-			}}
-			bind:this={geoJsonInstance}
-		/>
+		{#if map && geoJsonData}
+			{#key mapLevel + JSON.stringify(geoJsonData.features.length)}
+				<GeoJsonChoropleth
+					{map}
+					data={geoJsonData}
+					idProperty="regionKey"
+					{valueById}
+					popupFormatter={formatPopup}
+					baseFillOpacity={0.85}
+					hoverEnabled={true}
+					popupEnabled={true}
+					highlightedFacultad={highlightedRegionKey}
+					highlightStyle={{
+						color: '#ff00ff',
+						weight: 4,
+						opacity: 1,
+						fillOpacity: 0.9,
+						dashArray: '5, 10',
+						className: 'highlighted-feature'
+					}}
+					bind:this={geoJsonInstance}
+				/>
+			{/key}
+		{/if}
 	</div>
 {/if}
 

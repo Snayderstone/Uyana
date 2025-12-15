@@ -75,6 +75,7 @@
 	let L: typeof import('leaflet') | null = null;
 	let geoLayer: any = null;
 	let loadedData: any = null;
+	let isDestroyed = false;
 
 	// Facultad destacada actualmente
 	export let highlightedFacultad: string | null = null;
@@ -158,39 +159,48 @@
 
 	function bindEvents(feature: any, layer: any) {
 		if (!hoverEnabled && !popupEnabled) return;
-
 		layer.on('mouseover', (e: any) => {
 			if (!hoverEnabled) return;
-			// === Estilo de borde y glow existente ===
+
+			// Estilo hover (sin cambios)
 			e.target.setStyle({
 				color: hoverLineColor,
 				weight: Math.max(2, lineWeight + 1),
 				fillOpacity: Math.min(1, baseFillOpacity + 0.1)
 			});
-			// leve glow en el SVG path
+
 			const path: SVGPathElement | null = (e.target as any)?._path ?? null;
-			if (path)
+			if (path) {
 				path.style.filter =
 					'drop-shadow(0 0 6px rgba(110,41,231,.55)) drop-shadow(0 0 14px rgba(110,41,231,.28))';
+			}
 			e.target.bringToFront?.();
-			// === HOVER: tooltip al pasar el puntero === // ADD
-			const id = feature?.properties?.[idProperty];
-			if (id && L) {
-				const id = feature?.properties?.[idProperty];
-				if (id && L) {
-					const v = id != null ? valueById[id] : null;
-					layer
-						.bindTooltip(
-							hoverCardHTML(feature?.properties ?? {}, id, typeof v === 'number' ? v : null),
-							{
-								permanent: false,
-								direction: 'bottom', // abre hacia abajo
-								offset: [0, cardOffsetY], // muévelo un poco hacia abajo
-								className: 'faculty-card-tooltip', // nuestra clase nueva
-								sticky: true,
-								interactive: false
-							}
-						)
+
+			// === TOOLTOP HOVER CORREGIDO ===
+			if (L) {
+				// Usamos directamente las propiedades del feature asociado al layer
+				const props = e.target.feature?.properties;
+				if (props) {
+					const regionId = props[idProperty]; // ej: regionKey
+					//const value = regionId != null ? valueById[regionId] : null;
+					// ⭐⭐⭐ CORRECCIÓN AQUÍ: usar el valor del feature, no valueById en tiempo de evento
+					const value = props.totalParticipants != null ? props.totalParticipants : null;
+
+					const tooltipContent = hoverCardHTML(
+						props,
+						regionId || 'Desconocido',
+						typeof value === 'number' ? value : null
+					);
+
+					e.target
+						.bindTooltip(tooltipContent, {
+							permanent: false,
+							direction: 'bottom',
+							offset: [0, cardOffsetY],
+							className: 'faculty-card-tooltip',
+							sticky: true,
+							interactive: false
+						})
 						.openTooltip();
 				}
 			}
@@ -201,43 +211,56 @@
 			geoLayer.resetStyle(e.target);
 			const path: SVGPathElement | null = (e.target as any)?._path ?? null;
 			if (path) path.style.filter = '';
-			// === HOVER: cerrar tooltip cuando salga el puntero === // ADD
-			if (layer.closeTooltip) {
-				layer.closeTooltip();
-			}
+			e.target.closeTooltip?.();
 		});
 
 		if (popupEnabled) {
-			const id = feature?.properties?.[idProperty];
-			const v = id != null ? valueById[id] : null;
-			const html = popupFormatter(feature?.properties ?? {}, id, typeof v === 'number' ? v : null);
+			const props = feature.properties;
+			const regionId = props?.[idProperty];
+			//const value = regionId != null ? valueById[regionId] : null;
+			// ⭐⭐⭐ CORRECCIÓN AQUÍ: usar el valor del feature, no valueById
+			const value = props.totalParticipants != null ? props.totalParticipants : null;
+			const html = popupFormatter(
+				props ?? {},
+				regionId || '',
+				typeof value === 'number' ? value : null
+			);
 			layer.bindPopup(html);
 		}
 	}
 
 	async function buildLayer() {
 		if (!map || !loadedData || !L) return;
+
+		// Por si buildLayer se dispara varias veces seguidas
 		destroyLayer();
 
-		geoLayer = L!.geoJSON(loadedData, {
-			style: styleForFeature,
-			onEachFeature: (feature, layer) => {
-				bindEvents(feature, layer);
+		try {
+			geoLayer = L.geoJSON(loadedData, {
+				style: styleForFeature,
+				onEachFeature: (feature, layer) => {
+					bindEvents(feature, layer);
 
-				const id = feature?.properties?.[idProperty];
-				if (id && (layer as any).getBounds) {
-					const center = (layer as L.Polygon).getBounds().getCenter();
-					centroides[id] = [center.lat, center.lng];
+					const id = feature?.properties?.[idProperty];
+					if (id && (layer as any).getBounds) {
+						const center = (layer as L.Polygon).getBounds().getCenter();
+						centroides[id] = [center.lat, center.lng];
+					}
+
+					if (onEachFeature) {
+						onEachFeature(feature, layer);
+					}
 				}
+			});
 
-				// si el padre pasó un callback extra
-				if (onEachFeature) {
-					onEachFeature(feature, layer);
-				}
-			}
-		});
-
-		geoLayer.addTo(map);
+			geoLayer.addTo(map);
+		} catch (error) {
+			console.error('[GeoJsonChoropleth] Error al agregar capa GeoJSON al mapa:', error, {
+				hasMap: !!map,
+				hasData: !!loadedData
+			});
+			geoLayer = null;
+		}
 	}
 
 	function restyleLayer() {
@@ -255,10 +278,14 @@
 	$: if (geoLayer && valueById) {
 		restyleLayer();
 	}
-
 	function destroyLayer() {
-		if (geoLayer && map) {
+		if (!geoLayer || !map) return;
+
+		try {
 			map.removeLayer(geoLayer);
+		} catch (error) {
+			console.warn('[GeoJsonChoropleth] Error al quitar capa GeoJSON:', error);
+		} finally {
 			geoLayer = null;
 		}
 	}
@@ -381,12 +408,13 @@
 	});
 
 	onDestroy(() => {
+		isDestroyed = true;
 		destroyLayer();
 	});
 
 	// Si cambia el mapa, data, url o los valores: reconstuye o re-estiliza
 	$: (async () => {
-		if (!map) return;
+		if (!map || isDestroyed) return;
 		if (data || dataUrl) {
 			await ensureLeaflet();
 			await loadDataIfNeeded();
@@ -467,17 +495,20 @@
 	// (Opcional) separación vertical hacia abajo
 	export let cardOffsetY: number = 16;
 
-	// Utilidad: arma el HTML del “card” de hover
 	function hoverCardHTML(props: any, id: string, value: number | null) {
-		const name = id ?? props?.facultad ?? 'Facultad';
-		const valTxt = value == null ? '–' : String(value);
+		const name = props?.regionName || props?.facultad || id || 'Región';
+		//const valTxt = value == null ? '–' : String(value);
+		const valTxt = value != null ? String(value) : '0';
+		const level = props?.level;
+		const unidad = level === 'institution' ? 'participantes' : 'proyectos';
+
 		return `
     <div class="fac-card">
       <div class="fac-card__row">
         <span class="fac-card__icon">${cardSVG}</span>
         <div class="fac-card__col">
           <div class="fac-card__title">${name}</div>
-          <div class="fac-card__meta"><b>${valTxt}</b> proyectos</div>
+          <div class="fac-card__meta"><b>${valTxt}</b> ${unidad}</div>
         </div>
       </div>
     </div>
@@ -488,7 +519,6 @@
 <div class="geo-json-choropleth-wrapper">
 	<!-- Componente no tiene contenido directo, renderiza en el mapa -->
 </div>
-export {centroides};
 
 <style>
 	.geo-json-choropleth-wrapper {

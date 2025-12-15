@@ -52,7 +52,8 @@ export class MapParticipantsService {
 		console.log('[MapParticipantsService] baseRows =', baseRows.length, 'instituciones =', allInstitutions.length);
 
 		// 2) Construimos opciones de filtros a partir del dataset completo
-		const filterOptions = this.buildFilterOptions(baseRows);
+		//const filterOptions = this.buildFilterOptions(baseRows);
+		const filterOptions = this.buildFilterOptions(baseRows, allInstitutions);
 
 		// 3) Aplicamos filtros para quedarnos con los participantes visibles
 		const filteredParticipantsRows = this.applyFilters(baseRows, filterState);
@@ -117,7 +118,7 @@ export class MapParticipantsService {
 	// 2. Construcción de opciones de filtros
 	// ---------------------------------------------------------------------
 
-	private static buildFilterOptions(rows: MapParticipantDbRow[]): MapParticipantsFilterOptions {
+	private static buildFilterOptions(rows: MapParticipantDbRow[], allInstitutions: { id: number; nombre: string; sigla: string | null; pais: string | null; geometry: unknown | null }[]): MapParticipantsFilterOptions {
 		const facultadesMap = new Map<number, MapParticipantsFilterOption & { count: number }>();
 		const institucionesMap = new Map<number, MapParticipantsFilterOption & { count: number }>();
 		const carrerasMap = new Map<number, MapParticipantsFilterOption & { count: number }>();
@@ -294,6 +295,7 @@ export class MapParticipantsService {
 
 		return {
 			facultades: Array.from(facultadesMap.values()).sort(sortByLabel),
+			//instituciones: Array.from(institucionesMap.values()).sort(sortByLabel),
 			instituciones: Array.from(institucionesMap.values()).sort(sortByLabel),
 			carreras: Array.from(carrerasMap.values()).sort(sortByLabel),
 			generos: Array.from(generosMap.values()).sort(sortByLabel),
