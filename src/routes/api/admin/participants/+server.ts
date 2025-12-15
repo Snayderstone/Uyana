@@ -6,14 +6,35 @@
  */
 
 import { json, type RequestHandler } from '@sveltejs/kit';
-import { AdminParticipantesService } from '$lib/services/admin/participants.service';
+import { AdminParticipantsService } from '$lib/services/admin/participants.service';
 import type { CreateParticipanteDTO, ApiResponseDTO } from '$lib/models/admin';
 
 /**
  * GET - Listar participantes con paginación y filtros
+ * Usa all=true para traer todos los registros sin límite (múltiples páginas automáticas)
  */
 export const GET: RequestHandler = async ({ url }) => {
 	try {
+		const all = url.searchParams.get('all') === 'true';
+
+		if (all) {
+			// Obtener TODOS los participantes sin límite
+			const data = await AdminParticipantsService.getAllParticipants();
+			return json({
+				success: true,
+				data: {
+					data: data,
+					pagination: {
+						page: 1,
+						limit: data.length,
+						total: data.length,
+						total_pages: 1
+					}
+				}
+			});
+		}
+
+		// Paginación normal
 		const page = parseInt(url.searchParams.get('page') || '1');
 		const limit = parseInt(url.searchParams.get('limit') || '10');
 		const acreditado = url.searchParams.get('acreditado');

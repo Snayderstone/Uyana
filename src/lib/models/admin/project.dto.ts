@@ -23,7 +23,7 @@ export interface CreateProyectoDTO {
 	para_siies?: boolean;
 
 	// Relaciones (IDs)
-	instituciones_ids: number[];
+	instituciones_ids: number[]; // Instituciones encargadas del proyecto
 	tipos_ids: number[];
 	areas_conocimiento_ids: number[];
 	lineas_investigacion_ids: number[];
@@ -107,8 +107,16 @@ export interface ProyectoFiltersDTO {
 	tipo_id?: number;
 	fecha_inicio_desde?: string;
 	fecha_inicio_hasta?: string;
+	fecha_fin_desde?: string;
+	fecha_fin_hasta?: string;
 	participante_id?: number;
 	acreditado?: boolean;
+	requiere_aval?: boolean;
+	acreditado_senescyt?: boolean;
+	presupuesto_min?: number;
+	presupuesto_max?: number;
+	avance_min?: number;
+	avance_max?: number;
 }
 
 export interface ListProyectosResponseDTO {

@@ -168,18 +168,36 @@ export const AdminParticipantsService = {
 			carrera_id?: number;
 		}
 	) {
-		const { data, total } = await AdminParticipantsRepository.listParticipants(
+		const { data, total } = await AdminParticipantsRepository.listParticipantsWithCareer(
 			page,
 			limit,
 			filters
 		);
 
-		const participantes = await Promise.all(
-			data.map(async (p) => await this.getParticipantById(p.id))
-		);
+		const participantes = data.map((p: any) => ({
+			id: p.id,
+			nombre: p.nombre,
+			email: p.email,
+			genero: p.genero,
+			url_foto: p.url_foto,
+			acreditado: p.acreditado || false,
+			redes_sociales: p.redes_sociales,
+			carrera: p.carrera
+				? {
+						id: p.carrera.id,
+						nombre: p.carrera.nombre,
+						facultad: p.carrera.facultad
+							? {
+									id: p.carrera.facultad.id,
+									nombre: p.carrera.facultad.nombre
+							  }
+							: undefined
+				  }
+				: undefined
+		}));
 
 		return {
-			data: participantes.filter((p) => p !== null) as ParticipanteResponseDTO[],
+			data: participantes as ParticipanteResponseDTO[],
 			pagination: {
 				page,
 				limit,
@@ -195,5 +213,34 @@ export const AdminParticipantsService = {
 	async listAccreditedParticipants() {
 		const data = await AdminParticipantsRepository.listAccreditedParticipants();
 		return await Promise.all(data.map(async (p) => await this.getParticipantById(p.id)));
+	},
+
+	/**
+	 * Obtener TODOS los participantes (sin paginación)
+	 */
+	async getAllParticipants() {
+		const data = await AdminParticipantsRepository.getAllParticipantsWithCareer();
+
+		return data.map((p: any) => ({
+			id: p.id,
+			nombre: p.nombre,
+			email: p.email,
+			genero: p.genero,
+			url_foto: p.url_foto,
+			acreditado: p.acreditado || false,
+			redes_sociales: p.redes_sociales,
+			carrera: p.carrera
+				? {
+						id: p.carrera.id,
+						nombre: p.carrera.nombre,
+						facultad: p.carrera.facultad
+							? {
+									id: p.carrera.facultad.id,
+									nombre: p.carrera.facultad.nombre
+							  }
+							: undefined
+				  }
+				: undefined
+		}));
 	}
 };

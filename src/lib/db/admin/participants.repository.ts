@@ -130,6 +130,9 @@ export const AdminParticipantsRepository = {
 			query = query.eq('carrera_id', filters.carrera_id);
 		}
 
+		// Ordenar por nombre
+		query = query.order('nombre', { ascending: true });
+
 		// Paginación
 		const from = (page - 1) * limit;
 		const to = from + limit - 1;
@@ -142,6 +145,116 @@ export const AdminParticipantsRepository = {
 		}
 
 		return { data: data || [], total: count || 0 };
+	},
+
+	/**
+	 * Listar participantes con carrera (optimizado con JOIN)
+	 */
+	async listParticipantsWithCareer(
+		page: number = 1,
+		limit: number = 10,
+		filters?: {
+			nombre?: string;
+			email?: string;
+			genero?: string;
+			acreditado?: boolean;
+			carrera_id?: number;
+		}
+	) {
+		let query = supabase.from('participantes').select(
+			`
+			*,
+			carrera:carreras (
+				id,
+				nombre,
+				facultad:facultades (
+					id,
+					nombre
+				)
+			)
+		`,
+			{ count: 'exact' }
+		);
+
+		// Aplicar filtros
+		if (filters?.nombre) {
+			query = query.ilike('nombre', `%${filters.nombre}%`);
+		}
+		if (filters?.email) {
+			query = query.ilike('email', `%${filters.email}%`);
+		}
+		if (filters?.genero) {
+			query = query.eq('genero', filters.genero);
+		}
+		if (filters?.acreditado !== undefined) {
+			query = query.eq('acreditado', filters.acreditado);
+		}
+		if (filters?.carrera_id) {
+			query = query.eq('carrera_id', filters.carrera_id);
+		}
+
+		// Ordenar por ID
+		query = query.order('id', { ascending: true });
+
+		// Paginación
+		const from = (page - 1) * limit;
+		const to = from + limit - 1;
+
+		const { data, error, count } = await query.range(from, to);
+
+		if (error) {
+			console.error('Error al listar participantes con carrera:', error);
+			return { data: [], total: 0 };
+		}
+
+		return { data: data || [], total: count || 0 };
+	},
+
+	/**
+	 * Obtener todos los participantes sin límite (para cargar en frontend)
+	 */
+	async getAllParticipantsWithCareer() {
+		// Supabase tiene límite de 1000 por consulta, así que hacemos múltiples llamadas
+		const pageSize = 1000;
+		let allData: any[] = [];
+		let page = 1;
+		let hasMore = true;
+
+		while (hasMore) {
+			const { data, error } = await supabase
+				.from('participantes')
+				.select(
+					`
+					*,
+					carrera:carreras (
+						id,
+						nombre,
+						facultad:facultades (
+							id,
+							nombre
+						)
+					)
+				`
+				)
+				.order('id', { ascending: true })
+				.range((page - 1) * pageSize, page * pageSize - 1);
+
+			if (error) {
+				console.error('Error al obtener participantes:', error);
+				break;
+			}
+
+			if (data && data.length > 0) {
+				allData = [...allData, ...data];
+				page++;
+				hasMore = data.length === pageSize; // Si trae menos de 1000, ya no hay más
+			} else {
+				hasMore = false;
+			}
+		}
+
+		console.log(`✅ Cargados ${allData.length} participantes en ${page - 1} páginas`);
+		return allData;
 	},
 
 	/**

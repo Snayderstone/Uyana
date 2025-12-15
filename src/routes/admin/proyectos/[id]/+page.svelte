@@ -3,15 +3,28 @@
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
 	import type { ProyectoResponseDTO } from '$lib/models/admin';
-	import Toast from '$lib/components/admin/projects/Toast.svelte';
 
 	let loading = true;
 	let project: ProyectoResponseDTO | null = null;
-	let showToast = false;
-	let toastMessage = '';
-	let toastType: 'success' | 'error' | 'info' | 'warning' = 'info';
+	let error: string | null = null;
 
 	const projectId = $page.params.id;
+
+	const icons = {
+		back: '←',
+		edit: '✏️',
+		delete: '🗑️',
+		calendar: '📅',
+		money: '💰',
+		users: '👥',
+		building: '🏛️',
+		check: '✓',
+		document: '📄',
+		chart: '📊',
+		tag: '🏷️',
+		book: '📚',
+		science: '🔬'
+	};
 
 	onMount(async () => {
 		await loadProject();
@@ -19,16 +32,19 @@
 
 	async function loadProject() {
 		loading = true;
+		error = null;
 		try {
-			const response = await fetch(`/api/admin/proyectos/${projectId}`);
-			if (!response.ok) throw new Error('Error al cargar el proyecto');
+			const response = await fetch(`/api/admin/projects/${projectId}`);
+			const result = await response.json();
 
-			project = await response.json();
-		} catch (error) {
-			showToast = true;
-			toastMessage = '❌ Error al cargar el proyecto';
-			toastType = 'error';
-			setTimeout(() => goto('/admin/proyectos'), 2000);
+			if (result.success) {
+				project = result.data;
+			} else {
+				error = result.message || 'Proyecto no encontrado';
+			}
+		} catch (err) {
+			console.error('Error fetching proyecto:', err);
+			error = 'Error al cargar el proyecto';
 		} finally {
 			loading = false;
 		}
@@ -40,50 +56,21 @@
 		}
 
 		try {
-			const response = await fetch(`/api/admin/proyectos/${projectId}`, {
+			const response = await fetch(`/api/admin/projects/${projectId}`, {
 				method: 'DELETE'
 			});
 
-			if (!response.ok) throw new Error('Error al eliminar');
+			const result = await response.json();
 
-			showToast = true;
-			toastMessage = '✅ Proyecto eliminado correctamente';
-			toastType = 'success';
-
-			setTimeout(() => goto('/admin/proyectos'), 1500);
+			if (result.success) {
+				alert('✅ Proyecto eliminado correctamente');
+				setTimeout(() => goto('/admin/proyectos/tabla'), 1500);
+			} else {
+				alert('❌ Error al eliminar el proyecto');
+			}
 		} catch (error) {
-			showToast = true;
-			toastMessage = '❌ Error al eliminar el proyecto';
-			toastType = 'error';
-		}
-	}
-
-	async function downloadReport(format: 'pdf' | 'docx') {
-		try {
-			const response = await fetch(
-				`/api/admin/reports?type=individual&id=${projectId}&format=${format}`
-			);
-			if (!response.ok) throw new Error('Error al generar informe');
-
-			const blob = await response.blob();
-			const url = window.URL.createObjectURL(blob);
-			const a = document.createElement('a');
-			a.href = url;
-			a.download = `proyecto_${project?.codigo}_${
-				new Date().toISOString().split('T')[0]
-			}.${format}`;
-			document.body.appendChild(a);
-			a.click();
-			document.body.removeChild(a);
-			window.URL.revokeObjectURL(url);
-
-			showToast = true;
-			toastMessage = `✅ Informe ${format.toUpperCase()} generado correctamente`;
-			toastType = 'success';
-		} catch (error) {
-			showToast = true;
-			toastMessage = '❌ Error al generar el informe';
-			toastType = 'error';
+			console.error('Error deleting project:', error);
+			alert('❌ Error al eliminar el proyecto');
 		}
 	}
 
@@ -93,564 +80,744 @@
 
 	function formatDate(dateStr: string): string {
 		const date = new Date(dateStr);
-		return date.toLocaleDateString('es-EC', {
+		return new Intl.DateTimeFormat('es-EC', {
 			year: 'numeric',
 			month: 'long',
 			day: 'numeric'
-		});
+		}).format(date);
 	}
 </script>
 
 <svelte:head>
-	<title>Detalle del Proyecto - Admin</title>
+	<title>{project?.titulo || 'Cargando...'} - Admin UYANA</title>
 </svelte:head>
 
-<Toast bind:visible={showToast} message={toastMessage} type={toastType} />
-
-<div class="page-container">
-	<!-- Header -->
-	<div class="page-header">
-		<button class="back-btn" on:click={() => goto('/admin/proyectos')}>
-			← Volver a Proyectos
-		</button>
-
-		{#if !loading && project}
-			<div class="header-actions">
-				<button class="btn-secondary" on:click={() => goto(`/admin/proyectos/${projectId}/edit`)}>
-					✏️ Editar
-				</button>
-				<button class="btn-secondary" on:click={() => downloadReport('pdf')}>
-					📄 Informe PDF
-				</button>
-				<button class="btn-secondary" on:click={() => downloadReport('docx')}>
-					📝 Informe Word
-				</button>
-				<button class="btn-danger" on:click={handleDelete}> 🗑️ Eliminar </button>
-			</div>
-		{/if}
-	</div>
-
+<div class="proyecto-detalle-page">
 	{#if loading}
-		<div class="loading-container">
+		<div class="loading-state">
 			<div class="spinner" />
 			<p>Cargando proyecto...</p>
 		</div>
+	{:else if error}
+		<div class="error-state">
+			<h2>Error</h2>
+			<p>{error}</p>
+			<button class="btn-primary" on:click={() => goto('/admin/proyectos/tabla')}>
+				{icons.back} Volver a la lista
+			</button>
+		</div>
 	{:else if project}
-		<!-- Project Details -->
-		<div class="content-wrapper">
-			<!-- Basic Info -->
-			<div class="info-card">
-				<div class="card-header">
-					<h1>{project.titulo}</h1>
-					<div class="badges">
-						<span class="badge estado">{project.estado.nombre}</span>
-						{#if project.para_siies}
-							<span class="badge siies">SIIES</span>
-						{/if}
-					</div>
+		<!-- Header -->
+		<div class="proyecto-header">
+			<div class="header-top">
+				<button class="btn-back" on:click={() => goto('/admin/proyectos/tabla')}>
+					<span>{icons.back}</span>
+					Volver
+				</button>
+				<div class="header-actions">
+					<a href="/admin/proyectos/{projectId}/editar" class="btn-secondary">
+						<span>{icons.edit}</span>
+						Editar
+					</a>
+					<button class="btn-danger" on:click={handleDelete}>
+						<span>{icons.delete}</span>
+						Eliminar
+					</button>
 				</div>
+			</div>
 
-				<div class="info-grid">
-					<div class="info-item">
-						<span class="label">🔢 Código:</span>
-						<span class="value code">{project.codigo}</span>
-					</div>
-
-					<div class="info-item">
-						<span class="label">📊 Avance:</span>
-						<div class="progress-container">
-							<div class="progress-bar">
-								<div class="progress-fill" style="width: {project.porcentaje_avance}%" />
-							</div>
-							<span class="progress-text">{project.porcentaje_avance}%</span>
-						</div>
-					</div>
-
-					<div class="info-item">
-						<span class="label">💰 Presupuesto Total:</span>
-						<span class="value currency">{formatCurrency(project.monto_presupuesto_total)}</span>
-					</div>
-
-					<div class="info-item">
-						<span class="label">💵 Monto Presupuesto:</span>
-						<span class="value currency">{formatCurrency(project.monto_presupuesto_total)}</span>
-					</div>
-
-					<div class="info-item full-width">
-						<span class="label">📅 Fecha Inicio Planeada:</span>
-						<span class="value">{formatDate(project.fecha_inicio_planeada)}</span>
-					</div>
-
-					<div class="info-item full-width">
-						<span class="label">📅 Fecha Finalización Planeada:</span>
-						<span class="value">{formatDate(project.fecha_fin_planeada)}</span>
-					</div>
-
-					{#if project.fecha_fin_real}
-						<div class="info-item">
-							<span class="label">✅ Fecha Finalización Real:</span>
-							<span class="value">{formatDate(project.fecha_fin_real)}</span>
-						</div>
+			<div class="header-content">
+				<div class="proyecto-code">{project.codigo}</div>
+				<h1 class="proyecto-titulo">{project.titulo}</h1>
+				<div class="proyecto-meta">
+					<span
+						class="badge badge-{project.estado.nombre.toLowerCase().includes('activo')
+							? 'success'
+							: 'info'}"
+					>
+						{project.estado.nombre}
+					</span>
+					{#if project.requiere_aval}
+						<span class="badge badge-warning">Requiere Aval</span>
+					{/if}
+					{#if project.para_siies}
+						<span class="badge badge-primary">SIIES</span>
 					{/if}
 				</div>
 			</div>
+		</div>
 
-			<!-- Objetivo -->
-			{#if project.objetivo}
-				<div class="info-card">
-					<h2>📝 Objetivo</h2>
-					<p class="description">{project.objetivo}</p>
-				</div>
-			{/if}
-
-			<!-- Instituciones -->
-			<div class="info-card">
-				<h2>🏛️ Instituciones Participantes ({project.instituciones.length})</h2>
-				<div class="items-grid">
-					{#each project.instituciones as inst}
-						<div class="item-badge">{inst.nombre}</div>
-					{/each}
+		<!-- Stats Cards -->
+		<div class="stats-grid">
+			<div class="stat-card">
+				<div class="stat-icon">{icons.money}</div>
+				<div class="stat-content">
+					<div class="stat-label">Presupuesto Total</div>
+					<div class="stat-value">{formatCurrency(project.monto_presupuesto_total)}</div>
 				</div>
 			</div>
 
-			<!-- Tipos -->
-			<div class="info-card">
-				<h2>🏷️ Tipos de Proyecto ({project.tipos.length})</h2>
-				<div class="items-grid">
-					{#each project.tipos as tipo}
-						<div class="item-badge">{tipo.nombre}</div>
-					{/each}
+			<div class="stat-card">
+				<div class="stat-icon">{icons.chart}</div>
+				<div class="stat-content">
+					<div class="stat-label">Avance del Proyecto</div>
+					<div class="stat-value">{project.porcentaje_avance}%</div>
+					<div class="progress-bar">
+						<div class="progress-fill" style="width: {project.porcentaje_avance}%" />
+					</div>
 				</div>
 			</div>
 
-			<!-- Áreas de Conocimiento -->
-			{#if project.areas_conocimiento.length > 0}
-				<div class="info-card">
-					<h2>📚 Áreas de Conocimiento ({project.areas_conocimiento.length})</h2>
-					<div class="items-grid">
-						{#each project.areas_conocimiento as area}
-							<div class="item-badge">{area.nombre}</div>
-						{/each}
+			<div class="stat-card">
+				<div class="stat-icon">{icons.calendar}</div>
+				<div class="stat-content">
+					<div class="stat-label">Duración</div>
+					<div class="stat-value-small">
+						{formatDate(project.fecha_inicio_planeada)} - {formatDate(project.fecha_fin_planeada)}
 					</div>
 				</div>
-			{/if}
+			</div>
 
-			<!-- Líneas de Investigación -->
-			{#if project.lineas_investigacion.length > 0}
-				<div class="info-card">
-					<h2>🔬 Líneas de Investigación ({project.lineas_investigacion.length})</h2>
-					<div class="items-grid">
-						{#each project.lineas_investigacion as linea}
-							<div class="item-badge">{linea.nombre}</div>
-						{/each}
-					</div>
+			<div class="stat-card">
+				<div class="stat-icon">{icons.users}</div>
+				<div class="stat-content">
+					<div class="stat-label">Participantes</div>
+					<div class="stat-value">{project.participantes?.length || 0}</div>
 				</div>
-			{/if}
+			</div>
+		</div>
 
-			<!-- Participantes -->
-			<div class="info-card">
-				<h2>👥 Participantes ({project.participantes.length})</h2>
-				<div class="participants-list">
-					{#each project.participantes as participante}
-						<div class="participant-card">
-							<div class="participant-header">
-								<h3>{participante.nombre}</h3>
-								<span class="badge">{participante.cargo}</span>
-							</div>
-							<div class="participant-info">
-								<span>📧 {participante.email}</span>
-								<span>🕐 {participante.regimen_dedicacion}</span>
+		<!-- Main Content -->
+		<div class="content-grid">
+			<!-- Left Column -->
+			<div class="content-main">
+				<!-- Descripción -->
+				<!-- Objetivo -->
+				{#if project.objetivo}
+					<div class="info-card">
+						<h2 class="card-title">
+							<span>{icons.check}</span>
+							Objetivo
+						</h2>
+						<div class="card-content">
+							<p class="text-content">{project.objetivo}</p>
+						</div>
+					</div>
+				{/if}
+
+				<!-- Participantes -->
+				{#if project.participantes && project.participantes.length > 0}
+					<div class="info-card">
+						<h2 class="card-title">
+							<span>{icons.users}</span>
+							Equipo de Investigación ({project.participantes.length})
+						</h2>
+						<div class="card-content">
+							<div class="participantes-list">
+								{#each project.participantes as part}
+									<div class="participante-item">
+										<div class="participante-info">
+											<div class="participante-nombre">{part.nombre}</div>
+											<div class="participante-detalles">
+												<span class="badge badge-outline">{part.cargo}</span>
+												<span class="badge badge-outline">{part.regimen_dedicacion}</span>
+											</div>
+										</div>
+									</div>
+								{/each}
 							</div>
 						</div>
-					{/each}
-				</div>
+					</div>
+				{/if}
 			</div>
 
-			<!-- Fuentes de Financiamiento -->
-			{#if project.fuentes_financiamiento.length > 0}
+			<!-- Right Column -->
+			<div class="content-sidebar">
+				<!-- Clasificación -->
 				<div class="info-card">
-					<h2>💵 Fuentes de Financiamiento ({project.fuentes_financiamiento.length})</h2>
-					<div class="funding-list">
-						{#each project.fuentes_financiamiento as fuente}
-							<div class="funding-card">
-								<h3>{fuente.nombre}</h3>
-								<div class="funding-amount">Fuente de financiamiento</div>
-							</div>
-						{/each}
+					<h2 class="card-title">
+						<span>{icons.tag}</span>
+						Clasificación
+					</h2>
+					<div class="card-content">
+						<div class="info-list">
+							{#if project.tipos && project.tipos.length > 0}
+								<div class="info-item">
+									<div class="info-label">Tipos</div>
+									<div class="info-tags">
+										{#each project.tipos as tipo}
+											<span class="tag">{tipo.nombre}</span>
+										{/each}
+									</div>
+								</div>
+							{/if}
+							{#if project.areas_conocimiento && project.areas_conocimiento.length > 0}
+								<div class="info-item">
+									<div class="info-label">Áreas de Conocimiento</div>
+									<div class="info-tags">
+										{#each project.areas_conocimiento as area}
+											<span class="tag">{area.nombre}</span>
+										{/each}
+									</div>
+								</div>
+							{/if}
+							{#if project.lineas_investigacion && project.lineas_investigacion.length > 0}
+								<div class="info-item">
+									<div class="info-label">Líneas de Investigación</div>
+									<div class="info-tags">
+										{#each project.lineas_investigacion as linea}
+											<span class="tag">{linea.nombre}</span>
+										{/each}
+									</div>
+								</div>
+							{/if}
+						</div>
 					</div>
 				</div>
-			{/if}
-		</div>
-	{:else}
-		<div class="error-container">
-			<div class="error-icon">❌</div>
-			<h2>Proyecto no encontrado</h2>
-			<p>El proyecto solicitado no existe o fue eliminado.</p>
-			<button class="btn-primary" on:click={() => goto('/admin/proyectos')}>
-				Volver a Proyectos
-			</button>
+
+				<!-- Instituciones -->
+				{#if project.instituciones && project.instituciones.length > 0}
+					<div class="info-card">
+						<h2 class="card-title">
+							<span>{icons.building}</span>
+							Instituciones ({project.instituciones.length})
+						</h2>
+						<div class="card-content">
+							<div class="instituciones-list">
+								{#each project.instituciones as inst}
+									<div class="institucion-item">
+										<div class="institucion-nombre">{inst.nombre}</div>
+										{#if inst.sigla}
+											<div class="institucion-rol">{inst.sigla}</div>
+										{/if}
+									</div>
+								{/each}
+							</div>
+						</div>
+					</div>
+				{/if}
+
+				<!-- Financiamiento -->
+				{#if project.fuentes_financiamiento && project.fuentes_financiamiento.length > 0}
+					<div class="info-card">
+						<h2 class="card-title">
+							<span>{icons.money}</span>
+							Financiamiento ({project.fuentes_financiamiento.length})
+						</h2>
+						<div class="card-content">
+							<div class="fuentes-list">
+								{#each project.fuentes_financiamiento as fuente}
+									<div class="fuente-item">
+										<div class="fuente-nombre">{fuente.nombre}</div>
+									</div>
+								{/each}
+							</div>
+						</div>
+					</div>
+				{/if}
+
+				<!-- Información Adicional -->
+				<div class="info-card">
+					<h2 class="card-title">Información Adicional</h2>
+					<div class="card-content">
+						<div class="info-list">
+							{#if project.fecha_fin_real}
+								<div class="info-item">
+									<div class="info-label">Fecha Finalización Real</div>
+									<div class="info-value">{formatDate(project.fecha_fin_real)}</div>
+								</div>
+							{/if}
+							<div class="info-item">
+								<div class="info-label">Fecha de Creación</div>
+								<div class="info-value">{formatDate(project.creado_en)}</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
 		</div>
 	{/if}
 </div>
 
-<style>
-	.page-container {
+<style lang="scss">
+	.proyecto-detalle-page {
 		padding: 2rem;
 		max-width: 1400px;
 		margin: 0 auto;
+		min-height: 100vh;
+		background: #0f1419;
 	}
 
-	.page-header {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		margin-bottom: 2rem;
-		flex-wrap: wrap;
-		gap: 1rem;
-	}
-
-	.back-btn {
-		padding: 0.75rem 1.5rem;
-		border: 1px solid #ddd;
-		background: white;
-		border-radius: 8px;
-		font-weight: 600;
-		cursor: pointer;
-		transition: all 0.2s;
-	}
-
-	.back-btn:hover {
-		background: #f5f5f5;
-		border-color: #6e29e7;
-		color: #6e29e7;
-	}
-
-	.header-actions {
-		display: flex;
-		gap: 0.75rem;
-		flex-wrap: wrap;
-	}
-
-	.btn-primary,
-	.btn-secondary,
-	.btn-danger {
-		padding: 0.75rem 1.5rem;
-		border: none;
-		border-radius: 8px;
-		font-weight: 600;
-		cursor: pointer;
-		transition: all 0.2s;
-		white-space: nowrap;
-	}
-
-	.btn-primary {
-		background: #6e29e7;
-		color: white;
-	}
-
-	.btn-primary:hover {
-		background: #5a1fc7;
-		transform: translateY(-1px);
-		box-shadow: 0 4px 12px rgba(110, 41, 231, 0.3);
-	}
-
-	.btn-secondary {
-		background: white;
-		color: #666;
-		border: 1px solid #ddd;
-	}
-
-	.btn-secondary:hover {
-		background: #f5f5f5;
-		border-color: #999;
-	}
-
-	.btn-danger {
-		background: #f44336;
-		color: white;
-	}
-
-	.btn-danger:hover {
-		background: #d32f2f;
-		transform: translateY(-1px);
-		box-shadow: 0 4px 12px rgba(244, 67, 54, 0.3);
-	}
-
-	.loading-container,
-	.error-container {
+	// ==================== Loading & Error States ====================
+	.loading-state,
+	.error-state {
 		display: flex;
 		flex-direction: column;
 		align-items: center;
 		justify-content: center;
-		padding: 4rem 2rem;
-		text-align: center;
+		min-height: 60vh;
+		gap: 1.5rem;
+
+		p {
+			color: #9ca3af;
+			font-size: 1rem;
+			margin: 0;
+		}
 	}
 
 	.spinner {
-		width: 60px;
-		height: 60px;
-		border: 4px solid #f3f3f3;
-		border-top: 4px solid #6e29e7;
+		width: 48px;
+		height: 48px;
+		border: 4px solid #2d3748;
+		border-top: 4px solid #10b981;
 		border-radius: 50%;
-		animation: spin 1s linear infinite;
-		margin-bottom: 1rem;
+		animation: spin 0.8s linear infinite;
 	}
 
 	@keyframes spin {
-		0% {
-			transform: rotate(0deg);
-		}
-		100% {
+		to {
 			transform: rotate(360deg);
 		}
 	}
 
-	.error-icon {
-		font-size: 4rem;
-		margin-bottom: 1rem;
+	// ==================== Header ====================
+	.proyecto-header {
+		margin-bottom: 2rem;
+
+		.header-top {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			margin-bottom: 1.5rem;
+		}
+
+		.btn-back {
+			display: flex;
+			align-items: center;
+			gap: 0.5rem;
+			padding: 0.625rem 1rem;
+			background: #1a1f26;
+			border: 1px solid #2d3748;
+			border-radius: 6px;
+			color: #9ca3af;
+			font-size: 0.875rem;
+			cursor: pointer;
+			transition: all 0.15s ease;
+
+			&:hover {
+				border-color: #10b981;
+				color: #10b981;
+			}
+		}
+
+		.header-actions {
+			display: flex;
+			gap: 0.75rem;
+		}
+
+		.header-content {
+			.proyecto-code {
+				display: inline-block;
+				padding: 0.375rem 0.75rem;
+				background: #0f1419;
+				border: 1px solid #2d3748;
+				border-radius: 6px;
+				font-family: 'SF Mono', monospace;
+				font-size: 0.875rem;
+				color: #10b981;
+				margin-bottom: 1rem;
+			}
+
+			.proyecto-titulo {
+				font-size: 2.25rem;
+				font-weight: 700;
+				color: #ededed;
+				line-height: 1.2;
+				margin: 0 0 1rem 0;
+			}
+
+			.proyecto-meta {
+				display: flex;
+				gap: 0.75rem;
+				flex-wrap: wrap;
+			}
+		}
 	}
 
-	.content-wrapper {
+	// ==================== Stats Grid ====================
+	.stats-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+		gap: 1rem;
+		margin-bottom: 2rem;
+	}
+
+	.stat-card {
 		display: flex;
-		flex-direction: column;
+		align-items: flex-start;
+		gap: 1rem;
+		padding: 1.5rem;
+		background: linear-gradient(135deg, #1a1f26 0%, #0f1419 100%);
+		border: 1px solid #2d3748;
+		border-radius: 10px;
+		transition: all 0.2s ease;
+
+		&:hover {
+			border-color: #10b981;
+			transform: translateY(-2px);
+			box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+		}
+
+		.stat-icon {
+			font-size: 2rem;
+			width: 56px;
+			height: 56px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			background: rgba(16, 185, 129, 0.1);
+			border-radius: 12px;
+			flex-shrink: 0;
+		}
+
+		.stat-content {
+			flex: 1;
+			min-width: 0;
+		}
+
+		.stat-label {
+			font-size: 0.8125rem;
+			color: #9ca3af;
+			text-transform: uppercase;
+			letter-spacing: 0.5px;
+			margin-bottom: 0.5rem;
+		}
+
+		.stat-value {
+			font-size: 1.875rem;
+			font-weight: 700;
+			color: #ededed;
+			line-height: 1;
+		}
+
+		.stat-value-small {
+			font-size: 0.9375rem;
+			font-weight: 600;
+			color: #ededed;
+			line-height: 1.4;
+		}
+
+		.progress-bar {
+			margin-top: 0.75rem;
+			height: 6px;
+			background: #0f1419;
+			border-radius: 3px;
+			overflow: hidden;
+
+			.progress-fill {
+				height: 100%;
+				background: linear-gradient(90deg, #10b981, #059669);
+				border-radius: 3px;
+				transition: width 0.3s ease;
+			}
+		}
+	}
+
+	// ==================== Content Grid ====================
+	.content-grid {
+		display: grid;
+		grid-template-columns: 1fr 380px;
 		gap: 1.5rem;
 	}
 
 	.info-card {
-		background: white;
-		border-radius: 12px;
-		padding: 2rem;
-		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-	}
-
-	.card-header {
+		background: #1a1f26;
+		border: 1px solid #2d3748;
+		border-radius: 10px;
 		margin-bottom: 1.5rem;
+		overflow: hidden;
+
+		&:last-child {
+			margin-bottom: 0;
+		}
+
+		.card-title {
+			display: flex;
+			align-items: center;
+			gap: 0.5rem;
+			padding: 1.25rem 1.5rem;
+			background: linear-gradient(90deg, rgba(16, 185, 129, 0.1) 0%, transparent 100%);
+			border-bottom: 1px solid #2d3748;
+			font-size: 1.125rem;
+			font-weight: 600;
+			color: #ededed;
+			margin: 0;
+		}
+
+		.card-content {
+			padding: 1.5rem;
+		}
 	}
 
-	.card-header h1 {
-		margin: 0 0 1rem 0;
-		color: var(--color--text-primary, #1a1a1a);
-		font-size: 2rem;
+	.text-content {
+		color: #d1d5db;
+		line-height: 1.7;
+		font-size: 0.9375rem;
+		margin: 0;
 	}
 
-	.badges {
+	// ==================== Participantes ====================
+	.participantes-list {
 		display: flex;
-		gap: 0.5rem;
-		flex-wrap: wrap;
+		flex-direction: column;
+		gap: 0.75rem;
 	}
 
-	.badge {
-		display: inline-block;
-		padding: 0.4rem 1rem;
-		border-radius: 12px;
-		font-size: 0.85rem;
-		font-weight: 600;
-		text-transform: uppercase;
+	.participante-item {
+		padding: 1rem;
+		background: #0f1419;
+		border: 1px solid #2d3748;
+		border-radius: 8px;
+		transition: all 0.15s ease;
+
+		&:hover {
+			border-color: #10b981;
+		}
+
+		.participante-info {
+			display: flex;
+			flex-direction: column;
+			gap: 0.5rem;
+		}
+
+		.participante-nombre {
+			font-weight: 600;
+			color: #ededed;
+			font-size: 0.9375rem;
+		}
+
+		.participante-detalles {
+			display: flex;
+			gap: 0.5rem;
+			flex-wrap: wrap;
+		}
 	}
 
-	.badge.estado {
-		background: #e3f2fd;
-		color: #1976d2;
-	}
-
-	.badge.siies {
-		background: #4caf50;
-		color: white;
-	}
-
-	.info-card h2 {
-		margin: 0 0 1.5rem 0;
-		color: var(--color--text-primary, #1a1a1a);
-		font-size: 1.5rem;
-	}
-
-	.info-grid {
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-		gap: 1.5rem;
+	// ==================== Info List ====================
+	.info-list {
+		display: flex;
+		flex-direction: column;
+		gap: 1rem;
 	}
 
 	.info-item {
+		.info-label {
+			font-size: 0.8125rem;
+			font-weight: 500;
+			color: #9ca3af;
+			text-transform: uppercase;
+			letter-spacing: 0.5px;
+			margin-bottom: 0.5rem;
+			display: flex;
+			align-items: center;
+			gap: 0.25rem;
+		}
+
+		.info-value {
+			font-size: 0.9375rem;
+			font-weight: 500;
+			color: #ededed;
+		}
+
+		.info-tags {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 0.5rem;
+		}
+	}
+
+	.tag {
+		display: inline-block;
+		padding: 0.375rem 0.75rem;
+		background: rgba(16, 185, 129, 0.1);
+		border: 1px solid rgba(16, 185, 129, 0.3);
+		border-radius: 6px;
+		font-size: 0.8125rem;
+		color: #10b981;
+	}
+
+	// ==================== Instituciones ====================
+	.instituciones-list {
 		display: flex;
 		flex-direction: column;
-		gap: 0.5rem;
-	}
-
-	.info-item.full-width {
-		grid-column: 1 / -1;
-	}
-
-	.label {
-		font-weight: 600;
-		color: var(--color--text-secondary, #666);
-		font-size: 0.9rem;
-	}
-
-	.value {
-		font-size: 1.1rem;
-		color: var(--color--text-primary, #1a1a1a);
-	}
-
-	.value.code {
-		font-family: monospace;
-		font-weight: 600;
-		color: #6e29e7;
-	}
-
-	.value.currency {
-		font-weight: 700;
-		color: #4caf50;
-	}
-
-	.progress-container {
-		display: flex;
-		align-items: center;
 		gap: 0.75rem;
 	}
 
-	.progress-bar {
-		flex: 1;
-		height: 10px;
-		background: #e0e0e0;
-		border-radius: 5px;
-		overflow: hidden;
+	.institucion-item {
+		padding: 1rem;
+		background: #0f1419;
+		border: 1px solid #2d3748;
+		border-radius: 8px;
+
+		.institucion-nombre {
+			font-weight: 600;
+			color: #ededed;
+			margin-bottom: 0.25rem;
+			font-size: 0.9375rem;
+		}
+
+		.institucion-rol {
+			font-size: 0.8125rem;
+			color: #9ca3af;
+		}
 	}
 
-	.progress-fill {
-		height: 100%;
-		background: linear-gradient(90deg, #4caf50, #8bc34a);
-		transition: width 0.3s;
-	}
-
-	.progress-text {
-		font-weight: 700;
-		min-width: 45px;
-		text-align: right;
-	}
-
-	.description {
-		line-height: 1.8;
-		color: var(--color--text-secondary, #666);
-		font-size: 1.05rem;
-	}
-
-	.items-grid {
+	// ==================== Fuentes ====================
+	.fuentes-list {
 		display: flex;
-		flex-wrap: wrap;
+		flex-direction: column;
 		gap: 0.75rem;
 	}
 
-	.item-badge {
-		padding: 0.75rem 1.25rem;
-		background: #f5f0ff;
-		color: #6e29e7;
-		border-radius: 8px;
-		font-weight: 600;
-		font-size: 0.95rem;
-	}
-
-	.participants-list {
-		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-		gap: 1rem;
-	}
-
-	.participant-card {
-		padding: 1.25rem;
-		background: #f8f9fa;
-		border-radius: 8px;
-		border-left: 4px solid #6e29e7;
-	}
-
-	.participant-header {
+	.fuente-item {
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
-		margin-bottom: 0.75rem;
-		gap: 0.5rem;
-	}
-
-	.participant-header h3 {
-		margin: 0;
-		font-size: 1.05rem;
-		color: var(--color--text-primary, #1a1a1a);
-	}
-
-	.participant-info {
-		display: flex;
-		flex-direction: column;
-		gap: 0.5rem;
-		font-size: 0.9rem;
-		color: var(--color--text-secondary, #666);
-	}
-
-	.funding-list {
-		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-		gap: 1rem;
-	}
-
-	.funding-card {
-		padding: 1.25rem;
-		background: #f0f7ff;
+		padding: 1rem;
+		background: #0f1419;
+		border: 1px solid #2d3748;
 		border-radius: 8px;
-		border-left: 4px solid #2196f3;
+
+		.fuente-nombre {
+			font-weight: 500;
+			color: #ededed;
+			font-size: 0.9375rem;
+		}
 	}
 
-	.funding-card h3 {
-		margin: 0 0 0.75rem 0;
-		font-size: 1rem;
-		color: var(--color--text-primary, #1a1a1a);
+	// ==================== Badges ====================
+	.badge {
+		display: inline-flex;
+		align-items: center;
+		padding: 0.375rem 0.875rem;
+		font-size: 0.8125rem;
+		font-weight: 600;
+		border-radius: 6px;
+		white-space: nowrap;
+
+		&.badge-success {
+			background: rgba(16, 185, 129, 0.15);
+			color: #10b981;
+		}
+
+		&.badge-info {
+			background: rgba(59, 130, 246, 0.15);
+			color: #3b82f6;
+		}
+
+		&.badge-warning {
+			background: rgba(245, 158, 11, 0.15);
+			color: #f59e0b;
+		}
+
+		&.badge-primary {
+			background: rgba(139, 92, 246, 0.15);
+			color: #8b5cf6;
+		}
+
+		&.badge-outline {
+			background: transparent;
+			border: 1px solid #2d3748;
+			color: #9ca3af;
+			font-size: 0.75rem;
+		}
 	}
 
-	.funding-amount {
-		font-size: 1.25rem;
-		font-weight: 700;
-		color: #4caf50;
+	// ==================== Buttons ====================
+	.btn-primary,
+	.btn-secondary,
+	.btn-danger {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.625rem 1.25rem;
+		font-size: 0.875rem;
+		font-weight: 500;
+		border-radius: 6px;
+		cursor: pointer;
+		transition: all 0.15s ease;
+		text-decoration: none;
+		border: none;
 	}
 
-	/* Responsive */
-	@media (max-width: 768px) {
-		.page-container {
-			padding: 1rem;
-		}
+	.btn-primary {
+		background: #10b981;
+		color: #0f1419;
 
-		.page-header {
-			flex-direction: column;
-			align-items: stretch;
+		&:hover {
+			background: #059669;
 		}
+	}
 
-		.header-actions {
-			flex-direction: column;
+	.btn-secondary {
+		background: #2d3748;
+		color: #ededed;
+
+		&:hover {
+			background: #374151;
 		}
+	}
 
-		.back-btn,
-		.btn-primary,
-		.btn-secondary,
-		.btn-danger {
-			width: 100%;
-			text-align: center;
-			justify-content: center;
+	.btn-danger {
+		background: #ef4444;
+		color: #ffffff;
+
+		&:hover {
+			background: #dc2626;
 		}
+	}
 
-		.info-card {
-			padding: 1.5rem;
-		}
-
-		.card-header h1 {
-			font-size: 1.5rem;
-		}
-
-		.info-card h2 {
-			font-size: 1.25rem;
-		}
-
-		.info-grid {
+	// ==================== Responsive ====================
+	@media (max-width: 1024px) {
+		.content-grid {
 			grid-template-columns: 1fr;
 		}
 
-		.participants-list,
-		.funding-list {
+		.content-sidebar {
+			order: 2;
+		}
+	}
+
+	@media (max-width: 768px) {
+		.proyecto-detalle-page {
+			padding: 1rem;
+		}
+
+		.proyecto-header {
+			.header-top {
+				flex-direction: column;
+				align-items: stretch;
+				gap: 1rem;
+			}
+
+			.header-actions {
+				width: 100%;
+
+				a,
+				button {
+					flex: 1;
+					justify-content: center;
+				}
+			}
+
+			.header-content {
+				.proyecto-titulo {
+					font-size: 1.75rem;
+				}
+			}
+		}
+
+		.stats-grid {
 			grid-template-columns: 1fr;
 		}
 	}

@@ -53,6 +53,16 @@ export const AdminProjectsService = {
 			errors.push({ field: 'estado_id', message: 'El estado del proyecto es obligatorio' });
 		}
 
+		if (
+			'instituciones_ids' in dto &&
+			(!dto.instituciones_ids || dto.instituciones_ids.length === 0)
+		) {
+			errors.push({
+				field: 'instituciones_ids',
+				message: 'Debe seleccionar al menos una institución encargada'
+			});
+		}
+
 		if ('fecha_inicio_planeada' in dto && !dto.fecha_inicio_planeada) {
 			errors.push({
 				field: 'fecha_inicio_planeada',
@@ -449,8 +459,8 @@ export const AdminProjectsService = {
 	// =====================================
 
 	async addProjectRelations(proyectoId: number, dto: CreateProyectoDTO | UpdateProyectoDTO) {
-		// Agregar instituciones
-		if (dto.instituciones_ids) {
+		// Agregar instituciones encargadas
+		if (dto.instituciones_ids && dto.instituciones_ids.length > 0) {
 			await Promise.all(
 				dto.instituciones_ids.map((id) =>
 					AdminProjectsRepository.addProjectInstitution(proyectoId, id)

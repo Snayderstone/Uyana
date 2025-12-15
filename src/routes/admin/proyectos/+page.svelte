@@ -2,9 +2,9 @@
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 
-	// Redirigir a dashboard por defecto
+	// Redirigir a tabla por defecto
 	onMount(() => {
-		goto('/admin/proyectos/dashboard', { replaceState: true });
+		goto('/admin/proyectos/tabla', { replaceState: true });
 	});
 </script>
 
@@ -14,7 +14,7 @@
 
 <div class="redirect-page">
 	<div class="spinner" />
-	<p>Redirigiendo al dashboard...</p>
+	<p>Redirigiendo a proyectos...</p>
 </div>
 
 <style>

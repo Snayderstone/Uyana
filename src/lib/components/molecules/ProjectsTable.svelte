@@ -1,51 +1,75 @@
 <!-- src/lib/components/molecules/ProjectsTable.svelte -->
 <script lang="ts">
 	import type { Proyecto } from '$lib/services/proyectosService';
+	import { onMount, onDestroy } from 'svelte';
 
 	export let projects: Proyecto[] = [];
 	export let itemsPerPage = 5;
 
 	let currentPage = 1;
 	let searchQuery = '';
+	let debouncedSearchQuery = ''; // Query con debounce
 	let sortField = 'titulo';
 	let sortDirection: 'asc' | 'desc' = 'asc';
 	let selectedProject: Proyecto | null = null;
 	let showDetailModal = false;
 
-	// Filtrado y paginación
-	$: filteredProjects = projects.filter((project) => {
-		// Si no hay búsqueda, mostrar todos
-		if (!searchQuery) return true;
+	// Debounce timer
+	let searchTimeout: ReturnType<typeof setTimeout>;
+	const DEBOUNCE_DELAY = 300; // ms
 
-		// Buscar en varios campos
-		const query = searchQuery.toLowerCase();
-		return (
-			project.titulo?.toLowerCase().includes(query) ||
-			false ||
-			project.codigo?.toLowerCase().includes(query) ||
-			false ||
-			project.facultad_o_entidad_o_area_responsable?.toLowerCase().includes(query) ||
-			false ||
-			project.coordinador_director?.toLowerCase().includes(query) ||
-			false ||
-			project.estado?.toLowerCase().includes(query) ||
-			false
-		);
-	});
+	// Debounce para el input de búsqueda
+	$: {
+		searchQuery;
+		clearTimeout(searchTimeout);
+		searchTimeout = setTimeout(() => {
+			debouncedSearchQuery = searchQuery;
+			currentPage = 1; // Reset a primera página al buscar
+		}, DEBOUNCE_DELAY);
+	}
 
-	// Ordenamiento
-	$: sortedProjects = [...filteredProjects].sort((a, b) => {
-		const valueA = a[sortField as keyof Proyecto] || '';
-		const valueB = b[sortField as keyof Proyecto] || '';
+	// Filtrado optimizado con query debounced
+	$: filteredProjects = (() => {
+		// Si no hay búsqueda, retornar todos sin iterar
+		if (!debouncedSearchQuery) return projects;
 
-		if (typeof valueA === 'number' && typeof valueB === 'number') {
-			return sortDirection === 'asc' ? valueA - valueB : valueB - valueA;
-		} else {
+		const query = debouncedSearchQuery.toLowerCase();
+
+		// Filtrado optimizado: evitar conversiones repetidas
+		return projects.filter((project) => {
+			return (
+				project.titulo?.toLowerCase().includes(query) ||
+				project.codigo?.toLowerCase().includes(query) ||
+				project.facultad_o_entidad_o_area_responsable?.toLowerCase().includes(query) ||
+				project.coordinador_director?.toLowerCase().includes(query) ||
+				project.estado?.toLowerCase().includes(query)
+			);
+		});
+	})();
+
+	// Ordenamiento optimizado con memoización implícita
+	$: sortedProjects = (() => {
+		// Evitar copia y sort si no hay datos
+		if (filteredProjects.length === 0) return [];
+
+		const sorted = [...filteredProjects];
+		const multiplier = sortDirection === 'asc' ? 1 : -1;
+
+		sorted.sort((a, b) => {
+			const valueA = a[sortField as keyof Proyecto] || '';
+			const valueB = b[sortField as keyof Proyecto] || '';
+
+			if (typeof valueA === 'number' && typeof valueB === 'number') {
+				return (valueA - valueB) * multiplier;
+			}
+
 			const strA = String(valueA).toLowerCase();
 			const strB = String(valueB).toLowerCase();
-			return sortDirection === 'asc' ? strA.localeCompare(strB) : strB.localeCompare(strA);
-		}
-	});
+			return strA.localeCompare(strB) * multiplier;
+		});
+
+		return sorted;
+	})();
 
 	// Paginación
 	$: totalPages = Math.ceil(sortedProjects.length / itemsPerPage);
@@ -56,6 +80,11 @@
 
 	function changePage(page: number) {
 		currentPage = Math.max(1, Math.min(page, totalPages));
+		// Scroll suave a la tabla al cambiar página
+		document.querySelector('.projects-table-container')?.scrollIntoView({
+			behavior: 'smooth',
+			block: 'start'
+		});
 	}
 
 	function toggleSort(field: string) {
@@ -67,10 +96,37 @@
 		}
 	}
 
-	// Mostrar truncado
-	function truncateText(text: string | null, maxLength = 50) {
+	// Limpieza al destruir componente
+	onDestroy(() => {
+		clearTimeout(searchTimeout);
+	});
+
+	// Mostrar truncado (memoizado internamente por Svelte)
+	function truncateText(text: string | null, maxLength = 50): string {
 		if (!text) return '';
 		return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+	}
+
+	// Caché para textos truncados (evita recalcular en cada render)
+	const truncateCache = new Map<string, string>();
+
+	function truncateTextCached(text: string | null, maxLength = 50): string {
+		if (!text) return '';
+
+		const key = `${text}-${maxLength}`;
+		if (truncateCache.has(key)) {
+			return truncateCache.get(key)!;
+		}
+
+		const result = text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+		truncateCache.set(key, result);
+
+		// Limpiar caché si crece mucho (prevenir memory leak)
+		if (truncateCache.size > 1000) {
+			truncateCache.clear();
+		}
+
+		return result;
 	}
 
 	// Funciones para el modal de detalle
@@ -154,15 +210,15 @@
 						</td>
 					</tr>
 				{:else}
-					{#each paginatedProjects as project}
+					{#each paginatedProjects as project (project.codigo || project.titulo)}
 						<tr>
 							<td title={project.codigo}>{project.codigo || 'N/A'}</td>
-							<td title={project.titulo}>{truncateText(project.titulo, 60)}</td>
+							<td title={project.titulo}>{truncateTextCached(project.titulo, 60)}</td>
 							<td title={project.facultad_o_entidad_o_area_responsable}>
-								{truncateText(project.facultad_o_entidad_o_area_responsable, 30)}
+								{truncateTextCached(project.facultad_o_entidad_o_area_responsable, 30)}
 							</td>
 							<td title={project.coordinador_director}>
-								{truncateText(project.coordinador_director, 25)}
+								{truncateTextCached(project.coordinador_director, 25)}
 							</td>
 							<td>
 								<span
@@ -266,22 +322,22 @@
 			<div class="modal-body">
 				<div class="project-detail-grid">
 					<div class="detail-item">
-						<label class="detail-label">Código:</label>
+						<span class="detail-label">Código:</span>
 						<span class="detail-value">{selectedProject.codigo || 'No especificado'}</span>
 					</div>
 
 					<div class="detail-item full-width">
-						<label class="detail-label">Título:</label>
+						<span class="detail-label">Título:</span>
 						<span class="detail-value">{selectedProject.titulo || 'No especificado'}</span>
 					</div>
 
 					<div class="detail-item">
-						<label class="detail-label">Tipo de Proyecto:</label>
+						<span class="detail-label">Tipo de Proyecto:</span>
 						<span class="detail-value">{selectedProject.tipo_proyecto || 'No especificado'}</span>
 					</div>
 
 					<div class="detail-item">
-						<label class="detail-label">Estado:</label>
+						<span class="detail-label">Estado:</span>
 						<span
 							class="status-badge"
 							class:active={selectedProject.estado === 'En ejecución'}
@@ -295,26 +351,26 @@
 					</div>
 
 					<div class="detail-item full-width">
-						<label class="detail-label">Objetivo:</label>
+						<span class="detail-label">Objetivo:</span>
 						<span class="detail-value">{selectedProject.objetivo || 'No especificado'}</span>
 					</div>
 
 					<div class="detail-item">
-						<label class="detail-label">Facultad/Entidad:</label>
+						<span class="detail-label">Facultad/Entidad:</span>
 						<span class="detail-value"
 							>{selectedProject.facultad_o_entidad_o_area_responsable || 'No especificado'}</span
 						>
 					</div>
 
 					<div class="detail-item">
-						<label class="detail-label">Coordinador/Director:</label>
+						<span class="detail-label">Coordinador/Director:</span>
 						<span class="detail-value"
 							>{selectedProject.coordinador_director || 'No especificado'}</span
 						>
 					</div>
 
 					<div class="detail-item">
-						<label class="detail-label">Correo Electrónico:</label>
+						<span class="detail-label">Correo Electrónico:</span>
 						<span class="detail-value">
 							{#if selectedProject.correo_electronico_coordinador}
 								<a
@@ -330,42 +386,42 @@
 					</div>
 
 					<div class="detail-item">
-						<label class="detail-label">Fecha de Inicio:</label>
+						<span class="detail-label">Fecha de Inicio:</span>
 						<span class="detail-value">{selectedProject.fecha_inicio || 'No especificado'}</span>
 					</div>
 
 					<div class="detail-item">
-						<label class="detail-label">Fecha de Fin Planeada:</label>
+						<span class="detail-label">Fecha de Fin Planeada:</span>
 						<span class="detail-value"
 							>{selectedProject.fecha_fin_planeado || 'No especificado'}</span
 						>
 					</div>
 
 					<div class="detail-item">
-						<label class="detail-label">Campo Amplio:</label>
+						<span class="detail-label">Campo Amplio:</span>
 						<span class="detail-value">{selectedProject.campo_amplio || 'No especificado'}</span>
 					</div>
 
 					<div class="detail-item">
-						<label class="detail-label">Campo Específico:</label>
+						<span class="detail-label">Campo Específico:</span>
 						<span class="detail-value">{selectedProject.campo_especifico || 'No especificado'}</span
 						>
 					</div>
 
 					<div class="detail-item">
-						<label class="detail-label">Campo Detallado:</label>
+						<span class="detail-label">Campo Detallado:</span>
 						<span class="detail-value">{selectedProject.campo_detallado || 'No especificado'}</span>
 					</div>
 
 					<div class="detail-item">
-						<label class="detail-label">Alcance Territorial:</label>
+						<span class="detail-label">Alcance Territorial:</span>
 						<span class="detail-value"
 							>{selectedProject.alcance_territorial || 'No especificado'}</span
 						>
 					</div>
 
 					<div class="detail-item">
-						<label class="detail-label">Investigadores Acreditados SENESCYT:</label>
+						<span class="detail-label">Investigadores Acreditados SENESCYT:</span>
 						<span class="detail-value">
 							<span
 								class="acredited-badge"
@@ -378,7 +434,7 @@
 					</div>
 
 					<div class="detail-item">
-						<label class="detail-label">Fuente de Financiamiento:</label>
+						<span class="detail-label">Fuente de Financiamiento:</span>
 						<span class="detail-value"
 							>{selectedProject.fuente_financiamiento || 'No especificado'}</span
 						>
