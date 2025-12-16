@@ -11,9 +11,11 @@ export * from './project.model';
 export * from './participant.model';
 export * from './blog.model';
 export * from './chart.model';
+export * from './geoespacial.model';
 
 // DTOs
 export * from './project.dto';
 export * from './participant.dto';
 export * from './blog.dto';
 export * from './common.dto';
+export * from './geoespacial.dto';

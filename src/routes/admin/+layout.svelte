@@ -148,6 +148,15 @@
 					</a>
 				</li>
 
+				<li class="nav-section-title">Geoespacial</li>
+
+				<li class:active={$page.url.pathname.includes('/admin/geoespacial')}>
+					<a href="/admin/geoespacial">
+						<span class="icon">🗺️</span>
+						<span class="nav-text">Mapa</span>
+					</a>
+				</li>
+
 				<li class="nav-section-title">Sistema</li>
 
 				<li class:active={$page.url.pathname.includes('/admin/database-status')}>
@@ -209,7 +218,7 @@
 		</header>
 
 		<!-- Main Body -->
-		<main class="main-body">
+		<main class="main-body" class:no-padding={$page.url.pathname === '/admin/geoespacial'}>
 			<slot />
 		</main>
 	</div>
@@ -556,6 +565,11 @@
 
 		@include for-phone-only {
 			padding: 1rem;
+		}
+
+		&.no-padding {
+			padding: 0;
+			overflow: hidden;
 		}
 	}
 
