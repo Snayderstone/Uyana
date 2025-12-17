@@ -29,7 +29,6 @@
 
 	// Referencia al componente GeoJsonChoropleth para acceder a sus métodos
 	let geoJsonInstance: any;
-
 	// Datos para la coropleta
 	let proyectosPorFacultad: { facultad: string; cantidad: number }[] = [];
 	let valueById: Record<string, number> = {};
@@ -716,12 +715,13 @@
 					dashArray: '5, 10',
 					className: 'highlighted-feature'
 				}}
-				bind:this={geoJsonInstance}
 				onEachFeature={(feature, layer) => {
 					if (feature?.properties?.facultad_o_entidad_o_area_responsable) {
 						const facultad = feature.properties.facultad_o_entidad_o_area_responsable;
 						const center = layer.getBounds().getCenter();
 						centroides[facultad] = [center.lat, center.lng];
+						// Cuando tengas los centroides listos:
+						dispatch('centroidesReady', { centroides });
 					}
 				}}
 			/>

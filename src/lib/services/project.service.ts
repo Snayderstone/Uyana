@@ -244,12 +244,20 @@ async function buildFlatProjects(): Promise<ProyectoFlat[]> {
   // Facultad responsable y coordinador/director
   const facultadByProject = new Map<number, string>();
   const coordinadorByProject = new Map<number, { nombre: string; email: string }>();
+  // 🔹 TODAS las facultades relacionadas por proyecto
+  const facultadesRelacionadasByProject = new Map<number, Set<string>>();
 
   participantsDetails.forEach((row: any) => {
     const projectId = row.proyecto_id as number;
     if (!projectId) return;
 
     const facultad: string = row.facultad ?? '';
+    if (facultad) {
+      if (!facultadesRelacionadasByProject.has(projectId)) {
+        facultadesRelacionadasByProject.set(projectId, new Set<string>());
+      }
+      facultadesRelacionadasByProject.get(projectId)!.add(facultad);
+    }
     const esLider = esRolLider(row.cargo_nombre);
 
     if (esLider) {
@@ -394,7 +402,11 @@ async function buildFlatProjects(): Promise<ProyectoFlat[]> {
       institucion: institucionNombre,
       pais_institucion: institucionPais,
       // TODAS las instituciones relacionadas (para filtros y mapa)
-      instituciones_relacionadas: institucionesRelacionadas
+      instituciones_relacionadas: institucionesRelacionadas,
+      facultades_relacionadas: facultadesRelacionadasByProject.get(projectId)
+        ? Array.from(facultadesRelacionadasByProject.get(projectId)!).filter(Boolean).sort()
+        : (facultad ? [facultad] : []),
+
     };
   });
 
@@ -410,7 +422,7 @@ export const ProjectService = {
   /**
  * Mapa de proyectos por INSTITUCIÓN (con soporte de filtros)
  */
-    async getProjectsByInstitutionForMap(
+  async getProjectsByInstitutionForMap(
     filters?: ProjectFilters
   ): Promise<ProjectMapModel[]> {
     // 1) Traemos instituciones y todas las relaciones proyecto–institución

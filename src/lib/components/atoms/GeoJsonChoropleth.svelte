@@ -63,7 +63,6 @@
 			return `color-mix(in srgb, var(--color--card-background, #ffffff) ${p}%, var(--color--callout-accent--warning, #ffd60a))`;
 		}
 	};
-
 	// Normalizador de valores → [0,1]
 	function to01(v: number, lo: number, hi: number) {
 		// Asegurar que span no sea 0 para evitar divisiones por cero
@@ -76,7 +75,6 @@
 	let geoLayer: any = null;
 	let loadedData: any = null;
 	let isDestroyed = false;
-
 	// Facultad destacada actualmente
 	export let highlightedFacultad: string | null = null;
 
@@ -228,6 +226,7 @@
 			layer.bindPopup(html);
 		}
 	}
+
 
 	async function buildLayer() {
 		if (!map || !loadedData || !L) return;

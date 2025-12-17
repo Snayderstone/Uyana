@@ -13,6 +13,12 @@
 	import type { MapLevel } from '$lib/models/map.model';
 	import type { Map, LatLngTuple } from 'leaflet';
 	import { ProjectService } from '$lib/services/project.service';
+	import { createEventDispatcher } from 'svelte';
+	import MapNetworkLayer from '$lib/components/molecules/MapNetworkLayer.svelte';
+	import { NetworkService } from '$lib/services/network.service';
+	import NetworkPanel from '$lib/components/molecules/MapNetworkPanel.svelte';
+
+	const dispatch = createEventDispatcher();
 
 	// 🔹 Mismas funciones de normalización que usa ProjectsChoropleth
 	function normalizarNombreFacultad(nombre: string): string {
@@ -55,6 +61,7 @@
 	// Props para el mapa
 	export let center: LatLngTuple = [-0.1992, -78.5059]; // Quito - UCE por defecto
 	export let zoom = 16;
+	let centroides: Record<string, [number, number]> = {};
 
 	let mapLevel: MapLevel = 'faculty';
 	let lastMapLevel: MapLevel = mapLevel;
@@ -76,7 +83,7 @@
 	let showFiltersPanel = false;
 	let showResultsPanel = false;
 	let showStatsPanel = false; // Mostrar estadísticas por defecto
-	let activePanelTab = 'filters'; // 'filters' o 'results'
+	let activePanelTab: 'filters' | 'results' | 'network' = 'filters';
 
 	// Estadísticas para la leyenda
 	let minProyectos = 0;
@@ -89,6 +96,11 @@
 	// Indica si hay filtros activos (lista filtrada distinta de la lista completa)
 	let hasActiveFilters = false;
 	let nombresInstituciones: string[] = [];
+	// Estado del panel de red de colaboración
+	let showNetworkPanel = false;
+	let selectedNetworkType: 'projects' | 'participants' | 'international' | 'area' = 'projects';
+	let networkData = null;
+
 	onMount(async () => {
 		const rows = await ProjectService.getProjectsByInstitutionForMap();
 		nombresInstituciones = [...new Set(rows.map((r) => r.titulo))].sort();
@@ -424,6 +436,19 @@
 			map = null;
 		}
 	});
+	// Manejar aplicación de red de colaboración
+	async function handleApplyNetwork(e: CustomEvent) {
+		console.log('🔥 (MAPEXPLORER):APPLY NETWORK recibido:', e.detail);
+		const { type, level } = e.detail;
+		// ✅ USAR centroides del estado del padre (los que vienen de centroidesReady)
+		console.log('🧭 centroides (padre):', centroides);
+
+		networkData = await NetworkService.buildNetwork(type, level, centroides, filteredProyectos);
+
+		console.log('🔥 networkData generada:', networkData);
+		showNetworkPanel = false;
+		showNetworkPanel = false;
+	}
 </script>
 
 <div class="project-map-explorer" class:fullscreen={isFullscreenMap}>
@@ -472,10 +497,16 @@
 					{hasActiveFilters}
 					on:viewFacultyProjects={handleViewFacultyProjects}
 					on:mapClick={handleMapClick}
+					on:centroidesReady={(e) => {
+						centroides = e.detail.centroides;
+					}}
 					on:resetHighlights={() => (highlightedFacultad = null)}
 				/>
 			{/if}
-
+			{#if networkData}
+				{console.log('📡 ENVIANDO networkData AL COMPONENTE', networkData)}
+				<MapNetworkLayer {map} nodes={networkData.nodes} {centroides} edges={networkData.edges} />
+			{/if}
 			<div class="map-legend-container">
 				<ProjectsMapLegend
 					title={mapLevel === 'faculty'
@@ -701,10 +732,46 @@
 						</svg>
 					</button>
 				</div>
+				<!-- Botón para panel de red -->
+				<button
+					class="map-control-btn"
+					class:active={showNetworkPanel}
+					on:click={() => {
+						showNetworkPanel = !showNetworkPanel;
+						activePanelTab = 'network';
+						showFiltersPanel = false;
+						showResultsPanel = false;
+					}}
+					aria-label="Mostrar red"
+					title="Red de colaboración"
+				>
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="20"
+						height="20"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+					>
+						<!-- Ícono de red -->
+						<circle cx="6" cy="6" r="3" />
+						<circle cx="18" cy="6" r="3" />
+						<circle cx="12" cy="18" r="3" />
+						<line x1="8.5" y1="7.5" x2="15.5" y2="7.5" />
+						<line x1="7.5" y1="8.5" x2="10.5" y2="15" />
+						<line x1="16.5" y1="8.5" x2="13.5" y2="15" />
+					</svg>
+				</button>
 			</div>
 
 			<!-- Panel lateral integrado -->
-			<div class="map-side-panel" class:visible={showFiltersPanel || showResultsPanel}>
+			<div
+				class="map-side-panel"
+				class:visible={showFiltersPanel || showResultsPanel || showNetworkPanel}
+			>
 				<!-- Pestaña de filtros -->
 				{#if activePanelTab === 'filters'}
 					<Sparkles />
@@ -814,6 +881,9 @@
 							/>
 						{/if}
 					</div>
+				{/if}
+				{#if activePanelTab === 'network'}
+					<NetworkPanel bind:selectedNetworkType {mapLevel} on:applyNetwork={handleApplyNetwork} />
 				{/if}
 			</div>
 
@@ -1384,5 +1454,34 @@
 		.map-level-btn:not(.active):hover {
 			background: color-mix(in srgb, var(--color--primary) 10%, var(--color--card-background));
 		}
+	}
+	.network-panel h3 {
+		margin: 8px 0;
+		font-size: 1rem;
+		font-weight: 600;
+	}
+
+	.network-panel label {
+		display: flex;
+		gap: 8px;
+		margin: 6px 0;
+		font-size: 0.9rem;
+	}
+
+	.apply-btn {
+		margin-top: 15px;
+		width: 100%;
+		padding: 10px;
+		border-radius: 10px;
+		background: var(--color--primary);
+		color: white;
+		font-weight: 600;
+		cursor: pointer;
+		border: none;
+		transition: 0.2s;
+	}
+
+	.apply-btn:hover {
+		filter: brightness(1.15);
 	}
 </style>

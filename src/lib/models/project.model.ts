@@ -137,6 +137,7 @@ export type ProyectoFlat = {
   // todas las instituciones relacionadas al proyecto
   // (coinciden con las de proyecto_institucion)
   instituciones_relacionadas?: string[];
+  facultades_relacionadas?: string[];
 };
 
 
