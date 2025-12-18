@@ -26,6 +26,11 @@
 	// Hover
 	export let hoverEnabled = true;
 	export let hoverLineColor = 'var(--color--primary, #6E29E7)';
+	// Etiqueta de unidad para hover/popup (evita que institution => "participantes")
+	export let unitLabel: string = 'proyectos';
+
+	// Propiedad opcional dentro del GeoJSON a usar como fallback si valueById no tiene valor
+	export let valueProperty: string | null = null;
 
 	// Guardar los centroides calculados por facultad
 	let centroides: Record<string, [number, number]> = {};
@@ -127,6 +132,21 @@
 			loadedData = await res.json();
 		}
 	}
+	function resolveValue(props: any, regionId: string | null): number | null {
+		if (!regionId) return null;
+
+		// 1) Prioridad: valueById (refleja filtros dinámicos)
+		const fromMap = valueById?.[regionId];
+		if (typeof fromMap === 'number') return fromMap;
+
+		// 2) Fallback: alguna propiedad del feature (ej: projectCount)
+		if (valueProperty && props && typeof props[valueProperty] === 'number') {
+			return props[valueProperty];
+		}
+
+		// 3) Default
+		return 0;
+	}
 
 	function styleForFeature(f: any) {
 		const id = f?.properties?.[idProperty];
@@ -182,7 +202,7 @@
 					const regionId = props[idProperty]; // ej: regionKey
 					//const value = regionId != null ? valueById[regionId] : null;
 					// ⭐⭐⭐ CORRECCIÓN AQUÍ: usar el valor del feature, no valueById en tiempo de evento
-					const value = props.totalParticipants != null ? props.totalParticipants : null;
+					const value = resolveValue(props, regionId ?? null);
 
 					const tooltipContent = hoverCardHTML(
 						props,
@@ -217,7 +237,7 @@
 			const regionId = props?.[idProperty];
 			//const value = regionId != null ? valueById[regionId] : null;
 			// ⭐⭐⭐ CORRECCIÓN AQUÍ: usar el valor del feature, no valueById
-			const value = props.totalParticipants != null ? props.totalParticipants : null;
+			const value = resolveValue(props, regionId ?? null);
 			const html = popupFormatter(
 				props ?? {},
 				regionId || '',
@@ -226,7 +246,6 @@
 			layer.bindPopup(html);
 		}
 	}
-
 
 	async function buildLayer() {
 		if (!map || !loadedData || !L) return;
@@ -498,8 +517,7 @@
 		const name = props?.regionName || props?.facultad || id || 'Región';
 		//const valTxt = value == null ? '–' : String(value);
 		const valTxt = value != null ? String(value) : '0';
-		const level = props?.level;
-		const unidad = level === 'institution' ? 'participantes' : 'proyectos';
+		const unidad = unitLabel;
 
 		return `
     <div class="fac-card">
@@ -625,6 +643,7 @@
 	}
 
 	:global(.faculty-card-tooltip .fac-card__title) {
+		color: var(--color--secondary); 
 		order: 1;
 		font-weight: 800;
 		letter-spacing: 0.2px;
@@ -632,6 +651,7 @@
 	}
 
 	:global(.faculty-card-tooltip .fac-card__meta) {
+		color: var(--color--secondary); 
 		order: 2;
 		font-size: 12px;
 		opacity: 0.9;

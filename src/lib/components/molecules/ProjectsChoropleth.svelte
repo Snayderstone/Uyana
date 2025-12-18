@@ -706,6 +706,8 @@
 				hoverEnabled={true}
 				popupEnabled={true}
 				popupFormatter={formatPopup}
+				unitLabel="proyectos"
+				valueProperty="projectCount"
 				colorAt={generateColor}
 				highlightStyle={{
 					color: '#ff00ff',
