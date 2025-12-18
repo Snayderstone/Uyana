@@ -20,7 +20,16 @@ export interface GraficoConfig {
 		| 'horizontalBar'
 		| 'map'
 		| 'timeline';
-	tab_categoria: 'overview' | 'analytics' | 'geographic';
+	tab_categoria:
+		| 'overview'
+		| 'analytics'
+		| 'geographic'
+		| 'participantes_overview'
+		| 'participantes_facultades'
+		| 'participantes_carreras'
+		| 'participantes_cargos'
+		| 'participantes_investigadores'
+		| 'participantes_genero';
 	creado_en: string;
 	actualizado_en: string;
 }

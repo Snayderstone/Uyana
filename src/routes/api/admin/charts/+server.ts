@@ -11,10 +11,22 @@ import { AdminChartsRepository } from '$lib/db/admin/charts.repository';
 
 /**
  * GET - Listar todas las configuraciones de gráficos
+ * Query params:
+ *   - category: filtrar por categoría (ej: "participantes", "proyectos")
  */
-export const GET: RequestHandler = async () => {
+export const GET: RequestHandler = async ({ url }) => {
 	try {
-		const charts = await AdminChartsRepository.getAllChartConfigs();
+		const category = url.searchParams.get('category');
+		let charts = await AdminChartsRepository.getAllChartConfigs();
+
+		// Filtrar por categoría si se proporciona
+		if (category) {
+			charts = charts.filter(
+				(chart) =>
+					chart.nombre_grafico.startsWith(`${category}_`) ||
+					chart.tab_categoria.startsWith(`${category}_`)
+			);
+		}
 
 		return json({
 			success: true,

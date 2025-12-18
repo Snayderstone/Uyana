@@ -112,6 +112,45 @@
 			return null;
 		}
 
+		// Encontrar el contenedor de pestaña padre y mostrarlo temporalmente si está oculto
+		const tabContent = chartContainer.closest('.tab-content') as HTMLElement;
+		const wasTabHidden = tabContent && tabContent.classList.contains('hidden');
+		if (wasTabHidden) {
+			tabContent.classList.remove('hidden');
+			// Esperar a que el DOM se actualice
+			await new Promise((resolve) => setTimeout(resolve, 300));
+		}
+
+		// Caso especial: stats-grid (no tiene canvas, es HTML puro)
+		if (chartId === 'stats-grid' || chartId === 'participants-stats-grid') {
+			try {
+				// Buscar el contenedor interno de stats si existe
+				const statsContainer = chartContainer.querySelector('.stats-grid') || chartContainer;
+
+				// Esperar un momento para asegurar renderizado
+				await new Promise((resolve) => setTimeout(resolve, 500));
+
+				const canvas = await html2canvas(statsContainer as HTMLElement, {
+					scale: 2,
+					backgroundColor: '#1a1f26',
+					logging: false,
+					useCORS: true,
+					allowTaint: true
+				});
+
+				const imgData = canvas.toDataURL('image/png', 1.0);
+
+				// Restaurar estado oculto de la pestaña
+				if (wasTabHidden) tabContent.classList.add('hidden');
+
+				return imgData;
+			} catch (error) {
+				console.error(`Error capturing stats-grid (${chartId}):`, error);
+				if (wasTabHidden) tabContent.classList.add('hidden');
+				return null;
+			}
+		}
+
 		// Verificar si el gráfico está colapsado y expandirlo temporalmente
 		const wasCollapsed = chartContainer.classList.contains('collapsed');
 		if (wasCollapsed) {
@@ -134,6 +173,7 @@
 		if (!chartCanvas) {
 			console.warn(`Chart canvas not found for: ${chartId}`);
 			if (wasCollapsed) chartContainer.classList.add('collapsed');
+			if (wasTabHidden) tabContent.classList.add('hidden');
 			return null;
 		}
 
@@ -157,11 +197,14 @@
 
 			// Restaurar estado colapsado
 			if (wasCollapsed) chartContainer.classList.add('collapsed');
+			// Restaurar estado oculto de la pestaña
+			if (wasTabHidden) tabContent.classList.add('hidden');
 
 			return imgData;
 		} catch (error) {
 			console.error(`Error capturing chart ${chartId}:`, error);
 			if (wasCollapsed) chartContainer.classList.add('collapsed');
+			if (wasTabHidden) tabContent.classList.add('hidden');
 			return null;
 		}
 	}

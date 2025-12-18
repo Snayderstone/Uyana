@@ -3,6 +3,7 @@
 	import { browser } from '$app/environment';
 	import ChartRenderer from '$lib/components/admin/ChartRenderer.svelte';
 	import ExportPDFModal from '$lib/components/admin/ExportPDFModal.svelte';
+	import VisibilityConfirmModal from '$lib/components/molecules/VisibilityConfirmModal.svelte';
 	import type { GraficoConfig } from '$lib/models/admin';
 	import { type DashboardData } from '$lib/utils/chartConfigs';
 	import { chartGenerators } from '$lib/utils/optimizedChartConfigs';
@@ -11,7 +12,6 @@
 	// CACHE CONFIGURATION
 	// ==========================================
 	const CACHE_DURATION = 24 * 60 * 60 * 1000;
-	const POLL_INTERVAL = 30000;
 	const CACHE_VERSION = 'v3';
 
 	const CACHE_KEYS = {
@@ -37,6 +37,10 @@
 	let chartConfigs: GraficoConfig[] = [];
 	let visibleCharts: Record<string, boolean> = {};
 
+	// Stats grid configuration
+	let statsGridVisible = true;
+	let statsGridPublic = false;
+
 	// Dashboard data
 	let dashboardData: DashboardData = {
 		stats: {
@@ -48,12 +52,10 @@
 		projects: []
 	};
 
-	let pollInterval: number | undefined;
-
 	// Chart refs for export
 	let chartRefs: Record<string, any> = {};
 
-	// Available charts for export - solo gráficos de la pestaña Básicas
+	// Available charts for export
 	$: chartsBasicasForExport = chartConfigs.map((config) => ({
 		id: config.nombre_grafico,
 		name: config.nombre_grafico,
@@ -61,13 +63,13 @@
 		category: 'basicas'
 	}));
 
-	// Charts para Índices (vacío por ahora, pero preparado para el futuro)
-	let chartsIndicesForExport: Array<{
-		id: string;
-		name: string;
-		title: string;
-		category: string;
-	}> = [];
+	// Charts para Índices - tarjetas de estadísticas generales
+	$: chartsIndicesForExport = [
+		{ id: 'stats-grid', name: 'stats-grid', title: 'Índices Generales', category: 'indices' }
+	];
+
+	// Combinar todos los charts disponibles para exportación
+	$: availableChartsForExport = [...chartsIndicesForExport, ...chartsBasicasForExport];
 
 	// Charts para Avanzadas (vacío por ahora, pero preparado para el futuro)
 	let chartsAvanzadasForExport: Array<{
@@ -154,6 +156,13 @@
 					visibleCharts[config.nombre_grafico] = true;
 				});
 			}
+			// Cargar configuración de stats-grid
+			const statsConfig = localStorage.getItem('stats_grid_config');
+			if (statsConfig) {
+				const config = JSON.parse(statsConfig);
+				statsGridVisible = config.visible ?? true;
+				statsGridPublic = config.public ?? false;
+			}
 			lastUpdate = new Date(parseInt(timestamp)).toLocaleString('es-ES');
 			return true;
 		} catch (err) {
@@ -174,6 +183,14 @@
 			localStorage.setItem(CACHE_KEYS.timestamp, timestamp);
 			localStorage.setItem(CACHE_KEYS.hash, hash);
 			localStorage.setItem(CACHE_KEYS.chartConfigs, JSON.stringify(configs));
+			// Guardar configuración de stats-grid
+			localStorage.setItem(
+				'stats_grid_config',
+				JSON.stringify({
+					visible: statsGridVisible,
+					public: statsGridPublic
+				})
+			);
 
 			lastUpdate = new Date(parseInt(timestamp)).toLocaleString('es-ES');
 		} catch (err) {
@@ -231,7 +248,12 @@
 				analytics: analyticsData.data // Store full analytics data
 			};
 
-			chartConfigs = chartsData.success ? chartsData.data : [];
+			// Filtrar solo gráficos de proyectos (excluir gráficos de participantes)
+			chartConfigs = chartsData.success
+				? chartsData.data.filter(
+						(config: GraficoConfig) => !config.nombre_grafico.startsWith('participantes_')
+				  )
+				: [];
 			chartConfigs.forEach((config) => {
 				visibleCharts[config.nombre_grafico] = true;
 			});
@@ -282,30 +304,33 @@
 		}
 	}
 
-	async function checkForUpdates(): Promise<void> {
-		if (loading || isFetchingUpdate) return;
-		isFetchingUpdate = true;
-		await fetchDashboardData(true);
-	}
-
-	function startPolling(): void {
-		if (!browser) return;
-		pollInterval = window.setInterval(checkForUpdates, POLL_INTERVAL);
-	}
-
-	function stopPolling(): void {
-		if (pollInterval) {
-			clearInterval(pollInterval);
-			pollInterval = undefined;
-		}
-	}
-
 	// ==========================================
 	// CHART UTILITIES
 	// ==========================================
 	function toggleChart(chartName: string): void {
 		visibleCharts[chartName] = !visibleCharts[chartName];
 		visibleCharts = visibleCharts;
+	}
+
+	function toggleStatsGrid(): void {
+		statsGridVisible = !statsGridVisible;
+		saveStatsGridConfig();
+	}
+
+	function toggleStatsGridPublic(): void {
+		statsGridPublic = !statsGridPublic;
+		saveStatsGridConfig();
+	}
+
+	function saveStatsGridConfig(): void {
+		if (!browser) return;
+		localStorage.setItem(
+			'stats_grid_config',
+			JSON.stringify({
+				visible: statsGridVisible,
+				public: statsGridPublic
+			})
+		);
 	}
 
 	function formatCurrency(amount: number): string {
@@ -320,10 +345,21 @@
 	function getChartConfig(chartName: string) {
 		// Use optimized chart generators with materialized views
 		const generator = chartGenerators[chartName];
-		if (generator) {
-			return generator(dashboardData);
+		if (!generator) {
+			console.warn(`No generator found for chart: ${chartName}`);
+			return null;
 		}
-		return null;
+
+		try {
+			const config = generator(dashboardData);
+			if (!config) {
+				console.warn(`Generator returned null for chart: ${chartName}`);
+			}
+			return config;
+		} catch (err) {
+			console.error(`Error generating chart config for ${chartName}:`, err);
+			return null;
+		}
 	}
 
 	// ==========================================
@@ -338,12 +374,6 @@
 		} else {
 			await fetchDashboardData(false);
 		}
-
-		startPolling();
-	});
-
-	onDestroy(() => {
-		stopPolling();
 	});
 </script>
 
@@ -360,7 +390,28 @@
 				<p class="last-update">Última actualización: {lastUpdate}</p>
 			{/if}
 		</div>
-		<div class="header-actions" />
+		<div class="header-actions">
+			<button
+				class="action-btn export-btn"
+				on:click={() => (showExportModal = true)}
+				disabled={loading}
+			>
+				<svg
+					xmlns="http://www.w3.org/2000/svg"
+					width="18"
+					height="18"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="2"
+				>
+					<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+					<polyline points="7 10 12 15 17 10" />
+					<line x1="12" y1="15" x2="12" y2="3" />
+				</svg>
+				Exportar Dashboard
+			</button>
+		</div>
 	</div>
 
 	<!-- Tabs Navigation -->
@@ -453,263 +504,289 @@
 		</div>
 	{:else}
 		<!-- Tab Content: Índices Generales -->
-		{#if activeTab === 'indices'}
-			<div class="tab-content">
-				<div class="stats-grid">
-					<!-- Total Proyectos -->
-					<div class="stat-card">
-						<div class="stat-icon projects">
+		<div class="tab-content" class:hidden={activeTab !== 'indices'}>
+			<div class="chart-card stats-grid-card" class:collapsed={!statsGridVisible}>
+				<div class="chart-header">
+					<h3>Índices Generales</h3>
+					<div class="chart-actions">
+						<button
+							class="action-icon-btn"
+							class:public={statsGridPublic}
+							on:click={toggleStatsGridPublic}
+							title={statsGridPublic ? 'Público' : 'Privado'}
+						>
+							{#if statsGridPublic}
+								<svg
+									xmlns="http://www.w3.org/2000/svg"
+									width="18"
+									height="18"
+									viewBox="0 0 24 24"
+									fill="none"
+									stroke="currentColor"
+									stroke-width="2"
+								>
+									<circle cx="12" cy="12" r="10" />
+									<line x1="2" y1="12" x2="22" y2="12" />
+									<path
+										d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"
+									/>
+								</svg>
+							{:else}
+								<svg
+									xmlns="http://www.w3.org/2000/svg"
+									width="18"
+									height="18"
+									viewBox="0 0 24 24"
+									fill="none"
+									stroke="currentColor"
+									stroke-width="2"
+								>
+									<rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+									<path d="M7 11V7a5 5 0 0 1 10 0v4" />
+								</svg>
+							{/if}
+						</button>
+						<button
+							class="action-icon-btn"
+							on:click={toggleStatsGrid}
+							title={statsGridVisible ? 'Ocultar' : 'Mostrar'}
+						>
 							<svg
 								xmlns="http://www.w3.org/2000/svg"
-								width="24"
-								height="24"
+								width="18"
+								height="18"
 								viewBox="0 0 24 24"
 								fill="none"
 								stroke="currentColor"
 								stroke-width="2"
 							>
-								<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
-								<path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+								{#if statsGridVisible}
+									<polyline points="18 15 12 9 6 15" />
+								{:else}
+									<polyline points="6 9 12 15 18 9" />
+								{/if}
 							</svg>
-						</div>
-						<div class="stat-content">
-							<p class="stat-label">Total Proyectos</p>
-							<p class="stat-value">{dashboardData.stats.total_projects.toLocaleString()}</p>
-						</div>
-					</div>
-
-					<!-- Presupuesto Total con Tooltip -->
-					<div class="stat-card">
-						<div class="stat-icon budget">
-							<svg
-								xmlns="http://www.w3.org/2000/svg"
-								width="24"
-								height="24"
-								viewBox="0 0 24 24"
-								fill="none"
-								stroke="currentColor"
-								stroke-width="2"
-							>
-								<line x1="12" y1="1" x2="12" y2="23" />
-								<path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-							</svg>
-						</div>
-						<div class="stat-content">
-							<p class="stat-label">Presupuesto Total</p>
-							<div
-								class="stat-value-wrapper"
-								title={formatCompactNumber(dashboardData.stats.total_budget).full}
-							>
-								<p class="stat-value budget-value">
-									{formatCompactNumber(dashboardData.stats.total_budget).short}
-								</p>
-							</div>
-						</div>
-					</div>
-
-					<!-- Promedio por Proyecto -->
-					<div class="stat-card">
-						<div class="stat-icon average">
-							<svg
-								xmlns="http://www.w3.org/2000/svg"
-								width="24"
-								height="24"
-								viewBox="0 0 24 24"
-								fill="none"
-								stroke="currentColor"
-								stroke-width="2"
-							>
-								<path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-							</svg>
-						</div>
-						<div class="stat-content">
-							<p class="stat-label">Promedio por Proyecto</p>
-							<div class="stat-value-wrapper" title={formatCompactNumber(averageBudget).full}>
-								<p class="stat-value budget-value">
-									{formatCompactNumber(averageBudget).short}
-								</p>
-							</div>
-						</div>
-					</div>
-
-					<!-- Proyectos Activos -->
-					<div class="stat-card">
-						<div class="stat-icon active">
-							<svg
-								xmlns="http://www.w3.org/2000/svg"
-								width="24"
-								height="24"
-								viewBox="0 0 24 24"
-								fill="none"
-								stroke="currentColor"
-								stroke-width="2"
-							>
-								<circle cx="12" cy="12" r="10" />
-								<polyline points="12 6 12 12 16 14" />
-							</svg>
-						</div>
-						<div class="stat-content">
-							<p class="stat-label">Proyectos Activos</p>
-							<p class="stat-value">{activeProjects.toLocaleString()}</p>
-						</div>
-					</div>
-
-					<!-- Completados -->
-					<div class="stat-card">
-						<div class="stat-icon completed">
-							<svg
-								xmlns="http://www.w3.org/2000/svg"
-								width="24"
-								height="24"
-								viewBox="0 0 24 24"
-								fill="none"
-								stroke="currentColor"
-								stroke-width="2"
-							>
-								<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-								<polyline points="22 4 12 14.01 9 11.01" />
-							</svg>
-						</div>
-						<div class="stat-content">
-							<p class="stat-label">Completados</p>
-							<p class="stat-value">{dashboardData.stats.completed_count}</p>
-						</div>
-					</div>
-
-					<!-- En Progreso -->
-					<div class="stat-card">
-						<div class="stat-icon progress">
-							<svg
-								xmlns="http://www.w3.org/2000/svg"
-								width="24"
-								height="24"
-								viewBox="0 0 24 24"
-								fill="none"
-								stroke="currentColor"
-								stroke-width="2"
-							>
-								<polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
-							</svg>
-						</div>
-						<div class="stat-content">
-							<p class="stat-label">En Progreso</p>
-							<p class="stat-value">{dashboardData.stats.in_progress_count}</p>
-						</div>
-					</div>
-
-					<!-- Tasa de Finalización -->
-					<div class="stat-card">
-						<div class="stat-icon success-rate">
-							<svg
-								xmlns="http://www.w3.org/2000/svg"
-								width="24"
-								height="24"
-								viewBox="0 0 24 24"
-								fill="none"
-								stroke="currentColor"
-								stroke-width="2"
-							>
-								<path d="M22 12h-4l-3 9L9 3l-3 9H2" />
-							</svg>
-						</div>
-						<div class="stat-content">
-							<p class="stat-label">Tasa de Finalización</p>
-							<p class="stat-value">{completionRate}%</p>
-						</div>
-					</div>
-
-					<!-- Pendientes -->
-					<div class="stat-card">
-						<div class="stat-icon pending">
-							<svg
-								xmlns="http://www.w3.org/2000/svg"
-								width="24"
-								height="24"
-								viewBox="0 0 24 24"
-								fill="none"
-								stroke="currentColor"
-								stroke-width="2"
-							>
-								<circle cx="12" cy="12" r="10" />
-								<polyline points="8 12 12 16 16 12" />
-								<line x1="12" y1="8" x2="12" y2="16" />
-							</svg>
-						</div>
-						<div class="stat-content">
-							<p class="stat-label">Pendientes</p>
-							<p class="stat-value">
-								{dashboardData.stats.total_projects -
-									dashboardData.stats.completed_count -
-									dashboardData.stats.in_progress_count}
-							</p>
-						</div>
+						</button>
 					</div>
 				</div>
+
+				{#if statsGridVisible}
+					<div class="chart-body stats-grid-body">
+						<div class="stats-grid" id="chart-container-stats-grid">
+							<!-- Total Proyectos -->
+							<div class="stat-card">
+								<div class="stat-icon projects">
+									<svg
+										xmlns="http://www.w3.org/2000/svg"
+										width="24"
+										height="24"
+										viewBox="0 0 24 24"
+										fill="none"
+										stroke="currentColor"
+										stroke-width="2"
+									>
+										<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+										<path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+									</svg>
+								</div>
+								<div class="stat-content">
+									<p class="stat-label">Total Proyectos</p>
+									<p class="stat-value">{dashboardData.stats.total_projects.toLocaleString()}</p>
+								</div>
+							</div>
+
+							<!-- Presupuesto Total con Tooltip -->
+							<div class="stat-card">
+								<div class="stat-icon budget">
+									<svg
+										xmlns="http://www.w3.org/2000/svg"
+										width="24"
+										height="24"
+										viewBox="0 0 24 24"
+										fill="none"
+										stroke="currentColor"
+										stroke-width="2"
+									>
+										<line x1="12" y1="1" x2="12" y2="23" />
+										<path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+									</svg>
+								</div>
+								<div class="stat-content">
+									<p class="stat-label">Presupuesto Total</p>
+									<div
+										class="stat-value-wrapper"
+										title={formatCompactNumber(dashboardData.stats.total_budget).full}
+									>
+										<p class="stat-value budget-value">
+											{formatCompactNumber(dashboardData.stats.total_budget).short}
+										</p>
+									</div>
+								</div>
+							</div>
+
+							<!-- Promedio por Proyecto -->
+							<div class="stat-card">
+								<div class="stat-icon average">
+									<svg
+										xmlns="http://www.w3.org/2000/svg"
+										width="24"
+										height="24"
+										viewBox="0 0 24 24"
+										fill="none"
+										stroke="currentColor"
+										stroke-width="2"
+									>
+										<path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+									</svg>
+								</div>
+								<div class="stat-content">
+									<p class="stat-label">Promedio por Proyecto</p>
+									<div class="stat-value-wrapper" title={formatCompactNumber(averageBudget).full}>
+										<p class="stat-value budget-value">
+											{formatCompactNumber(averageBudget).short}
+										</p>
+									</div>
+								</div>
+							</div>
+
+							<!-- Proyectos Activos -->
+							<div class="stat-card">
+								<div class="stat-icon active">
+									<svg
+										xmlns="http://www.w3.org/2000/svg"
+										width="24"
+										height="24"
+										viewBox="0 0 24 24"
+										fill="none"
+										stroke="currentColor"
+										stroke-width="2"
+									>
+										<circle cx="12" cy="12" r="10" />
+										<polyline points="12 6 12 12 16 14" />
+									</svg>
+								</div>
+								<div class="stat-content">
+									<p class="stat-label">Proyectos Activos</p>
+									<p class="stat-value">{activeProjects.toLocaleString()}</p>
+								</div>
+							</div>
+
+							<!-- Completados -->
+							<div class="stat-card">
+								<div class="stat-icon completed">
+									<svg
+										xmlns="http://www.w3.org/2000/svg"
+										width="24"
+										height="24"
+										viewBox="0 0 24 24"
+										fill="none"
+										stroke="currentColor"
+										stroke-width="2"
+									>
+										<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+										<polyline points="22 4 12 14.01 9 11.01" />
+									</svg>
+								</div>
+								<div class="stat-content">
+									<p class="stat-label">Completados</p>
+									<p class="stat-value">{dashboardData.stats.completed_count}</p>
+								</div>
+							</div>
+
+							<!-- En Progreso -->
+							<div class="stat-card">
+								<div class="stat-icon progress">
+									<svg
+										xmlns="http://www.w3.org/2000/svg"
+										width="24"
+										height="24"
+										viewBox="0 0 24 24"
+										fill="none"
+										stroke="currentColor"
+										stroke-width="2"
+									>
+										<polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+									</svg>
+								</div>
+								<div class="stat-content">
+									<p class="stat-label">En Progreso</p>
+									<p class="stat-value">{dashboardData.stats.in_progress_count}</p>
+								</div>
+							</div>
+
+							<!-- Tasa de Finalización -->
+							<div class="stat-card">
+								<div class="stat-icon success-rate">
+									<svg
+										xmlns="http://www.w3.org/2000/svg"
+										width="24"
+										height="24"
+										viewBox="0 0 24 24"
+										fill="none"
+										stroke="currentColor"
+										stroke-width="2"
+									>
+										<path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+									</svg>
+								</div>
+								<div class="stat-content">
+									<p class="stat-label">Tasa de Finalización</p>
+									<p class="stat-value">{completionRate}%</p>
+								</div>
+							</div>
+
+							<!-- Pendientes -->
+							<div class="stat-card">
+								<div class="stat-icon pending">
+									<svg
+										xmlns="http://www.w3.org/2000/svg"
+										width="24"
+										height="24"
+										viewBox="0 0 24 24"
+										fill="none"
+										stroke="currentColor"
+										stroke-width="2"
+									>
+										<circle cx="12" cy="12" r="10" />
+										<polyline points="8 12 12 16 16 12" />
+										<line x1="12" y1="8" x2="12" y2="16" />
+									</svg>
+								</div>
+								<div class="stat-content">
+									<p class="stat-label">Pendientes</p>
+									<p class="stat-value">
+										{dashboardData.stats.total_projects -
+											dashboardData.stats.completed_count -
+											dashboardData.stats.in_progress_count}
+									</p>
+								</div>
+							</div>
+						</div>
+					</div>
+				{/if}
 			</div>
-		{/if}
+		</div>
 
 		<!-- Tab Content: Estadísticas Básicas -->
-		{#if activeTab === 'basicas'}
-			<div class="tab-content">
-				<div class="section-header">
-					<div class="section-header-content">
-						<h2>Estadísticas Básicas de Proyectos</h2>
-						<p class="section-description">
-							Análisis completo basado en vistas materializadas con datos pre-calculados para máximo
-							rendimiento
-						</p>
-					</div>
-					<div class="section-actions">
-						<button
-							class="action-btn refresh-btn"
-							on:click={() => fetchDashboardData(false)}
-							disabled={loading}
-						>
-							<svg
-								xmlns="http://www.w3.org/2000/svg"
-								width="18"
-								height="18"
-								viewBox="0 0 24 24"
-								fill="none"
-								stroke="currentColor"
-								stroke-width="2"
-							>
-								<path
-									d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"
-								/>
-							</svg>
-							{loading ? 'Actualizando...' : 'Actualizar'}
-						</button>
-						<button
-							class="action-btn export-btn"
-							on:click={() => (showExportModal = true)}
-							disabled={loading || chartsBasicasForExport.length === 0}
-						>
-							<svg
-								xmlns="http://www.w3.org/2000/svg"
-								width="18"
-								height="18"
-								viewBox="0 0 24 24"
-								fill="none"
-								stroke="currentColor"
-								stroke-width="2"
-							>
-								<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-								<polyline points="7 10 12 15 17 10" />
-								<line x1="12" y1="15" x2="12" y2="3" />
-							</svg>
-							Exportar Gráficos
-						</button>
-					</div>
+		<div class="tab-content" class:hidden={activeTab !== 'basicas'}>
+			<div class="section-header">
+				<div class="section-header-content">
+					<h2>Estadísticas Básicas de Proyectos</h2>
+					<p class="section-description">
+						Análisis completo basado en vistas materializadas con datos pre-calculados para máximo
+						rendimiento. Se actualiza automáticamente al detectar cambios en los datos.
+					</p>
 				</div>
+			</div>
 
-				<!-- Charts Grid -->
-				<div class="charts-grid">
-					{#each chartConfigs as config (config.nombre_grafico)}
-						{@const chartConfig = getChartConfig(config.nombre_grafico)}
-						{@const isVisible = visibleCharts[config.nombre_grafico]}
-						{@const isPublic = config.es_publico}
+			<!-- Charts Grid -->
+			<div class="charts-grid">
+				{#each chartConfigs as config (config.nombre_grafico)}
+					{@const chartConfig = getChartConfig(config.nombre_grafico)}
+					{@const isVisible = visibleCharts[config.nombre_grafico]}
+					{@const isPublic = config.es_publico}
 
+					{#if chartConfig}
 						<div
 							class="chart-card"
 							class:collapsed={!isVisible}
@@ -780,7 +857,7 @@
 								</div>
 							</div>
 
-							{#if isVisible && chartConfig}
+							{#if isVisible}
 								<div class="chart-body">
 									<ChartRenderer
 										chartId="chart-{config.nombre_grafico}"
@@ -791,95 +868,57 @@
 								</div>
 							{/if}
 						</div>
-					{/each}
-				</div>
+					{/if}
+				{/each}
 			</div>
-		{/if}
+		</div>
 
 		<!-- Tab Content: Estadísticas Avanzadas -->
-		{#if activeTab === 'avanzadas'}
-			<div class="tab-content">
-				<div class="section-header">
-					<h2>Estadísticas Avanzadas de Proyectos</h2>
-					<p class="section-description">
-						Análisis avanzado y correlaciones entre variables (próximamente)
-					</p>
-				</div>
-
-				<div class="empty-state">
-					<svg
-						xmlns="http://www.w3.org/2000/svg"
-						width="64"
-						height="64"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="1.5"
-					>
-						<circle cx="12" cy="12" r="10" />
-						<line x1="12" y1="16" x2="12" y2="12" />
-						<line x1="12" y1="8" x2="12.01" y2="8" />
-					</svg>
-					<h3>Estadísticas Avanzadas</h3>
-					<p>
-						Esta sección estará disponible próximamente con análisis predictivo, correlaciones y
-						tendencias avanzadas.
-					</p>
-				</div>
+		<div class="tab-content" class:hidden={activeTab !== 'avanzadas'}>
+			<div class="section-header">
+				<h2>Estadísticas Avanzadas de Proyectos</h2>
+				<p class="section-description">
+					Análisis avanzado y correlaciones entre variables (próximamente)
+				</p>
 			</div>
-		{/if}
+
+			<div class="empty-state">
+				<svg
+					xmlns="http://www.w3.org/2000/svg"
+					width="64"
+					height="64"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="1.5"
+				>
+					<circle cx="12" cy="12" r="10" />
+					<line x1="12" y1="16" x2="12" y2="12" />
+					<line x1="12" y1="8" x2="12.01" y2="8" />
+				</svg>
+				<h3>Estadísticas Avanzadas</h3>
+				<p>
+					Esta sección estará disponible próximamente con análisis predictivo, correlaciones y
+					tendencias avanzadas.
+				</p>
+			</div>
+		</div>
 	{/if}
 </div>
 
 <!-- Export Modal -->
-<ExportPDFModal bind:isOpen={showExportModal} availableCharts={chartsBasicasForExport} />
+<ExportPDFModal bind:isOpen={showExportModal} availableCharts={availableChartsForExport} />
 
-<!-- Confirmation Modal -->
-{#if showConfirmModal}
-	<div
-		class="modal-overlay"
-		on:click={() => (showConfirmModal = false)}
-		on:keydown={(e) => e.key === 'Escape' && (showConfirmModal = false)}
-		role="dialog"
-		aria-modal="true"
-	>
-		<div class="modal-content" on:click|stopPropagation on:keydown|stopPropagation>
-			<div class="modal-header">
-				<svg
-					xmlns="http://www.w3.org/2000/svg"
-					width="48"
-					height="48"
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					stroke-width="2"
-					class="warning-icon"
-				>
-					<path
-						d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"
-					/>
-					<line x1="12" y1="9" x2="12" y2="13" />
-					<line x1="12" y1="17" x2="12.01" y2="17" />
-				</svg>
-				<h3>Confirmar cambio de visibilidad</h3>
-			</div>
-			<div class="modal-body">
-				<p>¿Estás seguro de que deseas cambiar la visibilidad pública de este gráfico?</p>
-				<p class="modal-warning">
-					Esto hará que el gráfico <strong>
-						{chartConfigs.find((c) => c.nombre_grafico === chartToToggle)?.es_publico
-							? 'deje de estar'
-							: 'esté'}
-					</strong> disponible públicamente.
-				</p>
-			</div>
-			<div class="modal-actions">
-				<button class="btn-cancel" on:click={() => (showConfirmModal = false)}>Cancelar</button>
-				<button class="btn-confirm" on:click={confirmTogglePublic}>Confirmar</button>
-			</div>
-		</div>
-	</div>
-{/if}
+<!-- Visibility Confirmation Modal -->
+<VisibilityConfirmModal
+	bind:isOpen={showConfirmModal}
+	chartConfig={chartConfigs.find((c) => c.nombre_grafico === chartToToggle)}
+	onConfirm={confirmTogglePublic}
+	onCancel={() => {
+		showConfirmModal = false;
+		chartToToggle = null;
+	}}
+/>
 
 <style lang="scss">
 	.dashboard-container {
@@ -938,20 +977,14 @@
 		transform: translateY(-1px);
 	}
 
-	.refresh-btn {
-		background: #3b82f6;
-		color: white;
-	}
-
-	.refresh-btn:hover:not(:disabled) {
-		background: #2563eb;
-		transform: translateY(-1px);
-	}
-
 	.action-btn:disabled {
 		opacity: 0.6;
 		cursor: not-allowed;
 		transform: none;
+	}
+
+	.hidden {
+		display: none !important;
 	}
 
 	.error-message {
@@ -1073,12 +1106,6 @@
 
 	.section-header-content {
 		flex: 1;
-	}
-
-	.section-actions {
-		display: flex;
-		gap: 0.75rem;
-		flex-shrink: 0;
 	}
 
 	.section-header h2 {
@@ -1264,17 +1291,6 @@
 		background: #059669;
 		transform: translateY(-2px);
 		box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
-	}
-
-	.refresh-btn {
-		background: var(--color--primary);
-		color: var(--color--text-inverse);
-	}
-
-	.refresh-btn:hover:not(:disabled) {
-		background: var(--color--primary-shade);
-		transform: translateY(-2px);
-		box-shadow: 0 4px 12px rgba(110, 41, 231, 0.3);
 	}
 
 	.action-btn:disabled {
@@ -1632,6 +1648,19 @@
 		background: var(--color--card-background);
 	}
 
+	/* ========== STATS GRID CARD ========== */
+	.stats-grid-card {
+		margin-bottom: 2rem;
+	}
+
+	.stats-grid-card .stats-grid {
+		margin-bottom: 0;
+	}
+
+	.stats-grid-body {
+		padding: 1.5rem;
+	}
+
 	/* ========== RESPONSIVE ========== */
 	@media (max-width: 1024px) {
 		.charts-grid {
@@ -1692,139 +1721,5 @@
 			align-items: stretch;
 			gap: 1rem;
 		}
-
-		.section-actions {
-			width: 100%;
-		}
-
-		.section-actions .action-btn {
-			flex: 1;
-			min-width: 0;
-		}
-	}
-
-	/* ========== CONFIRMATION MODAL ========== */
-	.modal-overlay {
-		position: fixed;
-		top: 0;
-		left: 0;
-		right: 0;
-		bottom: 0;
-		background: rgba(0, 0, 0, 0.6);
-		backdrop-filter: blur(4px);
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		z-index: 9999;
-		animation: fadeInModal 0.2s ease-out;
-	}
-
-	@keyframes fadeInModal {
-		from {
-			opacity: 0;
-		}
-		to {
-			opacity: 1;
-		}
-	}
-
-	.modal-content {
-		background: var(--color--card-background);
-		border-radius: 16px;
-		padding: 2rem;
-		max-width: 480px;
-		width: 90%;
-		box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-		animation: slideUp 0.3s ease-out;
-	}
-
-	@keyframes slideUp {
-		from {
-			opacity: 0;
-			transform: translateY(20px);
-		}
-		to {
-			opacity: 1;
-			transform: translateY(0);
-		}
-	}
-
-	.modal-header {
-		text-align: center;
-		margin-bottom: 1.5rem;
-	}
-
-	.warning-icon {
-		color: #f59e0b;
-		margin-bottom: 1rem;
-	}
-
-	.modal-header h3 {
-		font-size: 1.5rem;
-		font-weight: 700;
-		color: var(--color--text);
-		margin: 0;
-		font-family: var(--font--default);
-	}
-
-	.modal-body {
-		margin-bottom: 2rem;
-	}
-
-	.modal-body p {
-		font-size: 1rem;
-		color: var(--color--text);
-		line-height: 1.6;
-		margin: 0 0 1rem 0;
-		font-family: var(--font--default);
-	}
-
-	.modal-warning {
-		background: rgba(245, 158, 11, 0.1);
-		padding: 0.75rem 1rem;
-		border-radius: 8px;
-		border-left: 3px solid #f59e0b;
-		font-size: 0.95rem;
-		color: var(--color--text-shade);
-	}
-
-	.modal-actions {
-		display: flex;
-		gap: 1rem;
-		justify-content: flex-end;
-	}
-
-	.btn-cancel,
-	.btn-confirm {
-		padding: 0.75rem 1.5rem;
-		border-radius: 8px;
-		font-size: 0.95rem;
-		font-weight: 600;
-		font-family: var(--font--default);
-		cursor: pointer;
-		transition: all 0.3s var(--ease-out-3);
-		border: none;
-	}
-
-	.btn-cancel {
-		background: var(--color--card-background);
-		color: var(--color--text);
-		border: 1px solid rgba(var(--color--text-rgb), 0.2);
-	}
-
-	.btn-cancel:hover {
-		background: rgba(var(--color--text-rgb), 0.05);
-		border-color: rgba(var(--color--text-rgb), 0.3);
-	}
-
-	.btn-confirm {
-		background: var(--color--primary);
-		color: var(--color--text-inverse);
-	}
-
-	.btn-confirm:hover {
-		background: var(--color--primary-shade);
-		transform: translateY(-2px);
-		box-shadow: 0 4px 12px rgba(110, 41, 231, 0.3);
 	}
 </style>

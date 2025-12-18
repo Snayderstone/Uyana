@@ -242,5 +242,74 @@ export const AdminParticipantsService = {
 				  }
 				: undefined
 		}));
+	},
+
+	/**
+	 * Obtener todos los datos del dashboard completo usando vistas materializadas
+	 */
+	async getDashboardDataComplete() {
+		return await AdminParticipantsRepository.getDashboardDataComplete();
+	},
+
+	/**
+	 * Refrescar vistas materializadas
+	 */
+	async refreshViews() {
+		try {
+			await AdminParticipantsRepository.refreshParticipantsViews();
+			return true;
+		} catch (error) {
+			console.error('❌ Error en el servicio al refrescar vistas:', error);
+			throw error; // Re-lanzar para que el endpoint lo maneje
+		}
+	},
+
+	/**
+	 * Obtener top facultades con distribución por género
+	 */
+	async getTopFacultades(limit: number = 15) {
+		return await AdminParticipantsRepository.getTopFacultades(limit);
+	},
+
+	/**
+	 * Obtener top carreras con distribución por género
+	 */
+	async getTopCarreras(limit: number = 20) {
+		return await AdminParticipantsRepository.getTopCarreras(limit);
+	},
+
+	/**
+	 * Obtener top cargos con distribución por género
+	 */
+	async getTopCargos(limit: number = 20) {
+		return await AdminParticipantsRepository.getTopCargos(limit);
+	},
+
+	/**
+	 * Obtener top participantes con más proyectos
+	 */
+	async getTopParticipantesProyectos(limit: number = 20) {
+		return await AdminParticipantsRepository.getTopParticipantesProyectos(limit);
+	},
+
+	/**
+	 * Obtener participación directiva por género
+	 */
+	async getParticipacionDirectivaGenero() {
+		return await AdminParticipantsRepository.getParticipacionDirectivaGenero();
+	},
+
+	/**
+	 * Obtener facultad × género
+	 */
+	async getFacultadGenero(limit: number = 15) {
+		return await AdminParticipantsRepository.getFacultadGenero(limit);
+	},
+
+	/**
+	 * Obtener cargo × género
+	 */
+	async getCargoGenero(limit: number = 10) {
+		return await AdminParticipantsRepository.getCargoGenero(limit);
 	}
 };

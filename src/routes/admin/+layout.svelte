@@ -10,6 +10,7 @@
 	let showUserMenu = false;
 	let isMobile = false;
 	let proyectosExpanded = false;
+	let participantesExpanded = false;
 
 	// Usuario hardcoded (TODO: integrar con auth real)
 	let user = {
@@ -41,6 +42,10 @@
 		proyectosExpanded = !proyectosExpanded;
 	}
 
+	function toggleParticipantesSubmenu() {
+		participantesExpanded = !participantesExpanded;
+	}
+
 	function checkMobile() {
 		isMobile = window.innerWidth <= 768;
 		if (!isMobile) {
@@ -55,6 +60,11 @@
 		// Expandir submenu de proyectos si estamos en una ruta de proyectos
 		if ($page.url.pathname.includes('/admin/proyectos')) {
 			proyectosExpanded = true;
+		}
+
+		// Expandir submenu de participantes si estamos en una ruta de participantes
+		if ($page.url.pathname.includes('/admin/participantes')) {
+			participantesExpanded = true;
 		}
 
 		return () => {
@@ -96,6 +106,7 @@
 						<span class="nav-text">Proyectos</span>
 						<span class="submenu-arrow" class:rotated={proyectosExpanded}>▼</span>
 					</button>
+
 					<ul class="submenu" class:show={proyectosExpanded}>
 						<li
 							class:active={$page.url.pathname === '/admin/proyectos' ||
@@ -120,12 +131,44 @@
 						</li>
 					</ul>
 				</li>
-				<li class:active={$page.url.pathname.includes('/admin/participantes')}>
-					<a href="/admin/participantes">
+
+				<li
+					class:active={$page.url.pathname.includes('/admin/participantes')}
+					class:expanded={participantesExpanded}
+				>
+					<button type="button" class="nav-button" on:click={toggleParticipantesSubmenu}>
 						<span class="icon">👥</span>
 						<span class="nav-text">Participantes</span>
-					</a>
+						<span class="submenu-arrow" class:rotated={participantesExpanded}>▼</span>
+					</button>
+
+					<ul class="submenu" class:show={participantesExpanded}>
+						<li
+							class:active={$page.url.pathname === '/admin/participantes/dashboard' ||
+								$page.url.pathname === '/admin/participantes/dashboard'}
+						>
+							<a href="/admin/participantes/dashboard">
+								<span class="icon">📊</span>
+								<span class="nav-text">Dashboard</span>
+							</a>
+						</li>
+
+						<li class:active={$page.url.pathname === '/admin/participantes/tabla'}>
+							<a href="/admin/participantes">
+								<span class="icon">📋</span>
+								<span class="nav-text">Tabla</span>
+							</a>
+						</li>
+
+						<li class:active={$page.url.pathname === '/admin/participantes/nuevo'}>
+							<a href="/admin/participantes/nuevo">
+								<span class="icon">➕</span>
+								<span class="nav-text">Nuevo Participante</span>
+							</a>
+						</li>
+					</ul>
 				</li>
+
 				<li class:active={$page.url.pathname.includes('/admin/blog')}>
 					<a href="/admin/blog">
 						<span class="icon">📝</span>
