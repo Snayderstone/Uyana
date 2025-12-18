@@ -523,9 +523,7 @@
 				<div class="section-title">
 					<h2>Paso 1: Información Básica</h2>
 					<p>
-						Datos principales del participante <span class="required-note"
-							>*</span
-						>
+						Datos principales del participante <span class="required-note">*</span>
 					</p>
 				</div>
 			</div>
@@ -693,7 +691,7 @@
 			<div class="section-content">
 				<!-- Photo Upload -->
 				<div class="form-group photo-management">
-					<label class="photo-label">Foto de Perfil</label>
+					<span class="photo-label">Foto de Perfil</span>
 					<div class="photo-actions">
 						<button
 							type="button"
