@@ -11,7 +11,7 @@
  */
 
 // Re-exportar todos los DTOs desde los archivos específicos
-export * from './project.dto';
-export * from './participant.dto';
-export * from './blog.dto';
-export * from './common.dto';
+export * from './projects/project.dto';
+export * from './participants/participant.dto';
+export * from './blog/blog.dto';
+export * from './catalog/common.dto';

@@ -5,8 +5,8 @@
  */
 
 import { json, type RequestHandler } from '@sveltejs/kit';
-import { AdminChartsRepository } from '$lib/db/admin/charts.repository';
-import { AdminProjectsService } from '$lib/services/admin/projects.service';
+import { AdminChartsRepository } from '$lib/db/admin/graficosConfig/chart.repository';
+import { AdminProjectsService } from '$lib/services/admin/projects/projects.service';
 
 /**
  * GET - Obtener gráficos públicos con datos

@@ -5,9 +5,9 @@
  */
 
 import type { PageServerLoad } from './$types';
-import { AdminChartsRepository } from '$lib/db/admin/charts.repository';
-import { AnalyticsRepository } from '$lib/db/admin/analytics.repository';
-import type { GraficoConfig } from '$lib/models/admin/chart.model';
+import { AdminChartsRepository } from '$lib/db/admin/graficosConfig/chart.repository';
+import { AnalyticsRepository } from '$lib/db/admin/projects/dashboardProjects.repository';
+import type { GraficoConfig } from '$lib/models/admin/graficosConfig/chart.model';
 
 interface DashboardStats {
 	total_projects: number;

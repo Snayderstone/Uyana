@@ -325,6 +325,54 @@
 	}
 
 	/**
+	 * Export ALL projects from database
+	 */
+	async function exportAllProjects() {
+		exportingData = true;
+
+		try {
+			showToast('⏳ Obteniendo todos los proyectos...', 'info');
+
+			// Fetch all projects using the 'all=true' parameter
+			const response = await fetch('/api/admin/projects?all=true');
+
+			if (!response.ok) {
+				throw new Error('Error al obtener todos los proyectos');
+			}
+
+			const result = await response.json();
+
+			if (!result.success || !result.data.data) {
+				throw new Error('No se pudieron obtener los proyectos');
+			}
+
+			const allProjects = result.data.data;
+
+			showToast(`📊 Exportando ${allProjects.length} proyectos...`, 'info');
+
+			if (exportFormat === 'csv') {
+				exportToCSV(allProjects);
+			} else {
+				exportToExcel(allProjects);
+			}
+
+			showToast(
+				`✅ ${allProjects.length} proyecto${allProjects.length !== 1 ? 's' : ''} exportado${
+					allProjects.length !== 1 ? 's' : ''
+				} correctamente`,
+				'success'
+			);
+
+			showExportModal = false;
+		} catch (err) {
+			console.error('Error exporting all:', err);
+			showToast('❌ Error al exportar todos los proyectos', 'error');
+		} finally {
+			exportingData = false;
+		}
+	}
+
+	/**
 	 * Export to CSV with complete data
 	 */
 	function exportToCSV(data: ProyectoResponseDTO[]) {
@@ -750,12 +798,22 @@
 				</button>
 			{/if}
 
-			<button class="btn-icon-text" on:click={handleExportClick}>
+			<button class="btn-primary" on:click={handleExportClick}>
 				<span>{icons.download}</span>
-				Exportar
+				Exportar Selección
 				{#if selectedProjects.size > 0}
 					<span class="export-badge">({selectedProjects.size})</span>
 				{/if}
+			</button>
+
+			<button
+				class="btn-primary"
+				on:click={() => (showExportModal = true)}
+				disabled={exportingData}
+			>
+				<span>{icons.download}</span>
+				Exportar Todo
+				<span class="export-badge">({totalItems})</span>
 			</button>
 		</div>
 	</div>
@@ -1328,10 +1386,16 @@
 
 			<div class="modal-body">
 				<p class="export-info">
-					Se exportarán <strong>{selectedProjects.size}</strong> proyecto{selectedProjects.size !==
-					1
-						? 's'
-						: ''} con toda su información y relaciones.
+					{#if selectedProjects.size > 0}
+						Se exportarán <strong>{selectedProjects.size}</strong>
+						proyecto{selectedProjects.size !== 1 ? 's' : ''} seleccionado{selectedProjects.size !==
+						1
+							? 's'
+							: ''} con toda su información y relaciones.
+					{:else}
+						Se exportarán <strong>TODOS</strong> los proyectos (<strong>{totalItems}</strong> en total)
+						con toda su información y relaciones.
+					{/if}
 				</p>
 
 				<div class="export-format-selection">
@@ -1371,7 +1435,11 @@
 
 			<div class="modal-footer">
 				<button class="btn-secondary" on:click={() => (showExportModal = false)}> Cancelar </button>
-				<button class="btn-primary" on:click={exportProjects} disabled={exportingData}>
+				<button
+					class="btn-primary"
+					on:click={selectedProjects.size > 0 ? exportProjects : exportAllProjects}
+					disabled={exportingData}
+				>
 					{#if exportingData}
 						<span class="spinner-sm" />
 					{:else}

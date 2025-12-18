@@ -38,7 +38,11 @@
 	// Detectar navegación SPA y manejar transiciones
 	afterNavigate((navigation) => {
 		if (browser) {
-			handlePageNavigation($page.url.pathname);
+			const currentPath = $page.url.pathname;
+			// Solo procesar si la ruta ha cambiado realmente
+			if (currentPath !== previousPath) {
+				handlePageNavigation(currentPath);
+			}
 		}
 	});
 
@@ -52,7 +56,7 @@
 
 	// Función para manejar navegación con carga de página y transiciones
 	function handlePageNavigation(currentPath: string) {
-		console.log('🚀 Navegación detectada a:', currentPath);
+		// console.log('🚀 Navegación detectada a:', currentPath);
 
 		// Resetear estados de transición
 		actions.setShowWithTransition(false);
@@ -62,7 +66,7 @@
 		const shouldShow = actions.shouldShowOnCurrentPage(currentPath);
 
 		if (shouldShow && !currentPath.includes('/chat')) {
-			console.log('✨ Iniciando secuencia de aparición con transición');
+			// console.log('✨ Iniciando secuencia de aparición con transición');
 			// Ocultar temporalmente mientras se carga la página
 			actions.setVisible(false);
 
@@ -163,7 +167,7 @@
 
 	onMount(() => {
 		isMounted = true;
-		console.log('🚀 ChatWidget montado con transiciones suaves');
+		// console.log('🚀 ChatWidget montado con transiciones suaves');
 
 		// Inicializar detección de carga de página
 		const cleanupPageDetection = detectPageLoaded();
@@ -171,7 +175,7 @@
 		// Establecer la ruta inicial
 		if (browser && $page.url) {
 			previousPath = $page.url.pathname;
-			console.log('📍 Ruta inicial:', previousPath);
+			// console.log('📍 Ruta inicial:', previousPath);
 
 			// Manejar la navegación inicial
 			handlePageNavigation(previousPath);

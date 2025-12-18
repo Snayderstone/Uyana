@@ -7,7 +7,7 @@
  */
 
 import { json, type RequestHandler } from '@sveltejs/kit';
-import { AdminParticipantesService } from '$lib/services/admin/participants.service';
+import { AdminParticipantsService } from '$lib/services/admin/participants/participants.service';
 import type { UpdateParticipanteDTO, ApiResponseDTO } from '$lib/models/admin';
 
 /**

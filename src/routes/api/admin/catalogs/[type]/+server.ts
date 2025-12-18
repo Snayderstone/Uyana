@@ -28,7 +28,7 @@ import {
 	AdminInstitucionesRepository,
 	AdminFacultadesRepository,
 	AdminCarrerasRepository
-} from '$lib/db/admin/catalogs.repository';
+} from '$lib/db/admin/catalogs/catalogs.repository';
 import type { ApiResponseDTO } from '$lib/models/admin';
 
 const catalogRepositories: Record<string, any> = {

@@ -5,7 +5,7 @@
  */
 
 import { json, type RequestHandler } from '@sveltejs/kit';
-import { AdminParticipantsService } from '$lib/services/admin/participants.service';
+import { AdminParticipantsService } from '$lib/services/admin/participants/participants.service';
 
 /**
  * POST - Refrescar todas las vistas materializadas de participantes

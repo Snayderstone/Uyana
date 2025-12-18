@@ -31,7 +31,6 @@
 	let showExportModal = false;
 	let showConfirmModal = false;
 	let chartToToggle: string | null = null;
-	let activeTab: 'indices' | 'basicas' | 'avanzadas' = 'indices';
 
 	// Chart configurations from database
 	let chartConfigs: GraficoConfig[] = [];
@@ -56,12 +55,22 @@
 	let chartRefs: Record<string, any> = {};
 
 	// Available charts for export
-	$: chartsBasicasForExport = chartConfigs.map((config) => ({
-		id: config.nombre_grafico,
-		name: config.nombre_grafico,
-		title: config.titulo_display,
-		category: 'basicas'
-	}));
+	$: chartsBasicasForExport = chartConfigs.map((config) => {
+		// Mapear tab_categoria a categorías de exportación
+		let exportCategory = 'basicas';
+		if (config.tab_categoria === 'presupuesto') {
+			exportCategory = 'presupuesto';
+		} else if (config.tab_categoria === 'overview') {
+			exportCategory = 'basicas';
+		}
+
+		return {
+			id: config.nombre_grafico,
+			name: config.nombre_grafico,
+			title: config.titulo_display,
+			category: exportCategory
+		};
+	});
 
 	// Charts para Índices - tarjetas de estadísticas generales
 	$: chartsIndicesForExport = [
@@ -213,8 +222,8 @@
 		try {
 			// Fetch analytics data (uses materialized views)
 			const [analyticsRes, chartsRes] = await Promise.all([
-				fetch('/api/admin/analytics'),
-				fetch('/api/admin/charts')
+				fetch('/api/admin/projects/dashboard'),
+				fetch('/api/admin/graficosConfig?category=proyectos')
 			]);
 
 			if (!analyticsRes.ok || !chartsRes.ok) {
@@ -281,7 +290,7 @@
 		if (!chartToToggle) return;
 
 		try {
-			const response = await fetch(`/api/admin/charts/${chartToToggle}/toggle-public`, {
+			const response = await fetch(`/api/admin/graficosConfig/${chartToToggle}/toggle-public`, {
 				method: 'POST'
 			});
 
@@ -414,69 +423,7 @@
 		</div>
 	</div>
 
-	<!-- Tabs Navigation -->
-	<div class="tabs-navigation">
-		<button
-			class="tab-btn"
-			class:active={activeTab === 'indices'}
-			on:click={() => (activeTab = 'indices')}
-		>
-			<svg
-				xmlns="http://www.w3.org/2000/svg"
-				width="18"
-				height="18"
-				viewBox="0 0 24 24"
-				fill="none"
-				stroke="currentColor"
-				stroke-width="2"
-			>
-				<rect x="3" y="3" width="7" height="7" />
-				<rect x="14" y="3" width="7" height="7" />
-				<rect x="14" y="14" width="7" height="7" />
-				<rect x="3" y="14" width="7" height="7" />
-			</svg>
-			Índices Generales
-		</button>
-		<button
-			class="tab-btn"
-			class:active={activeTab === 'basicas'}
-			on:click={() => (activeTab = 'basicas')}
-		>
-			<svg
-				xmlns="http://www.w3.org/2000/svg"
-				width="18"
-				height="18"
-				viewBox="0 0 24 24"
-				fill="none"
-				stroke="currentColor"
-				stroke-width="2"
-			>
-				<line x1="12" y1="20" x2="12" y2="10" />
-				<line x1="18" y1="20" x2="18" y2="4" />
-				<line x1="6" y1="20" x2="6" y2="16" />
-			</svg>
-			Estadísticas Básicas de Proyectos
-		</button>
-		<button
-			class="tab-btn"
-			class:active={activeTab === 'avanzadas'}
-			on:click={() => (activeTab = 'avanzadas')}
-		>
-			<svg
-				xmlns="http://www.w3.org/2000/svg"
-				width="18"
-				height="18"
-				viewBox="0 0 24 24"
-				fill="none"
-				stroke="currentColor"
-				stroke-width="2"
-			>
-				<path d="M3 3v18h18" />
-				<path d="m19 9-5 5-4-4-3 3" />
-			</svg>
-			Estadísticas Avanzadas de Proyectos
-		</button>
-	</div>
+	<!-- Single Page Layout with Sections -->
 
 	{#if error && !loading}
 		<div class="error-message">
@@ -503,8 +450,8 @@
 			<p>Cargando dashboard...</p>
 		</div>
 	{:else}
-		<!-- Tab Content: Índices Generales -->
-		<div class="tab-content" class:hidden={activeTab !== 'indices'}>
+		<!-- Sección: Índices Generales -->
+		<div class="dashboard-section">
 			<div class="chart-card stats-grid-card" class:collapsed={!statsGridVisible}>
 				<div class="chart-header">
 					<h3>Índices Generales</h3>
@@ -768,14 +715,10 @@
 		</div>
 
 		<!-- Tab Content: Estadísticas Básicas -->
-		<div class="tab-content" class:hidden={activeTab !== 'basicas'}>
+		<div class="dashboard-section">
 			<div class="section-header">
 				<div class="section-header-content">
 					<h2>Estadísticas Básicas de Proyectos</h2>
-					<p class="section-description">
-						Análisis completo basado en vistas materializadas con datos pre-calculados para máximo
-						rendimiento. Se actualiza automáticamente al detectar cambios en los datos.
-					</p>
 				</div>
 			</div>
 
@@ -872,37 +815,6 @@
 				{/each}
 			</div>
 		</div>
-
-		<!-- Tab Content: Estadísticas Avanzadas -->
-		<div class="tab-content" class:hidden={activeTab !== 'avanzadas'}>
-			<div class="section-header">
-				<h2>Estadísticas Avanzadas de Proyectos</h2>
-				<p class="section-description">
-					Análisis avanzado y correlaciones entre variables (próximamente)
-				</p>
-			</div>
-
-			<div class="empty-state">
-				<svg
-					xmlns="http://www.w3.org/2000/svg"
-					width="64"
-					height="64"
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					stroke-width="1.5"
-				>
-					<circle cx="12" cy="12" r="10" />
-					<line x1="12" y1="16" x2="12" y2="12" />
-					<line x1="12" y1="8" x2="12.01" y2="8" />
-				</svg>
-				<h3>Estadísticas Avanzadas</h3>
-				<p>
-					Esta sección estará disponible próximamente con análisis predictivo, correlaciones y
-					tendencias avanzadas.
-				</p>
-			</div>
-		</div>
 	{/if}
 </div>
 
@@ -981,10 +893,6 @@
 		opacity: 0.6;
 		cursor: not-allowed;
 		transform: none;
-	}
-
-	.hidden {
-		display: none !important;
 	}
 
 	.error-message {
@@ -1113,12 +1021,6 @@
 		font-weight: 600;
 		color: #1a1a1a;
 		margin: 0 0 0.5rem 0;
-	}
-
-	.section-description {
-		color: #6b7280;
-		font-size: 0.875rem;
-		margin: 0;
 	}
 
 	.charts-grid {
@@ -1299,95 +1201,6 @@
 		transform: none;
 	}
 
-	/* ========== TABS NAVIGATION ========== */
-	.tabs-navigation {
-		display: flex;
-		gap: 0.5rem;
-		margin-bottom: 2rem;
-		border-bottom: 2px solid rgba(var(--color--text-rgb), 0.08);
-		overflow-x: auto;
-	}
-
-	.tab-btn {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		padding: 0.75rem 1.25rem;
-		background: transparent;
-		border: none;
-		border-bottom: 3px solid transparent;
-		color: var(--color--text-shade);
-		font-size: 0.95rem;
-		font-weight: 600;
-		font-family: var(--font--default);
-		cursor: pointer;
-		transition: all 0.3s var(--ease-out-3);
-		white-space: nowrap;
-		margin-bottom: -2px;
-	}
-
-	.tab-btn:hover {
-		color: var(--color--primary);
-		background: var(--color--primary-tint);
-	}
-
-	.tab-btn.active {
-		color: var(--color--primary);
-		border-bottom-color: var(--color--primary);
-		background: var(--color--primary-tint);
-	}
-
-	.tab-btn svg {
-		flex-shrink: 0;
-	}
-
-	/* ========== TAB CONTENT ========== */
-	.tab-content {
-		animation: fadeIn 0.3s ease-in;
-	}
-
-	@keyframes fadeIn {
-		from {
-			opacity: 0;
-			transform: translateY(10px);
-		}
-		to {
-			opacity: 1;
-			transform: translateY(0);
-		}
-	}
-
-	/* ========== EMPTY STATE ========== */
-	.empty-state {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-		padding: 4rem 2rem;
-		text-align: center;
-		color: var(--color--text-shade);
-	}
-
-	.empty-state svg {
-		opacity: 0.3;
-		margin-bottom: 1.5rem;
-	}
-
-	.empty-state h3 {
-		font-size: 1.25rem;
-		font-weight: 600;
-		color: var(--color--text);
-		margin: 0 0 0.75rem 0;
-		font-family: var(--font--default);
-	}
-
-	.empty-state p {
-		font-size: 0.95rem;
-		max-width: 500px;
-		margin: 0;
-		line-height: 1.6;
-	}
-
 	/* ========== ERROR & LOADING ========== */
 	.error-message {
 		display: flex;
@@ -1552,13 +1365,6 @@
 		font-family: var(--font--default);
 	}
 
-	.section-description {
-		color: var(--color--text-shade);
-		font-size: 0.95rem;
-		margin: 0;
-		line-height: 1.5;
-	}
-
 	/* ========== CHARTS GRID ========== */
 	.charts-grid {
 		display: grid;
@@ -1687,16 +1493,6 @@
 			flex: 1;
 			min-width: 0;
 			justify-content: center;
-		}
-
-		.tabs-navigation {
-			overflow-x: scroll;
-			-webkit-overflow-scrolling: touch;
-		}
-
-		.tab-btn {
-			font-size: 0.85rem;
-			padding: 0.625rem 1rem;
 		}
 
 		.stats-grid {

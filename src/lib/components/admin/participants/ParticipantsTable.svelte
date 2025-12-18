@@ -6,7 +6,6 @@
 	// Estado de datos
 	let participants: any[] = [];
 	let filteredParticipants: any[] = [];
-	let carreras: any[] = [];
 	let loading = true;
 	let showForm = false;
 	let editingParticipant: any = null;
@@ -15,7 +14,6 @@
 	let searchTerm = '';
 	let filterGenero = '';
 	let filterAcreditado = '';
-	let filterCarrera = '';
 
 	// Estado de paginación
 	let currentPage = 1;
@@ -51,13 +49,6 @@
 				participants = data.data?.data || [];
 				applyFilters();
 			}
-
-			// Cargar carreras para el filtro
-			const carrerasRes = await fetch('/api/admin/catalogs/carreras');
-			if (carrerasRes.ok) {
-				const data = await carrerasRes.json();
-				carreras = data.data || [];
-			}
 		} catch (error) {
 			showToastMessage('Error al cargar datos', 'error');
 			console.error('Error loading data:', error);
@@ -89,11 +80,6 @@
 		if (filterAcreditado !== '') {
 			const isAcreditado = filterAcreditado === 'true';
 			filtered = filtered.filter((p) => p.acreditado === isAcreditado);
-		}
-
-		// Filtro por carrera
-		if (filterCarrera) {
-			filtered = filtered.filter((p) => p.carrera_id === parseInt(filterCarrera));
 		}
 
 		// Ordenamiento
@@ -243,7 +229,6 @@
 		searchTerm = '';
 		filterGenero = '';
 		filterAcreditado = '';
-		filterCarrera = '';
 		applyFilters();
 	}
 
@@ -251,7 +236,6 @@
 		searchTerm;
 		filterGenero;
 		filterAcreditado;
-		filterCarrera;
 		applyFilters();
 	}
 </script>
@@ -260,7 +244,6 @@
 	{#if showForm}
 		<ParticipantForm
 			participant={editingParticipant}
-			{carreras}
 			on:save={handleFormSave}
 			on:cancel={handleFormCancel}
 		/>
@@ -317,16 +300,6 @@
 						<option value="">Todos</option>
 						<option value="true">Acreditados</option>
 						<option value="false">No Acreditados</option>
-					</select>
-				</div>
-
-				<div class="filter-group">
-					<label for="filterCarrera">Carrera</label>
-					<select id="filterCarrera" class="form-select" bind:value={filterCarrera}>
-						<option value="">Todas</option>
-						{#each carreras as carrera}
-							<option value={carrera.id}>{carrera.nombre}</option>
-						{/each}
 					</select>
 				</div>
 

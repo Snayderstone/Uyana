@@ -112,15 +112,6 @@
 			return null;
 		}
 
-		// Encontrar el contenedor de pestaña padre y mostrarlo temporalmente si está oculto
-		const tabContent = chartContainer.closest('.tab-content') as HTMLElement;
-		const wasTabHidden = tabContent && tabContent.classList.contains('hidden');
-		if (wasTabHidden) {
-			tabContent.classList.remove('hidden');
-			// Esperar a que el DOM se actualice
-			await new Promise((resolve) => setTimeout(resolve, 300));
-		}
-
 		// Caso especial: stats-grid (no tiene canvas, es HTML puro)
 		if (chartId === 'stats-grid' || chartId === 'participants-stats-grid') {
 			try {
@@ -140,13 +131,9 @@
 
 				const imgData = canvas.toDataURL('image/png', 1.0);
 
-				// Restaurar estado oculto de la pestaña
-				if (wasTabHidden) tabContent.classList.add('hidden');
-
 				return imgData;
 			} catch (error) {
 				console.error(`Error capturing stats-grid (${chartId}):`, error);
-				if (wasTabHidden) tabContent.classList.add('hidden');
 				return null;
 			}
 		}
@@ -158,12 +145,14 @@
 			await new Promise((resolve) => setTimeout(resolve, 800));
 		}
 
+		// Buscar el chart-body (puede estar visible u oculto)
+		// Buscar el chart-body
+		const chartBody = chartContainer.querySelector('.chart-body') as HTMLElement;
 		// Buscar el canvas dentro del contenedor
 		let chartCanvas = chartContainer.querySelector('canvas') as HTMLCanvasElement;
 
 		// Si no hay canvas, esperar a que se renderice
-		if (!chartCanvas) {
-			const chartBody = chartContainer.querySelector('.chart-body');
+		if (!chartCanvas && chartBody) {
 			if (chartBody) {
 				await new Promise((resolve) => setTimeout(resolve, 2000));
 				chartCanvas = chartContainer.querySelector('canvas') as HTMLCanvasElement;
@@ -173,7 +162,6 @@
 		if (!chartCanvas) {
 			console.warn(`Chart canvas not found for: ${chartId}`);
 			if (wasCollapsed) chartContainer.classList.add('collapsed');
-			if (wasTabHidden) tabContent.classList.add('hidden');
 			return null;
 		}
 
@@ -181,13 +169,12 @@
 		await new Promise((resolve) => setTimeout(resolve, 800));
 
 		// Capturar el chart-body completo para mejor calidad
-		const chartBody = chartContainer.querySelector('.chart-body') as HTMLElement;
 		const targetElement = chartBody || chartCanvas;
 
 		try {
 			const canvas = await html2canvas(targetElement, {
 				scale: 2,
-				backgroundColor: '#1a1f26', // Fondo oscuro del dashboard
+				backgroundColor: '#1a1f26',
 				logging: false,
 				useCORS: true,
 				allowTaint: true
@@ -197,24 +184,16 @@
 
 			// Restaurar estado colapsado
 			if (wasCollapsed) chartContainer.classList.add('collapsed');
-			// Restaurar estado oculto de la pestaña
-			if (wasTabHidden) tabContent.classList.add('hidden');
 
 			return imgData;
 		} catch (error) {
 			console.error(`Error capturing chart ${chartId}:`, error);
 			if (wasCollapsed) chartContainer.classList.add('collapsed');
-			if (wasTabHidden) tabContent.classList.add('hidden');
 			return null;
 		}
 	}
 
 	async function generatePreview() {
-		if (selectedCharts.size === 0) {
-			alert('Por favor, selecciona al menos un gráfico para previsualizar');
-			return;
-		}
-
 		isGeneratingPreview = true;
 		previewImages = [];
 
@@ -345,10 +324,13 @@
 		return acc;
 	}, {} as Record<string, typeof availableCharts>);
 
-	const categoryNames = {
+	const categoryNames: Record<string, string> = {
+		indices: 'Índices Generales',
+		basicas: 'Estadísticas Básicas de Proyectos',
 		overview: 'Resumen General',
 		analytics: 'Análisis Detallado',
-		geographic: 'Distribución Geográfica'
+		geographic: 'Distribución Geográfica',
+		presupuesto: 'Análisis de Presupuesto'
 	};
 </script>
 

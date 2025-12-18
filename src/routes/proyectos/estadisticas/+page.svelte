@@ -1,7 +1,7 @@
 <script lang="ts">
 	import PublicStatsOverview from '$lib/components/organisms/PublicStatsOverview.svelte';
 	import PublicChartsSection from '$lib/components/organisms/PublicChartsSection.svelte';
-	import type { GraficoConfig } from '$lib/models/admin/chart.model';
+	import type { GraficoConfig } from '$lib/models/admin/graficosConfig/chart.model';
 	import { type DashboardData } from '$lib/utils/chartConfigs';
 	import { chartGenerators } from '$lib/utils/optimizedChartConfigs';
 

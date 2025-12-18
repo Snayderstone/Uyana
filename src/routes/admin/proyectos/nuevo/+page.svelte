@@ -1890,116 +1890,36 @@
 			</div>
 
 			<div class="modal-body">
-				{#if error}
-					<div class="error-banner">
-						<span>⚠</span>
-						<p>{error}</p>
-						<button on:click={() => (error = null)}>✕</button>
+				<div class="info-box">
+					<div class="info-icon">
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							width="48"
+							height="48"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						>
+							<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+							<circle cx="12" cy="10" r="3" />
+						</svg>
 					</div>
-				{/if}
-
-				<div class="form-group">
-					<label for="new-inst-nombre">Nombre de la Institución *</label>
-					<input
-						id="new-inst-nombre"
-						type="text"
-						bind:value={newInstitucion.nombre}
-						placeholder="Ej: Universidad Central del Ecuador"
-						required
-					/>
-				</div>
-
-				<div class="form-grid">
-					<div class="form-group combobox-wrapper">
-						<label for="new-inst-pais">País *</label>
-						<input
-							type="text"
-							id="new-inst-pais"
-							bind:value={newInstitucion.pais}
-							on:input={filterPaises}
-							on:focus={handlePaisFocus}
-							on:blur={handlePaisBlur}
-							placeholder="Ej: Ecuador (escribe o selecciona)"
-							autocomplete="off"
-							required
-						/>
-						{#if showPaisDropdown}
-							<div class="combobox-dropdown" transition:slide={{ duration: 200 }}>
-								{#if filteredPaises.length > 0}
-									{#each filteredPaises as pais}
-										<button type="button" class="combobox-option" on:click={() => selectPais(pais)}>
-											{pais}
-										</button>
-									{/each}
-								{:else}
-									<div class="combobox-no-results">
-										No hay resultados. Escribe para agregar "{newInstitucion.pais}"
-									</div>
-								{/if}
-							</div>
-						{/if}
-					</div>
-					<div class="form-group">
-						<label for="new-inst-sigla">Sigla</label>
-						<input
-							id="new-inst-sigla"
-							type="text"
-							bind:value={newInstitucion.sigla}
-							placeholder="Ej: UCE"
-						/>
-					</div>
-				</div>
-				<div class="form-group">
-					<label for="new-inst-geojson">Geometría (GeoJSON) *</label>
-					<div class="geojson-help">
-						<p>
-							📍 Dibuja el polígono de la institución usando
-							<a href="https://geojson.io/" target="_blank" rel="noopener">geojson.io</a>
-							y pega el resultado aquí.
-						</p>
-						<details>
-							<summary>Ver ejemplo</summary>
-							<pre><code
-									>{JSON.stringify(
-										{
-											type: 'Feature',
-											geometry: {
-												type: 'Polygon',
-												coordinates: [
-													[
-														[-78.511, -0.198],
-														[-78.511, -0.201],
-														[-78.506, -0.202],
-														[-78.502, -0.197],
-														[-78.511, -0.198]
-													]
-												]
-											},
-											properties: {}
-										},
-										null,
-										2
-									)}</code
-								></pre>
-						</details>
-					</div>
-					<textarea
-						id="new-inst-geojson"
-						bind:value={newInstitucion.geometry}
-						placeholder={`{
-  "type": "Feature",
-  "geometry": {
-    "type": "Polygon",
-    "coordinates": [...]
-  },
-  "properties": {}
-}`}
-						rows="10"
-						on:blur={() => validateGeoJson(newInstitucion.geometry)}
-					/>
-					{#if geoJsonError}
-						<div class="field-error">{geoJsonError}</div>
-					{/if}
+					<h4>Ir al Módulo Geoespacial</h4>
+					<p>
+						Para crear una nueva institución, debes utilizar el módulo geoespacial donde podrás:
+					</p>
+					<ul>
+						<li>📍 Ubicar la institución en el mapa</li>
+						<li>📝 Ingresar todos los detalles</li>
+						<li>🗺️ Definir coordenadas geográficas</li>
+						<li>✅ Guardar y asociar al proyecto</li>
+					</ul>
+					<p class="note">
+						<strong>Nota:</strong> Una vez creada la institución, regresa a esta página para seleccionarla.
+					</p>
 				</div>
 			</div>
 
@@ -2009,8 +1929,6 @@
 					class="btn-secondary"
 					on:click={() => {
 						showCreateInstitucionModal = false;
-						newInstitucion = { nombre: '', sigla: '', pais: 'Ecuador', geometry: '' };
-						geoJsonError = '';
 					}}
 				>
 					Cancelar
@@ -2018,15 +1936,25 @@
 				<button
 					type="button"
 					class="btn-primary"
-					on:click={createInstitucion}
-					disabled={loading || !newInstitucion.nombre || !newInstitucion.geometry}
+					on:click={() => {
+						goto('/admin/geoespacial');
+					}}
 				>
-					{#if loading}
-						<div class="spinner-sm" />
-					{:else}
-						<span>+</span>
-					{/if}
-					Crear Institución
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="16"
+						height="16"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+					>
+						<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+						<circle cx="12" cy="10" r="3" />
+					</svg>
+					Ir al Módulo Geoespacial
 				</button>
 			</div>
 		</div>
@@ -3067,71 +2995,87 @@
 	.modal-body {
 		padding: 1.5rem;
 
-		.geojson-help {
-			background: #0f1419;
-			border: 1px solid #2d3748;
-			border-radius: 6px;
-			padding: 1rem;
-			margin-bottom: 0.75rem;
+		.info-box {
+			text-align: center;
+			padding: 2rem;
+			background: linear-gradient(
+				135deg,
+				rgba(110, 41, 231, 0.05) 0%,
+				rgba(139, 92, 246, 0.05) 100%
+			);
+			border: 2px solid rgba(110, 41, 231, 0.2);
+			border-radius: 12px;
+
+			.info-icon {
+				margin: 0 auto 1.5rem;
+				width: 80px;
+				height: 80px;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				background: linear-gradient(135deg, #6e29e7 0%, #8b5cf6 100%);
+				border-radius: 50%;
+				box-shadow: 0 4px 20px rgba(110, 41, 231, 0.3);
+
+				svg {
+					color: white;
+				}
+			}
+
+			h4 {
+				font-size: 1.5rem;
+				font-weight: 600;
+				color: #ededed;
+				margin: 0 0 1rem 0;
+			}
 
 			p {
-				margin: 0 0 0.5rem 0;
-				font-size: 0.875rem;
-				color: #9ca3af;
-
-				a {
-					color: #10b981;
-					text-decoration: none;
-					font-weight: 500;
-
-					&:hover {
-						text-decoration: underline;
-					}
-				}
+				font-size: 1rem;
+				color: #a0aec0;
+				line-height: 1.6;
+				margin: 0 0 1.5rem 0;
 			}
 
-			details {
-				summary {
-					cursor: pointer;
-					font-size: 0.8125rem;
-					color: #10b981;
-					margin-top: 0.5rem;
-					user-select: none;
+			ul {
+				text-align: left;
+				list-style: none;
+				padding: 0;
+				margin: 0 0 1.5rem 0;
+				max-width: 400px;
+				margin-left: auto;
+				margin-right: auto;
 
-					&:hover {
-						text-decoration: underline;
-					}
-				}
-
-				pre {
-					margin: 0.75rem 0 0 0;
+				li {
 					padding: 0.75rem;
-					background: #000;
-					border-radius: 4px;
-					overflow-x: auto;
-					font-size: 0.75rem;
+					margin-bottom: 0.5rem;
+					background: rgba(110, 41, 231, 0.1);
+					border: 1px solid rgba(110, 41, 231, 0.2);
+					border-radius: 8px;
+					color: #e2e8f0;
+					font-size: 0.9375rem;
+					transition: all 0.2s;
 
-					code {
-						color: #10b981;
-						font-family: 'Courier New', monospace;
+					&:hover {
+						background: rgba(110, 41, 231, 0.15);
+						border-color: rgba(110, 41, 231, 0.3);
+						transform: translateX(4px);
 					}
 				}
 			}
-		}
 
-		textarea {
-			font-family: 'Courier New', monospace;
-			font-size: 0.8125rem;
-		}
+			.note {
+				background: rgba(251, 191, 36, 0.1);
+				border: 1px solid rgba(251, 191, 36, 0.3);
+				border-radius: 8px;
+				padding: 1rem;
+				font-size: 0.875rem;
+				color: #fbbf24;
+				margin: 0;
 
-		.field-error {
-			margin-top: 0.5rem;
-			padding: 0.5rem;
-			background: rgba(239, 68, 68, 0.1);
-			border: 1px solid rgba(239, 68, 68, 0.3);
-			border-radius: 4px;
-			color: #ef4444;
-			font-size: 0.8125rem;
+				strong {
+					color: #fbbf24;
+				}
+			}
 		}
 	}
 
@@ -3144,6 +3088,14 @@
 
 		button {
 			padding: 0.75rem 1.5rem;
+			display: inline-flex;
+			align-items: center;
+			gap: 0.5rem;
+
+			svg {
+				width: 16px;
+				height: 16px;
+			}
 		}
 	}
 
@@ -3203,12 +3155,5 @@
 		&:active {
 			background: #374151;
 		}
-	}
-
-	.combobox-no-results {
-		padding: 0.75rem 0.875rem;
-		color: #9ca3af;
-		font-size: 0.8125rem;
-		text-align: center;
 	}
 </style>

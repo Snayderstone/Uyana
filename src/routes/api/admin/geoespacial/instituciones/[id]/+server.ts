@@ -7,7 +7,7 @@
 
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { geoespacialService } from '$lib/services/admin/geoespacial.service';
+import { geoespacialService } from '$lib/services/admin/geoespacial/geoespacial.service';
 
 export const GET: RequestHandler = async ({ params, url }) => {
 	try {

@@ -5,7 +5,7 @@
  */
 
 import { json, type RequestHandler } from '@sveltejs/kit';
-import { AdminParticipantsService } from '$lib/services/admin/participants.service';
+import { AdminParticipantsService } from '$lib/services/admin/participants/participants.service';
 
 /**
  * GET - Obtener participación directiva por género

@@ -2,7 +2,6 @@
 	import { createEventDispatcher } from 'svelte';
 
 	export let participant: any = null;
-	export let carreras: any[] = [];
 
 	const dispatch = createEventDispatcher();
 
@@ -11,7 +10,6 @@
 		nombre: '',
 		email: '',
 		genero: '',
-		carrera_id: '',
 		url_foto: '',
 		acreditado: false,
 		redes_sociales: ''
@@ -20,6 +18,8 @@
 	let errors: Record<string, string> = {};
 	let loading = false;
 	let isEditing = false;
+	let fileInput: HTMLInputElement;
+	let uploadingPhoto = false;
 
 	// Inicializar formulario con datos del participante si existe
 	$: if (participant) {
@@ -28,7 +28,6 @@
 			nombre: participant.nombre || '',
 			email: participant.email || '',
 			genero: participant.genero || '',
-			carrera_id: participant.carrera_id?.toString() || '',
 			url_foto: participant.url_foto || '',
 			acreditado: participant.acreditado || false,
 			redes_sociales: participant.redes_sociales || ''
@@ -52,10 +51,6 @@
 			errors.genero = 'El género es obligatorio';
 		}
 
-		if (!formData.carrera_id) {
-			errors.carrera_id = 'La carrera es obligatoria';
-		}
-
 		return Object.keys(errors).length === 0;
 	}
 
@@ -71,8 +66,7 @@
 			const method = isEditing ? 'PUT' : 'POST';
 
 			const payload = {
-				...formData,
-				carrera_id: parseInt(formData.carrera_id)
+				...formData
 			};
 
 			const response = await fetch(url, {
@@ -103,6 +97,84 @@
 
 	function handleCancel() {
 		dispatch('cancel');
+	}
+
+	/**
+	 * Handle file selection for photo upload
+	 */
+	async function handleFileSelect(event: Event) {
+		const target = event.target as HTMLInputElement;
+		const file = target.files?.[0];
+
+		if (!file) return;
+
+		// Validate file type
+		if (!file.type.startsWith('image/')) {
+			errors.url_foto = 'Por favor selecciona un archivo de imagen válido';
+			return;
+		}
+
+		// Validate file size (max 5MB)
+		if (file.size > 5 * 1024 * 1024) {
+			errors.url_foto = 'La imagen no puede ser mayor a 5MB';
+			return;
+		}
+
+		// Clear previous errors
+		delete errors.url_foto;
+		errors = errors;
+
+		uploadingPhoto = true;
+
+		try {
+			// Convert to base64
+			const base64 = await convertFileToBase64(file);
+			formData.url_foto = base64;
+		} catch (error) {
+			console.error('Error converting file:', error);
+			errors.url_foto = 'Error al procesar la imagen';
+		} finally {
+			uploadingPhoto = false;
+		}
+	}
+
+	/**
+	 * Convert file to base64 string
+	 */
+	function convertFileToBase64(file: File): Promise<string> {
+		return new Promise((resolve, reject) => {
+			const reader = new FileReader();
+
+			reader.onload = () => {
+				if (typeof reader.result === 'string') {
+					resolve(reader.result);
+				} else {
+					reject(new Error('Error reading file'));
+				}
+			};
+
+			reader.onerror = () => reject(new Error('Error reading file'));
+			reader.readAsDataURL(file);
+		});
+	}
+
+	/**
+	 * Clear photo
+	 */
+	function clearPhoto() {
+		formData.url_foto = '';
+		if (fileInput) {
+			fileInput.value = '';
+		}
+		delete errors.url_foto;
+		errors = errors;
+	}
+
+	/**
+	 * Trigger file input
+	 */
+	function triggerFileUpload() {
+		fileInput?.click();
 	}
 </script>
 
@@ -188,42 +260,72 @@
 				{/if}
 			</div>
 
-			<!-- Carrera -->
+			<!-- Foto del Participante -->
 			<div class="form-group">
-				<label for="carrera" class="form-label">
-					Carrera <span class="required">*</span>
+				<label for="photo-upload" class="form-label">
+					Foto del Participante <span class="optional">(opcional)</span>
 				</label>
-				<select
-					id="carrera"
-					class="form-select"
-					class:error={errors.carrera_id}
-					bind:value={formData.carrera_id}
-					disabled={loading}
-				>
-					<option value="">Seleccionar carrera</option>
-					{#each carreras as carrera}
-						<option value={carrera.id}>{carrera.nombre}</option>
-					{/each}
-				</select>
-				{#if errors.carrera_id}
-					<span class="error-message">{errors.carrera_id}</span>
-				{/if}
-			</div>
 
-			<!-- URL Foto -->
-			<div class="form-group">
-				<label for="url_foto" class="form-label">
-					URL de Foto <span class="optional">(opcional)</span>
-				</label>
+				<!-- Hidden file input -->
 				<input
-					id="url_foto"
-					type="url"
-					class="form-input"
-					bind:value={formData.url_foto}
-					placeholder="https://ejemplo.com/foto.jpg"
-					disabled={loading}
+					id="photo-upload"
+					bind:this={fileInput}
+					type="file"
+					accept="image/*"
+					on:change={handleFileSelect}
+					style="display: none;"
+					disabled={loading || uploadingPhoto}
 				/>
-				<span class="help-text">URL pública de la foto del participante</span>
+
+				<!-- Upload button or preview -->
+				{#if formData.url_foto}
+					<div class="photo-upload-container has-photo">
+						<div class="photo-preview-small">
+							<img src={formData.url_foto} alt="Foto del participante" />
+							<div class="photo-overlay">
+								<button
+									type="button"
+									class="btn-photo-action btn-change"
+									on:click={triggerFileUpload}
+									disabled={loading || uploadingPhoto}
+								>
+									📷 Cambiar
+								</button>
+								<button
+									type="button"
+									class="btn-photo-action btn-remove"
+									on:click={clearPhoto}
+									disabled={loading || uploadingPhoto}
+								>
+									🗑️ Quitar
+								</button>
+							</div>
+						</div>
+					</div>
+				{:else}
+					<div class="photo-upload-container">
+						<button
+							type="button"
+							class="btn-upload-photo"
+							class:uploading={uploadingPhoto}
+							on:click={triggerFileUpload}
+							disabled={loading || uploadingPhoto}
+						>
+							{#if uploadingPhoto}
+								<span class="spinner-small" />
+								Procesando...
+							{:else}
+								📷 Subir Foto
+							{/if}
+						</button>
+					</div>
+				{/if}
+
+				{#if errors.url_foto}
+					<span class="error-message">{errors.url_foto}</span>
+				{/if}
+
+				<span class="help-text"> Formatos soportados: JPG, PNG, GIF. Tamaño máximo: 5MB </span>
 			</div>
 
 			<!-- Redes Sociales -->
@@ -265,11 +367,18 @@
 			</div>
 		</div>
 
-		<!-- Preview de foto -->
+		<!-- Preview de foto grande -->
 		{#if formData.url_foto}
-			<div class="photo-preview">
-				<span class="preview-label">Vista previa de foto:</span>
-				<img src={formData.url_foto} alt="Preview" on:error={() => (formData.url_foto = '')} />
+			<div class="photo-preview-large">
+				<span class="preview-label">Vista previa de la foto:</span>
+				<div class="photo-container">
+					<img src={formData.url_foto} alt="Foto del participante" on:error={clearPhoto} />
+					<div class="photo-info">
+						<span class="photo-status">✅ Foto cargada correctamente</span>
+						<span class="photo-note">La foto se almacenará de forma segura en la base de datos</span
+						>
+					</div>
+				</div>
 			</div>
 		{/if}
 
@@ -499,27 +608,165 @@
 		}
 	}
 
-	.photo-preview {
-		margin-bottom: 2rem;
-		padding: 1rem;
-		background: var(--color-background-elevated);
-		border-radius: 8px;
+	.photo-upload-container {
 		display: flex;
 		flex-direction: column;
-		gap: 1rem;
+		gap: 0.75rem;
+
+		&.has-photo {
+			align-items: flex-start;
+		}
+	}
+
+	.btn-upload-photo {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.5rem;
+		padding: 1rem 1.5rem;
+		border: 2px dashed var(--color-border);
+		border-radius: 8px;
+		background: var(--color-background-elevated);
+		color: var(--color-text);
+		font-weight: 500;
+		cursor: pointer;
+		transition: all 0.2s ease;
+		min-height: 60px;
+
+		&:hover:not(:disabled) {
+			border-color: var(--color-primary);
+			background: var(--color-background-hover);
+			color: var(--color-primary);
+		}
+
+		&:disabled {
+			opacity: 0.6;
+			cursor: not-allowed;
+		}
+
+		&.uploading {
+			border-color: var(--color-primary);
+			background: rgba(110, 41, 231, 0.05);
+		}
+	}
+
+	.photo-preview-small {
+		position: relative;
+		width: 120px;
+		height: 120px;
+		border-radius: 12px;
+		overflow: hidden;
+		border: 3px solid var(--color-primary);
+		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+
+		img {
+			width: 100%;
+			height: 100%;
+			object-fit: cover;
+			display: block;
+		}
+
+		.photo-overlay {
+			position: absolute;
+			top: 0;
+			left: 0;
+			right: 0;
+			bottom: 0;
+			background: rgba(0, 0, 0, 0.8);
+			display: flex;
+			flex-direction: column;
+			justify-content: center;
+			align-items: center;
+			gap: 0.5rem;
+			opacity: 0;
+			transition: opacity 0.2s ease;
+		}
+
+		&:hover .photo-overlay {
+			opacity: 1;
+		}
+	}
+
+	.btn-photo-action {
+		padding: 0.375rem 0.75rem;
+		border: none;
+		border-radius: 4px;
+		font-size: 0.75rem;
+		font-weight: 500;
+		cursor: pointer;
+		transition: all 0.2s ease;
+
+		&.btn-change {
+			background: var(--color-primary);
+			color: white;
+
+			&:hover:not(:disabled) {
+				background: var(--color-primary-dark);
+			}
+		}
+
+		&.btn-remove {
+			background: #ef4444;
+			color: white;
+
+			&:hover:not(:disabled) {
+				background: #dc2626;
+			}
+		}
+
+		&:disabled {
+			opacity: 0.6;
+			cursor: not-allowed;
+		}
+	}
+
+	.photo-preview-large {
+		margin-bottom: 2rem;
+		padding: 1.5rem;
+		background: var(--color-background-elevated);
+		border-radius: 12px;
+		border: 2px solid var(--color-border);
 
 		.preview-label {
 			font-weight: 600;
 			color: var(--color-text);
 			font-size: 0.875rem;
+			margin-bottom: 1rem;
+			display: block;
 		}
 
-		img {
-			width: 120px;
-			height: 120px;
-			object-fit: cover;
-			border-radius: 50%;
-			border: 3px solid var(--color-primary);
+		.photo-container {
+			display: flex;
+			align-items: flex-start;
+			gap: 1.5rem;
+
+			img {
+				width: 120px;
+				height: 120px;
+				object-fit: cover;
+				border-radius: 50%;
+				border: 4px solid var(--color-primary);
+				box-shadow: 0 4px 12px rgba(110, 41, 231, 0.2);
+			}
+
+			.photo-info {
+				display: flex;
+				flex-direction: column;
+				gap: 0.5rem;
+				justify-content: center;
+
+				.photo-status {
+					font-weight: 500;
+					color: #059669;
+					font-size: 0.875rem;
+				}
+
+				.photo-note {
+					color: var(--color-text-secondary);
+					font-size: 0.75rem;
+					font-style: italic;
+				}
+			}
 		}
 	}
 
@@ -620,6 +867,16 @@
 			.btn {
 				width: 100%;
 			}
+		}
+
+		.photo-preview-large .photo-container {
+			flex-direction: column;
+			align-items: center;
+			text-align: center;
+		}
+
+		.btn-upload-photo {
+			width: 100%;
 		}
 	}
 </style>

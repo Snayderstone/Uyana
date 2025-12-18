@@ -17,7 +17,7 @@ import {
 	TableCell,
 	WidthType
 } from 'docx';
-import { AdminProjectsService } from './projects.service';
+import { AdminProjectsService } from './projects/projects.service';
 import type { ProyectoResponseDTO } from '$lib/models/admin';
 
 export const AdminReportsService = {

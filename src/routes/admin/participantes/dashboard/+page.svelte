@@ -1,10 +1,5 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
 	import ParticipantsAdvancedDashboard from '$lib/components/admin/participants/ParticipantsAdvancedDashboard.svelte';
-
-	onMount(() => {
-		// Inicialización del dashboard (carga de métricas, gráficos, etc.)
-	});
 </script>
 
 <svelte:head>

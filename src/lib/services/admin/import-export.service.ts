@@ -5,8 +5,8 @@
  */
 
 import type { ImportProyectoRowDTO, ImportResultDTO } from '$lib/models/admin';
-import { AdminProjectsService } from './projects.service';
-import { AdminParticipantsService } from './participants.service';
+import { AdminProjectsService } from '/home/snayderstone/Descargas/Uyana/src/lib/services/admin/projects/projects.service';
+import { AdminParticipantsService } from '/home/snayderstone/Descargas/Uyana/src/lib/services/admin/participants/participants.service';
 import {
 	AdminEstadosRepository,
 	AdminTiposRepository,
@@ -18,7 +18,7 @@ import {
 	AdminCarrerasRepository,
 	AdminCargosRepository,
 	AdminRegimenesRepository
-} from '$lib/db/admin/catalogs.repository';
+} from '$lib/db/admin/catalogs/catalogs.repository';
 
 export const AdminImportExportService = {
 	/**

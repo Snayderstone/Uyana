@@ -7,7 +7,7 @@
  */
 
 import { json, type RequestHandler } from '@sveltejs/kit';
-import { AdminBlogService } from '$lib/services/admin/blog.service';
+import { AdminBlogService } from '$lib/services/admin/blog/blog.service';
 import type { UpdateBlogCategoriaDTO } from '$lib/models/admin';
 
 /**

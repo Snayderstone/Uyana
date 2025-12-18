@@ -151,7 +151,7 @@
 
 	async function loadChartConfigs() {
 		try {
-			const response = await fetch('/api/admin/charts?category=participantes');
+			const response = await fetch('/api/admin/graficosConfig?category=participantes');
 			const result = await response.json();
 
 			if (result.success) {
@@ -251,7 +251,7 @@
 		if (!chartToToggle) return;
 
 		try {
-			const response = await fetch(`/api/admin/charts/${chartToToggle}/toggle-public`, {
+			const response = await fetch(`/api/admin/graficosConfig/${chartToToggle}/toggle-public`, {
 				method: 'POST'
 			});
 

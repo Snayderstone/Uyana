@@ -723,6 +723,132 @@ export function getResumenEjecutivoConfig(data: any): ChartConfiguration {
 }
 
 /**
+ * 14. Top Proyectos por Presupuesto
+ */
+export function getTopProyectosPresupuestoConfig(data: any): ChartConfiguration {
+	const proyectos = data.analytics?.topProyectosPresupuesto || [];
+
+	console.log('📊 Top Proyectos Presupuesto - Datos recibidos:', proyectos.length, 'proyectos');
+
+	// Si no hay datos, retornar configuración vacía
+	if (!proyectos || proyectos.length === 0) {
+		return {
+			type: 'bar',
+			data: {
+				labels: ['Sin datos'],
+				datasets: [
+					{
+						label: 'Presupuesto (US$)',
+						data: [0],
+						backgroundColor: CHART_COLORS.success,
+						borderRadius: 6
+					}
+				]
+			},
+			options: {
+				...commonOptions,
+				indexAxis: 'y' as const
+			}
+		};
+	}
+
+	// Limitar a los top 20 proyectos
+	const topProyectos = proyectos.slice(0, 20);
+
+	// Formatear etiquetas solo con el código del proyecto
+	const labels = topProyectos.map((p: any) => p.codigo || 'N/A');
+
+	// Función para formatear moneda
+	const formatCurrency = (value: number): string => {
+		if (value >= 1000000) {
+			return `${(value / 1000000).toFixed(2)}M`;
+		} else if (value >= 1000) {
+			return `${(value / 1000).toFixed(0)}K`;
+		}
+		return value.toFixed(0);
+	};
+
+	return {
+		type: 'bar',
+		data: {
+			labels: labels,
+			datasets: [
+				{
+					label: 'Presupuesto (US$)',
+					data: topProyectos.map((p: any) => p.presupuesto_total),
+					backgroundColor: CHART_COLORS.success,
+					borderRadius: 6
+				}
+			]
+		},
+		options: {
+			...commonOptions,
+			indexAxis: 'y' as const,
+			scales: {
+				...whiteScalesConfig,
+				x: {
+					...whiteScalesConfig.x,
+					beginAtZero: true,
+					ticks: {
+						...whiteScalesConfig.x.ticks,
+						callback: function (value: any) {
+							return formatCurrency(value);
+						}
+					}
+				},
+				y: {
+					...whiteScalesConfig.y,
+					ticks: {
+						...whiteScalesConfig.y.ticks,
+						autoSkip: false
+					}
+				}
+			},
+			plugins: {
+				...commonOptions.plugins,
+				tooltip: {
+					...commonOptions.plugins.tooltip,
+					callbacks: {
+						title: function (context: any) {
+							const proyecto = topProyectos[context[0].dataIndex];
+							return proyecto?.codigo || 'N/A';
+						},
+						label: function (context: any) {
+							const value = context.parsed.x || 0;
+							const proyecto = topProyectos[context.dataIndex];
+							if (!proyecto) return [`Presupuesto: $${value.toFixed(2)}`];
+
+							const tooltipLines = [
+								`Título: ${proyecto.titulo || 'Sin título'}`,
+								`Presupuesto: $${value.toLocaleString('en-US', {
+									minimumFractionDigits: 2,
+									maximumFractionDigits: 2
+								})}`
+							];
+
+							if (proyecto.estado) {
+								tooltipLines.push(`Estado: ${proyecto.estado}`);
+							}
+
+							if (proyecto.fecha_inicio) {
+								try {
+									const fecha = new Date(proyecto.fecha_inicio);
+									tooltipLines.push(`Inicio: ${fecha.toLocaleDateString('es-ES')}`);
+								} catch (e) {
+									// Si hay error parseando la fecha, no la mostramos
+								}
+							}
+
+							return tooltipLines;
+						}
+					}
+				}
+			}
+		}
+	};
+}
+
+/**
  * Mapeo de nombres de gráficos a funciones
  */
 export const chartGenerators: Record<string, (data: any) => ChartConfiguration> = {
@@ -738,5 +864,6 @@ export const chartGenerators: Record<string, (data: any) => ChartConfiguration> 
 	distribucionAvance: getDistribucionAvanceConfig,
 	distribucionDuracion: getDistribucionDuracionConfig,
 	distribucionPresupuesto: getDistribucionPresupuestoConfig,
-	resumenEjecutivo: getResumenEjecutivoConfig
+	resumenEjecutivo: getResumenEjecutivoConfig,
+	top_presupuesto_proyectos: getTopProyectosPresupuestoConfig
 };
