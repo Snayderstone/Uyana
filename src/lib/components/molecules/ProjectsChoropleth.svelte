@@ -721,7 +721,7 @@
 						const center = layer.getBounds().getCenter();
 						centroides[facultad] = [center.lat, center.lng];
 						// Cuando tengas los centroides listos:
-						dispatch('centroidesReady', { centroides });
+						dispatch('centroidesReady', { centroides, level: mapLevel });
 					}
 				}}
 			/>

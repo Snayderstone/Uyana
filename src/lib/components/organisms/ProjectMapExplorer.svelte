@@ -17,6 +17,7 @@
 	import MapNetworkLayer from '$lib/components/molecules/MapNetworkLayer.svelte';
 	import { NetworkService } from '$lib/services/network.service';
 	import NetworkPanel from '$lib/components/molecules/MapNetworkPanel.svelte';
+	import { tick } from 'svelte';
 
 	const dispatch = createEventDispatcher();
 
@@ -61,7 +62,10 @@
 	// Props para el mapa
 	export let center: LatLngTuple = [-0.1992, -78.5059]; // Quito - UCE por defecto
 	export let zoom = 16;
-	let centroides: Record<string, [number, number]> = {};
+	let centroidesByLevel: Record<MapLevel, Record<string, [number, number]>> = {
+		faculty: {},
+		institution: {}
+	};
 
 	let mapLevel: MapLevel = 'faculty';
 	let lastMapLevel: MapLevel = mapLevel;
@@ -100,11 +104,16 @@
 	let showNetworkPanel = false;
 	let selectedNetworkType: 'projects' | 'participants' | 'international' | 'area' = 'projects';
 	let networkData = null;
+	let facultyOptions: string[] = [];
+	let institutionOptions: string[] = [];
 
 	onMount(async () => {
 		const rows = await ProjectService.getProjectsByInstitutionForMap();
 		nombresInstituciones = [...new Set(rows.map((r) => r.titulo))].sort();
 	});
+
+	$: facultyOptions = Object.keys(centroidesByLevel.faculty || {}).sort();
+	$: institutionOptions = nombresInstituciones || [];
 
 	// Cuando cambia el nivel del mapa (facultad/institución), limpiamos selección y filtros actuales
 	$: if (mapLevel !== lastMapLevel) {
@@ -112,6 +121,7 @@
 		filteredProyectos = proyectos;
 		selectedFacultad = null;
 		highlightedFacultad = null;
+		mapLevel;
 	}
 	$: hasActiveFilters = filteredProyectos.length > 0 && filteredProyectos.length < proyectos.length;
 	// Recalcular estadísticas para la leyenda y el resumen según el nivel del mapa
@@ -151,6 +161,12 @@
 			totalFacultades = new Set(Object.keys(countByRegion)).size;
 			facultadesConProyectos = Object.keys(countByRegion).length;
 		}
+	}
+	function handleCentroidesReady(
+		e: CustomEvent<{ level: MapLevel; centroides: Record<string, [number, number]> }>
+	) {
+		const { level, centroides } = e.detail;
+		centroidesByLevel[level] = centroides;
 	}
 
 	// Cargar datos de proyectos
@@ -438,15 +454,13 @@
 	});
 	// Manejar aplicación de red de colaboración
 	async function handleApplyNetwork(e: CustomEvent) {
-		console.log('🔥 (MAPEXPLORER):APPLY NETWORK recibido:', e.detail);
-		const { type, level } = e.detail;
-		// ✅ USAR centroides del estado del padre (los que vienen de centroidesReady)
-		console.log('🧭 centroides (padre):', centroides);
-
-		networkData = await NetworkService.buildNetwork(type, level, centroides, filteredProyectos);
+		console.log('🔥 applyNetwork payload:', e.detail);
+		// ✅ limpia visualmente antes de construir la nueva
+		networkData = null;
+		await tick();
+		networkData = await NetworkService.buildNetwork(e.detail, centroidesByLevel, filteredProyectos);
 
 		console.log('🔥 networkData generada:', networkData);
-		showNetworkPanel = false;
 		showNetworkPanel = false;
 	}
 </script>
@@ -497,15 +511,13 @@
 					{hasActiveFilters}
 					on:viewFacultyProjects={handleViewFacultyProjects}
 					on:mapClick={handleMapClick}
-					on:centroidesReady={(e) => {
-						centroides = e.detail.centroides;
-					}}
+					on:centroidesReady={handleCentroidesReady}
 					on:resetHighlights={() => (highlightedFacultad = null)}
 				/>
 			{/if}
 			{#if networkData}
 				{console.log('📡 ENVIANDO networkData AL COMPONENTE', networkData)}
-				<MapNetworkLayer {map} nodes={networkData.nodes} {centroides} edges={networkData.edges} />
+				<MapNetworkLayer {map} nodes={networkData.nodes} edges={networkData.edges} />
 			{/if}
 			<div class="map-legend-container">
 				<ProjectsMapLegend
@@ -883,7 +895,15 @@
 					</div>
 				{/if}
 				{#if activePanelTab === 'network'}
-					<NetworkPanel bind:selectedNetworkType {mapLevel} on:applyNetwork={handleApplyNetwork} />
+					<NetworkPanel
+						bind:selectedNetworkType
+						{mapLevel}
+						{facultyOptions}
+						{institutionOptions}
+						on:applyNetwork={handleApplyNetwork}
+						on:clearNetwork={() => (networkData = null)}
+						on:close={() => (showNetworkPanel = false)}
+					/>
 				{/if}
 			</div>
 

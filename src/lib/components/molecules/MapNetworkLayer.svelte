@@ -12,10 +12,10 @@
 	console.log('🟦 MapNetworkLayer MONTADO');
 	async function loadLeaflet() {
 		if (!L) {
-            console.log("📦 Cargando Leaflet...");
+			console.log('📦 Cargando Leaflet...');
 			const leafletModule = await import('leaflet'); // ← IMPORT DINÁMICO
 			L = leafletModule;
-            console.log("📦 Leaflet cargado:", L);
+			console.log('📦 Leaflet cargado:', L);
 		}
 	}
 
@@ -36,10 +36,12 @@
 
 		if (!L || !map) return;
 		clearLayer();
+		// ✅ Si no hay datos, listo: queda limpio visualmente
+		if (!nodes || nodes.length === 0) return;
 
 		// --- DIBUJAR ARCOS ---
 		edges.forEach((e) => {
-            console.log("➡️ DIBUJANDO ARCO:", e);
+			console.log('➡️ DIBUJANDO ARCO:', e);
 			const from = nodes.find((n) => n.id === e.source);
 			const to = nodes.find((n) => n.id === e.target);
 
@@ -67,7 +69,7 @@
 
 		// --- DIBUJAR NODOS ---
 		nodes.forEach((n) => {
-            console.log("➡️ DIBUJANDO NODO:", n);
+			console.log('➡️ DIBUJANDO NODO:', n);
 			if (n.lat == null || n.lng == null) return;
 
 			L.circleMarker([n.lat, n.lng], {
@@ -80,6 +82,10 @@
 				.addTo(layerGroup)
 				.bindTooltip(`<b>${n.label}</b><br> Proyectos: ${n.projectCount}`, { sticky: true });
 		});
+		if (!nodes || nodes.length === 0) {
+			clearLayer();
+			return;
+		}
 	}
 
 	onMount(async () => {
@@ -87,8 +93,8 @@
 		drawNetwork();
 	});
 
-	$: if (map && nodes.length > 0 && L) {
-		drawNetwork();
+	$: if (map && L) {
+		drawNetwork(); // drawNetwork ya hace clearLayer() y no pinta si no hay datos
 	}
 
 	onDestroy(() => {
