@@ -7,41 +7,71 @@
 	export let edges = [];
 	export let centroides: Record<string, [number, number]> = {};
 
-	let L: any = null; // ← Leaflet se cargará aquí dinámicamente
+	let L: any = null;
 	let layerGroup: any = null;
-	console.log('🟦 MapNetworkLayer MONTADO');
+
+	// 🎨 Colores que usaremos según el tema
+	let themeColors = {
+		edge: '#0044cc',
+		nodeStroke: '#0044cc',
+		nodeFill: '#6699ff'
+	};
+
+	let themeObserver: MutationObserver | null = null;
+	let mql: MediaQueryList | null = null;
+
 	async function loadLeaflet() {
 		if (!L) {
-			console.log('📦 Cargando Leaflet...');
-			const leafletModule = await import('leaflet'); // ← IMPORT DINÁMICO
+			const leafletModule = await import('leaflet');
 			L = leafletModule;
-			console.log('📦 Leaflet cargado:', L);
 		}
 	}
 
-	function clearLayer() {
-		if (layerGroup && map) {
-			layerGroup.clearLayers();
-			map.removeLayer(layerGroup);
-		}
-		if (L) {
+	function ensureLayer() {
+		if (!layerGroup && L && map) {
 			layerGroup = L.layerGroup().addTo(map);
 		}
 	}
 
-	function drawNetwork() {
-		console.log('🟩 drawNetwork() EJECUTADO');
-		console.log('🟩 Nodes:', nodes);
-		console.log('🟩 Edges:', edges);
+	function clearLayer() {
+		if (layerGroup) layerGroup.clearLayers();
+	}
 
+	// Detecta tema real: light/dark/auto (auto depende del sistema)
+	function getResolvedTheme(): 'light' | 'dark' {
+		const t = document.documentElement.getAttribute('data-theme');
+
+		if (t === 'dark') return 'dark';
+		if (t === 'light') return 'light';
+
+		// auto o null → depende del sistema
+		return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+	}
+
+	// Lee variables CSS del tema, pero elige primary o secondary según light/dark
+	function readThemeColors() {
+		const resolved = getResolvedTheme();
+		const s = getComputedStyle(document.documentElement);
+
+		// En claro -> primary; en oscuro -> secondary
+		const main = resolved === 'dark' ? 'secondary' : 'callout-accent--success';
+		const shade = `${main}-shade`;
+
+		themeColors = {
+			edge: s.getPropertyValue(`--color--${main}`).trim() || themeColors.edge,
+			nodeStroke: s.getPropertyValue(`--color--${main}`).trim() || themeColors.nodeStroke,
+			nodeFill: s.getPropertyValue(`--color--${shade}`).trim() || themeColors.nodeFill
+		};
+	}
+
+	function drawNetwork() {
 		if (!L || !map) return;
+		ensureLayer();
 		clearLayer();
-		// ✅ Si no hay datos, listo: queda limpio visualmente
 		if (!nodes || nodes.length === 0) return;
 
-		// --- DIBUJAR ARCOS ---
+		// --- EDGES ---
 		edges.forEach((e) => {
-			console.log('➡️ DIBUJANDO ARCO:', e);
 			const from = nodes.find((n) => n.id === e.source);
 			const to = nodes.find((n) => n.id === e.target);
 
@@ -49,55 +79,84 @@
 			if (from.lat == null || from.lng == null || to.lat == null || to.lng == null) return;
 
 			const weight = 2 + e.normalized * 6;
+			const opacity = 0.2 + e.normalized * 0.8;
 
-			L.polyline(
+			const line = L.polyline(
 				[
 					[from.lat, from.lng],
 					[to.lat, to.lng]
 				],
 				{
-					color: `rgba(0,0,150,${0.2 + e.normalized * 0.8})`,
+					color: themeColors.edge,
 					weight,
-					opacity: 0.9
+					opacity
 				}
 			)
 				.addTo(layerGroup)
 				.bindTooltip(`<b>${from.label}</b> ↔ <b>${to.label}</b><br> Peso: ${e.weight}`, {
 					sticky: true
 				});
+
+			// (Opcional) si quieres controlar hover tú mismo, aquí podrías:
+			// line.on('mouseover', () => line.setStyle({ weight: weight + 2, opacity: 1 }));
+			// line.on('mouseout', () => line.setStyle({ weight, opacity }));
 		});
 
-		// --- DIBUJAR NODOS ---
+		// --- NODES ---
 		nodes.forEach((n) => {
-			console.log('➡️ DIBUJANDO NODO:', n);
 			if (n.lat == null || n.lng == null) return;
 
 			L.circleMarker([n.lat, n.lng], {
 				radius: 6 + Math.sqrt(n.projectCount),
-				color: '#0044cc',
-				fillColor: '#6699ff',
+				color: themeColors.nodeStroke,
+				fillColor: themeColors.nodeFill,
 				fillOpacity: 0.9,
 				weight: 2
 			})
 				.addTo(layerGroup)
 				.bindTooltip(`<b>${n.label}</b><br> Proyectos: ${n.projectCount}`, { sticky: true });
 		});
-		if (!nodes || nodes.length === 0) {
-			clearLayer();
-			return;
-		}
+	}
+
+	function refreshThemeAndRedraw() {
+		readThemeColors();
+		drawNetwork();
 	}
 
 	onMount(async () => {
-		await loadLeaflet(); // ← Se carga Leaflet solo en el navegador
-		drawNetwork();
+		await loadLeaflet();
+		refreshThemeAndRedraw();
+
+		// 1) Cambios en data-theme (light/dark/auto)
+		themeObserver = new MutationObserver(() => {
+			refreshThemeAndRedraw();
+		});
+
+		themeObserver.observe(document.documentElement, {
+			attributes: true,
+			attributeFilter: ['data-theme']
+		});
+
+		// 2) Si data-theme = auto, y cambia el tema del sistema
+		mql = window.matchMedia('(prefers-color-scheme: dark)');
+		mql.addEventListener?.('change', () => {
+			// solo importa si estás en auto (o sin data-theme)
+			const t = document.documentElement.getAttribute('data-theme');
+			if (!t || t === 'auto') refreshThemeAndRedraw();
+		});
 	});
 
+	// ✅ Redibuja cuando cambien nodes/edges/map o cuando L esté listo
 	$: if (map && L) {
-		drawNetwork(); // drawNetwork ya hace clearLayer() y no pinta si no hay datos
+		nodes;
+		edges;
+		readThemeColors();
+		drawNetwork();
 	}
 
 	onDestroy(() => {
+		themeObserver?.disconnect();
+		mql?.removeEventListener?.('change', refreshThemeAndRedraw as any);
 		clearLayer();
 	});
 </script>
@@ -105,7 +164,7 @@
 <div class="network-legend">
 	<b>Red de colaboración</b><br />
 	• Grosor = fuerza del vínculo<br />
-	• Color = intensidad del vínculo<br />
+	• Intensidad = opacidad del vínculo<br />
 </div>
 
 <style>
