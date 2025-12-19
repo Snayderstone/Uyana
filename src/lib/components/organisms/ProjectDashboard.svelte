@@ -51,10 +51,8 @@
 		estado: p.estado,
 		tipo_proyecto: p.tipo_proyecto
 	}));
-
 	// Variable para manejar el ancho responsive
 	let width = 800;
-
 	// Cargar datos
 	async function cargarDatos() {
 		try {

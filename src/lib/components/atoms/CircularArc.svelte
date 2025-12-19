@@ -25,7 +25,7 @@
 	export let pointRadius: number = 7;
 
 	// Transición del progreso (ms)
-	export const transitionMs: number = 5600;
+	export let transitionMs: number = 5600;
 
 	/* ===== CÓDIGO NUEVO: control de inicio/longitud del arco ===== */
 	// 0° = derecha, 90° = abajo, 180° = izquierda, 270° = arriba
