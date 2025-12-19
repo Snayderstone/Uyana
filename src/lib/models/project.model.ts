@@ -138,6 +138,15 @@ export type ProyectoFlat = {
   // (coinciden con las de proyecto_institucion)
   instituciones_relacionadas?: string[];
   facultades_relacionadas?: string[];
+
+  porcentaje_avance?: number | null;
+  monto_presupuesto_total?: number | null;
+
+  // líneas relacionadas (nombres)
+  lineas_investigacion?: string[];
+
+  // países relacionados (por todas las instituciones del proyecto)
+  paises_instituciones?: string[];
 };
 
 

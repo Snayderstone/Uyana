@@ -920,7 +920,7 @@
 					<!-- 🔹 Aquí va el contenido que se desliza -->
 					<div class="panel-content results-panel">
 						{#if showDashboard}
-							<ProjectsDashboard proyectos={filteredProyectos} />
+							<ProjectsDashboard proyectos={filteredProyectos} totalGeneral={proyectos.length}/>
 						{:else}
 							<ProjectsDetail
 								proyectos={filteredProyectos}

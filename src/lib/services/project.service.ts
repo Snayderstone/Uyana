@@ -174,6 +174,7 @@ async function buildFlatProjects(): Promise<ProyectoFlat[]> {
     projectTypes,
     projectAreas,
     fundingRows,
+    projectLines,
     participantsDetails,
     participantsAcreditado,
     institutions,
@@ -183,24 +184,12 @@ async function buildFlatProjects(): Promise<ProyectoFlat[]> {
     RelacionesSQLRepository.getProjectTypesWithNames(),
     RelacionesSQLRepository.getProjectAreasWithNames(),
     RelacionesSQLRepository.getProjectFundingWithNames(),
+    RelacionesSQLRepository.getProjectLinesWithNames(),
     RelacionesSQLRepository.getProjectParticipantsWithDetails(),
     RelacionesSQLRepository.getProjectParticipantsWithAcreditado(),
     ProjectsRepository.getAllInstitutions(),          // ya lo usas en el mapa
     ProjectsRepository.getProjectInstitutionPairs()   // también ya existe
   ]);
-
-
-  console.log('[ProjectService.getFlatProjectsForUI] datasets cargados:', {
-    projects: projects.length,
-    projectTypes: projectTypes.length,
-    projectAreas: projectAreas.length,
-    fundingRows: fundingRows.length,
-    participantsDetails: participantsDetails.length,
-    participantsAcreditado: participantsAcreditado.length,
-    institutions: institutions.length,
-    projectInstitutionPairs: projectInstitutionPairs.length
-  });
-
 
   // 2) Índices auxiliares por proyecto_id ==========================
 
@@ -328,7 +317,30 @@ async function buildFlatProjects(): Promise<ProyectoFlat[]> {
       institucionesByProject.get(projectId)!.add(instInfo.nombre);
     }
   });
+  const linesByProject = new Map<number, Set<string>>();
 
+  projectLines.forEach((row: any) => {
+    const projectId = row.proyecto_id as number;
+    const nombreLinea: string = row.linea?.nombre ?? '';
+    if (!projectId || !nombreLinea) return;
+
+    if (!linesByProject.has(projectId)) linesByProject.set(projectId, new Set());
+    linesByProject.get(projectId)!.add(nombreLinea);
+  });
+  const paisesByProject = new Map<number, Set<string>>();
+
+  (projectInstitutionPairs ?? []).forEach((row: any) => {
+    const projectId = row.proyecto_id as number;
+    const instId = row.institucion_id as number;
+    if (!projectId || !instId) return;
+
+    const instInfo = institutionById.get(instId);
+    const pais = instInfo?.pais;
+    if (!pais) return;
+
+    if (!paisesByProject.has(projectId)) paisesByProject.set(projectId, new Set());
+    paisesByProject.get(projectId)!.add(pais);
+  });
 
   // 3) Construimos el array “plano” de ProyectoFlat ====================
   const proyectos: ProyectoFlat[] = projects.map((p: any) => {
@@ -406,7 +418,17 @@ async function buildFlatProjects(): Promise<ProyectoFlat[]> {
       facultades_relacionadas: facultadesRelacionadasByProject.get(projectId)
         ? Array.from(facultadesRelacionadasByProject.get(projectId)!).filter(Boolean).sort()
         : (facultad ? [facultad] : []),
+      // Líneas de investigación
+      porcentaje_avance: p.porcentaje_avance ?? null,
+      monto_presupuesto_total: p.monto_presupuesto_total ?? null,
 
+      lineas_investigacion: linesByProject.get(projectId)
+        ? Array.from(linesByProject.get(projectId)!).sort()
+        : [],
+
+      paises_instituciones: paisesByProject.get(projectId)
+        ? Array.from(paisesByProject.get(projectId)!).sort()
+        : (institucionPais && institucionPais !== 'Sin país' ? [institucionPais] : []),
     };
   });
 

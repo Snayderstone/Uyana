@@ -57,6 +57,34 @@
 	// Mensaje de éxito para limpiar filtros
 	let showClearSuccess = false;
 	let filteredProyectos: Proyecto[] = [];
+	let filtroAvanceDesde: number | '' = '';
+	let filtroAvanceHasta: number | '' = '';
+	let sinAvance: boolean = false;
+
+	let filtroPresupuestoDesde: number | '' = '';
+	let filtroPresupuestoHasta: number | '' = '';
+	let sinPresupuesto: boolean = false;
+
+	let lineas: string[] = [];
+	let filtroLinea: string = '';
+
+	let paises: string[] = [];
+	let filtroPais: string = '';
+
+	type Nivel = '' | 'bajo' | 'medio' | 'alto';
+
+	let filtroAvanceNivel: Nivel = '';
+	let filtroPresupuestoNivel: Nivel = '';
+
+	let avanceMin: number | null = null;
+	let avanceMax: number | null = null;
+	let avanceT1: number | null = null;
+	let avanceT2: number | null = null;
+
+	let presupuestoMin: number | null = null;
+	let presupuestoMax: number | null = null;
+	let presupuestoT1: number | null = null;
+	let presupuestoT2: number | null = null;
 
 	// 🔹 Cuando cambia mapLevel (faculty ↔ institution), limpiamos el filtro principal
 	$: if (mapLevel) {
@@ -119,6 +147,62 @@
 				filtroAnioInicioDesde = '';
 				filtroAnioInicioHasta = '';
 			}
+			lineas = [
+				...new Set(
+					proyectos.flatMap((p: any) =>
+						Array.isArray(p.lineas_investigacion) ? p.lineas_investigacion : []
+					)
+				)
+			]
+				.filter(Boolean)
+				.sort();
+			lineas = [
+				...new Set(
+					proyectos.flatMap((p: any) =>
+						Array.isArray(p.lineas_investigacion) ? p.lineas_investigacion : []
+					)
+				)
+			]
+				.filter(Boolean)
+				.sort();
+			paises = [
+				...new Set(
+					proyectos.flatMap((p: any) =>
+						Array.isArray(p.paises_instituciones) ? p.paises_instituciones : []
+					)
+				)
+			]
+				.filter(Boolean)
+				.sort();
+		}
+		// Avance thresholds
+		const avances = proyectos
+			.map((p: any) => p.porcentaje_avance)
+			.filter((v: any) => typeof v === 'number' && !Number.isNaN(v));
+
+		if (avances.length) {
+			avanceMin = Math.min(...avances);
+			avanceMax = Math.max(...avances);
+			const span = avanceMax - avanceMin;
+			avanceT1 = avanceMin + span / 3;
+			avanceT2 = avanceMin + (2 * span) / 3;
+		} else {
+			avanceMin = avanceMax = avanceT1 = avanceT2 = null;
+		}
+
+		// Presupuesto thresholds
+		const presupuestos = proyectos
+			.map((p: any) => p.monto_presupuesto_total)
+			.filter((v: any) => typeof v === 'number' && !Number.isNaN(v));
+
+		if (presupuestos.length) {
+			presupuestoMin = Math.min(...presupuestos);
+			presupuestoMax = Math.max(...presupuestos);
+			const span = presupuestoMax - presupuestoMin;
+			presupuestoT1 = presupuestoMin + span / 3;
+			presupuestoT2 = presupuestoMin + (2 * span) / 3;
+		} else {
+			presupuestoMin = presupuestoMax = presupuestoT1 = presupuestoT2 = null;
 		}
 	}
 	function aplicarFiltros() {
@@ -172,6 +256,53 @@
 			if (typeof filtroAnioInicioHasta === 'number' && anio != null) {
 				anioMatch = anioMatch && anio <= filtroAnioInicioHasta;
 			}
+			const avance = (proyecto as any).porcentaje_avance;
+
+			let avanceMatch = true;
+			if (sinAvance) {
+				avanceMatch = avance == null;
+			} else if (
+				filtroAvanceNivel &&
+				typeof avance === 'number' &&
+				avanceT1 != null &&
+				avanceT2 != null
+			) {
+				if (filtroAvanceNivel === 'bajo') avanceMatch = avance < avanceT1;
+				if (filtroAvanceNivel === 'medio') avanceMatch = avance >= avanceT1 && avance < avanceT2;
+				if (filtroAvanceNivel === 'alto') avanceMatch = avance >= avanceT2;
+			} else {
+				// si no hay nivel, no filtra (y si avance es null, pasa)
+				avanceMatch = true;
+			}
+
+			const presupuesto = (proyecto as any).monto_presupuesto_total;
+
+			let presupuestoMatch = true;
+			if (sinPresupuesto) {
+				presupuestoMatch = presupuesto == null;
+			} else if (
+				filtroPresupuestoNivel &&
+				typeof presupuesto === 'number' &&
+				presupuestoT1 != null &&
+				presupuestoT2 != null
+			) {
+				if (filtroPresupuestoNivel === 'bajo') presupuestoMatch = presupuesto < presupuestoT1;
+				if (filtroPresupuestoNivel === 'medio')
+					presupuestoMatch = presupuesto >= presupuestoT1 && presupuesto < presupuestoT2;
+				if (filtroPresupuestoNivel === 'alto') presupuestoMatch = presupuesto >= presupuestoT2;
+			} else {
+				presupuestoMatch = true;
+			}
+
+			const lineaMatch =
+				!filtroLinea ||
+				(Array.isArray((proyecto as any).lineas_investigacion) &&
+					(proyecto as any).lineas_investigacion.includes(filtroLinea));
+			const paisMatch =
+				!filtroPais ||
+				(Array.isArray((proyecto as any).paises_instituciones) &&
+					(proyecto as any).paises_instituciones.includes(filtroPais));
+
 			// Nota: si anio es null, lo dejamos pasar (anioMatch se queda en true)
 			return (
 				textMatch &&
@@ -182,7 +313,11 @@
 				financiamientoMatch &&
 				acreditadosMatch &&
 				siiesMatch &&
-				anioMatch
+				anioMatch &&
+				avanceMatch &&
+				presupuestoMatch &&
+				lineaMatch &&
+				paisMatch
 			);
 		});
 
@@ -221,9 +356,24 @@
 		const yearFilterActive =
 			typeof filtroAnioInicioDesde === 'number' || typeof filtroAnioInicioHasta === 'number';
 
+		const avanceFilterActive =
+			sinAvance || typeof filtroAvanceDesde === 'number' || typeof filtroAvanceHasta === 'number';
+
+		const presupuestoFilterActive =
+			sinPresupuesto ||
+			typeof filtroPresupuestoDesde === 'number' ||
+			typeof filtroPresupuestoHasta === 'number';
+
+		const lineaFilterActive = !!filtroLinea;
+		const paisFilterActive = !!filtroPais;
+
 		let count = baseFilters.filter(Boolean).length;
 
 		if (yearFilterActive) count += 1;
+		if (avanceFilterActive) count += 1;
+		if (presupuestoFilterActive) count += 1;
+		if (lineaFilterActive) count += 1;
+		if (paisFilterActive) count += 1;
 		if (filtroTexto) count += 1;
 
 		activeFilterCount = count;
@@ -232,8 +382,10 @@
 	// Arreglo con los filtros activos para mostrar
 	$: {
 		let yearLabel = '';
+		let avanceLabel = '';
 		const desde = filtroAnioInicioDesde;
 		const hasta = filtroAnioInicioHasta;
+		let presupuestoLabel = '';
 
 		if (typeof desde === 'number' || typeof hasta === 'number') {
 			if (typeof desde === 'number' && typeof hasta === 'number') {
@@ -291,8 +443,46 @@
 						filtroAnioInicioHasta = '';
 					}
 				}
-			}
+			},
+			{
+				name: 'Avance',
+				value: avanceLabel,
+				clear: () => {
+					sinAvance = false;
+					filtroAvanceDesde = '';
+					filtroAvanceHasta = '';
+				}
+			},
+			{
+				name: 'Presupuesto',
+				value: presupuestoLabel,
+				clear: () => {
+					sinPresupuesto = false;
+					filtroPresupuestoDesde = '';
+					filtroPresupuestoHasta = '';
+				}
+			},
+			{ name: 'Línea', value: filtroLinea, clear: () => (filtroLinea = '') },
+			{ name: 'País', value: filtroPais, clear: () => (filtroPais = '') }
 		].filter((filter) => filter.value);
+		if (sinAvance) {
+			avanceLabel = 'Sin avance';
+		} else {
+			const d = filtroAvanceDesde;
+			const h = filtroAvanceHasta;
+			if (typeof d === 'number' && typeof h === 'number') avanceLabel = `${d}–${h}%`;
+			else if (typeof d === 'number') avanceLabel = `Desde ${d}%`;
+			else if (typeof h === 'number') avanceLabel = `Hasta ${h}%`;
+		}
+		if (sinPresupuesto) {
+			presupuestoLabel = 'Sin presupuesto';
+		} else {
+			const d = filtroPresupuestoDesde;
+			const h = filtroPresupuestoHasta;
+			if (typeof d === 'number' && typeof h === 'number') presupuestoLabel = `${d}–${h}`;
+			else if (typeof d === 'number') presupuestoLabel = `Desde ${d}`;
+			else if (typeof h === 'number') presupuestoLabel = `Hasta ${h}`;
+		}
 	}
 	// Limpiar todos los filtros
 	function limpiarFiltros() {
@@ -304,6 +494,16 @@
 		filtroTexto = '';
 		filtroAcreditados = '';
 		soloParaSIIES = false;
+		sinAvance = false;
+		filtroAvanceDesde = '';
+		filtroAvanceHasta = '';
+
+		sinPresupuesto = false;
+		filtroPresupuestoDesde = '';
+		filtroPresupuestoHasta = '';
+
+		filtroLinea = '';
+		filtroPais = '';
 
 		if (minAnioInicio != null && maxAnioInicio != null) {
 			filtroAnioInicioDesde = minAnioInicio;
@@ -656,6 +856,72 @@
 						<option value="">Todos</option>
 						<option value="con">Con acreditados</option>
 						<option value="sin">Sin acreditados</option>
+					</select>
+				</div>
+				<div class="filter-group">
+					<label>Avance (%)</label>
+
+					<select bind:value={filtroAvanceNivel} disabled={sinAvance}>
+						<option value="">Todos</option>
+						<option value="bajo">Bajo</option>
+						<option value="medio">Medio</option>
+						<option value="alto">Alto</option>
+					</select>
+
+					{#if avanceMin != null && avanceMax != null && avanceT1 != null && avanceT2 != null}
+						<small style="opacity:.75">
+							Bajo: &lt; {avanceT1.toFixed(1)}% · Medio: {avanceT1.toFixed(1)}–{avanceT2.toFixed(
+								1
+							)}% · Alto: ≥ {avanceT2.toFixed(1)}%
+						</small>
+					{/if}
+
+					<label class="siies-checkbox">
+						<input type="checkbox" bind:checked={sinAvance} />
+						Sin avance
+					</label>
+				</div>
+
+				<div class="filter-group">
+					<label>Presupuesto</label>
+
+					<select bind:value={filtroPresupuestoNivel} disabled={sinPresupuesto}>
+						<option value="">Todos</option>
+						<option value="bajo">Bajo</option>
+						<option value="medio">Medio</option>
+						<option value="alto">Alto</option>
+					</select>
+
+					{#if presupuestoMin != null && presupuestoMax != null && presupuestoT1 != null && presupuestoT2 != null}
+						<small style="opacity:.75">
+							Bajo: &lt; {Math.round(presupuestoT1)} · Medio: {Math.round(
+								presupuestoT1
+							)}–{Math.round(presupuestoT2)} · Alto: ≥ {Math.round(presupuestoT2)}
+						</small>
+					{/if}
+
+					<label class="siies-checkbox">
+						<input type="checkbox" bind:checked={sinPresupuesto} />
+						Sin presupuesto
+					</label>
+				</div>
+
+				<div class="filter-group">
+					<label for="linea">Línea de investigación</label>
+					<select id="linea" bind:value={filtroLinea}>
+						<option value="">Todas las líneas</option>
+						{#each lineas as linea}
+							<option value={linea}>{linea}</option>
+						{/each}
+					</select>
+				</div>
+				<div class="filter-group">
+					<label for="pais">País de institución</label>
+					<select id="pais" bind:value={filtroPais}>
+						<option value="">Todos los países</option>
+						{#each paises as pais}
+							<option value={pais}>{pais}</option>
+						{/each}
 					</select>
 				</div>
 

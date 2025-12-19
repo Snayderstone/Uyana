@@ -49,7 +49,7 @@ export const ProjectsRepository = {
   async getAllInstitutions() {
     const { data, error } = await supabase
       .from('instituciones')
-      .select('id, nombre, geometry');
+      .select('id, nombre, pais, geometry');
 
     if (error) {
       console.error('Error al obtener instituciones:', error);

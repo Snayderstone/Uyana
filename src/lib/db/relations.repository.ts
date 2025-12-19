@@ -302,5 +302,23 @@ export const RelacionesSQLRepository = {
   async getWithFilters(_filters: any) {
     console.warn('RelacionesSQLRepository.getWithFilters() aún no está implementado');
     return [];
-  }
+  },
+  async getProjectLinesWithNames() {
+    const { data, error } = await supabase
+      .from('proyecto_linea_investigacion')
+      .select(`
+      proyecto_id,
+      linea:lineas_investigacion (
+        id,
+        nombre
+      )
+    `);
+
+    if (error) {
+      console.error('❌ RelacionesSQLRepository.getProjectLinesWithNames():', error);
+      return [];
+    }
+
+    return data ?? [];
+  },
 };
