@@ -75,25 +75,25 @@
 	let showCreateTipoModal = false;
 	let tipoSearch = '';
 	let filteredTipos: Array<{ id: number; nombre: string }> = [];
-	let newTipo = { nombre: '' };
+	let newTipo = { nombre: '', descripcion: '' };
 
 	// Áreas state
 	let showCreateAreaModal = false;
 	let areaSearch = '';
 	let filteredAreas: Array<{ id: number; nombre: string }> = [];
-	let newArea = { nombre: '' };
+	let newArea = { nombre: '', descripcion: '' };
 
 	// Líneas state
 	let showCreateLineaModal = false;
 	let lineaSearch = '';
 	let filteredLineas: Array<{ id: number; nombre: string }> = [];
-	let newLinea = { nombre: '' };
+	let newLinea = { nombre: '', descripcion: '' };
 
 	// Fuentes state
 	let showCreateFuenteModal = false;
 	let fuenteSearch = '';
 	let filteredFuentes: Array<{ id: number; nombre: string }> = [];
-	let newFuente = { nombre: '' };
+	let newFuente = { nombre: '', descripcion: '' };
 
 	// Participantes search state (por cada índice del array)
 	let participanteSearches: { [key: number]: string } = {};
@@ -495,7 +495,10 @@
 			const response = await fetch('/api/admin/catalogs/tipos', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ nombre: newTipo.nombre })
+				body: JSON.stringify({
+					nombre: newTipo.nombre,
+					descripcion: newTipo.descripcion || undefined
+				})
 			});
 
 			if (!response.ok) {
@@ -515,7 +518,7 @@
 			formData.tipos_ids = [...(formData.tipos_ids || []), created.id];
 
 			// Reset form and close modal
-			newTipo = { nombre: '' };
+			newTipo = { nombre: '', descripcion: '' };
 			showCreateTipoModal = false;
 		} catch (err) {
 			error = err instanceof Error ? err.message : 'Error al crear tipo';
@@ -540,7 +543,10 @@
 			const response = await fetch('/api/admin/catalogs/areas', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ nombre: newArea.nombre })
+				body: JSON.stringify({
+					nombre: newArea.nombre,
+					descripcion: newArea.descripcion || undefined
+				})
 			});
 
 			if (!response.ok) {
@@ -560,7 +566,7 @@
 			formData.areas_conocimiento_ids = [...(formData.areas_conocimiento_ids || []), created.id];
 
 			// Reset form and close modal
-			newArea = { nombre: '' };
+			newArea = { nombre: '', descripcion: '' };
 			showCreateAreaModal = false;
 		} catch (err) {
 			error = err instanceof Error ? err.message : 'Error al crear área';
@@ -585,7 +591,10 @@
 			const response = await fetch('/api/admin/catalogs/lineas', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ nombre: newLinea.nombre })
+				body: JSON.stringify({
+					nombre: newLinea.nombre,
+					descripcion: newLinea.descripcion || undefined
+				})
 			});
 
 			if (!response.ok) {
@@ -608,7 +617,7 @@
 			];
 
 			// Reset form and close modal
-			newLinea = { nombre: '' };
+			newLinea = { nombre: '', descripcion: '' };
 			showCreateLineaModal = false;
 		} catch (err) {
 			error = err instanceof Error ? err.message : 'Error al crear línea';
@@ -633,7 +642,10 @@
 			const response = await fetch('/api/admin/catalogs/fuentes', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ nombre: newFuente.nombre })
+				body: JSON.stringify({
+					nombre: newFuente.nombre,
+					descripcion: newFuente.descripcion || undefined
+				})
 			});
 
 			if (!response.ok) {
@@ -656,7 +668,7 @@
 			];
 
 			// Reset form and close modal
-			newFuente = { nombre: '' };
+			newFuente = { nombre: '', descripcion: '' };
 			showCreateFuenteModal = false;
 		} catch (err) {
 			error = err instanceof Error ? err.message : 'Error al crear fuente';
@@ -1984,13 +1996,25 @@
 				{/if}
 
 				<div class="form-group">
-					<label for="new-tipo-nombre">Nombre del Tipo *</label>
+					<label for="new-tipo-nombre">Nombre del Tipo <span class="required">*</span></label>
 					<input
 						id="new-tipo-nombre"
 						type="text"
 						bind:value={newTipo.nombre}
-						placeholder="Ej: Investigación Aplicada"
+						placeholder="Ej: Investigación Aplicada, Desarrollo Tecnológico..."
 						required
+					/>
+				</div>
+
+				<div class="form-group">
+					<label for="new-tipo-descripcion"
+						>Descripción <span class="optional">(opcional)</span></label
+					>
+					<textarea
+						id="new-tipo-descripcion"
+						bind:value={newTipo.descripcion}
+						placeholder="Agrega una descripción breve para ayudar a identificar este tipo de proyecto..."
+						rows="3"
 					/>
 				</div>
 			</div>
@@ -2001,7 +2025,7 @@
 					class="btn-secondary"
 					on:click={() => {
 						showCreateTipoModal = false;
-						newTipo = { nombre: '' };
+						newTipo = { nombre: '', descripcion: '' };
 					}}
 				>
 					Cancelar
@@ -2047,13 +2071,24 @@
 				{/if}
 
 				<div class="form-group">
-					<label for="new-area-nombre">Nombre del Área *</label>
+					<label for="new-area-nombre">Nombre del Área <span class="required">*</span></label>
 					<input
 						id="new-area-nombre"
 						type="text"
 						bind:value={newArea.nombre}
-						placeholder="Ej: Ciencias Sociales"
+						placeholder="Ej: Ciencias Sociales, Ingeniería..."
 						required
+					/>
+				</div>
+				<div class="form-group">
+					<label for="new-area-descripcion"
+						>Descripción <span class="optional">(opcional)</span></label
+					>
+					<textarea
+						id="new-area-descripcion"
+						bind:value={newArea.descripcion}
+						placeholder="Agrega una descripción breve para ayudar a identificar esta área de conocimiento..."
+						rows="3"
 					/>
 				</div>
 			</div>
@@ -2064,7 +2099,7 @@
 					class="btn-secondary"
 					on:click={() => {
 						showCreateAreaModal = false;
-						newArea = { nombre: '' };
+						newArea = { nombre: '', descripcion: '' };
 					}}
 				>
 					Cancelar
@@ -2110,13 +2145,24 @@
 				{/if}
 
 				<div class="form-group">
-					<label for="new-linea-nombre">Nombre de la Línea *</label>
+					<label for="new-linea-nombre">Nombre de la Línea <span class="required">*</span></label>
 					<input
 						id="new-linea-nombre"
 						type="text"
 						bind:value={newLinea.nombre}
-						placeholder="Ej: Desarrollo Sostenible"
+						placeholder="Ej: Desarrollo Sostenible, Biotecnología..."
 						required
+					/>
+				</div>
+				<div class="form-group">
+					<label for="new-linea-descripcion"
+						>Descripción <span class="optional">(opcional)</span></label
+					>
+					<textarea
+						id="new-linea-descripcion"
+						bind:value={newLinea.descripcion}
+						placeholder="Agrega una descripción breve para ayudar a identificar esta línea de investigación..."
+						rows="3"
 					/>
 				</div>
 			</div>
@@ -2127,7 +2173,7 @@
 					class="btn-secondary"
 					on:click={() => {
 						showCreateLineaModal = false;
-						newLinea = { nombre: '' };
+						newLinea = { nombre: '', descripcion: '' };
 					}}
 				>
 					Cancelar
@@ -2173,13 +2219,24 @@
 				{/if}
 
 				<div class="form-group">
-					<label for="new-fuente-nombre">Nombre de la Fuente *</label>
+					<label for="new-fuente-nombre">Nombre de la Fuente <span class="required">*</span></label>
 					<input
 						id="new-fuente-nombre"
 						type="text"
 						bind:value={newFuente.nombre}
-						placeholder="Ej: Fondos Públicos"
+						placeholder="Ej: Fondos Públicos, Donaciones Internacionales..."
 						required
+					/>
+				</div>
+				<div class="form-group">
+					<label for="new-fuente-descripcion"
+						>Descripción <span class="optional">(opcional)</span></label
+					>
+					<textarea
+						id="new-fuente-descripcion"
+						bind:value={newFuente.descripcion}
+						placeholder="Agrega una descripción breve para ayudar a identificar esta fuente de financiamiento..."
+						rows="3"
 					/>
 				</div>
 			</div>
@@ -2190,7 +2247,7 @@
 					class="btn-secondary"
 					on:click={() => {
 						showCreateFuenteModal = false;
-						newFuente = { nombre: '' };
+						newFuente = { nombre: '', descripcion: '' };
 					}}
 				>
 					Cancelar
@@ -2993,72 +3050,66 @@
 	}
 
 	.modal-body {
-		padding: 1.5rem;
+		padding: 1rem;
 
 		.info-box {
 			text-align: center;
-			padding: 2rem;
-			background: linear-gradient(
-				135deg,
-				rgba(110, 41, 231, 0.05) 0%,
-				rgba(139, 92, 246, 0.05) 100%
-			);
-			border: 2px solid rgba(110, 41, 231, 0.2);
-			border-radius: 12px;
+			padding: 1.25rem;
+			background: transparent;
+			border: 1px solid #2d3748;
+			border-radius: 8px;
 
 			.info-icon {
-				margin: 0 auto 1.5rem;
-				width: 80px;
-				height: 80px;
+				margin: 0 auto 1rem;
+				width: 48px;
+				height: 48px;
 				display: flex;
 				align-items: center;
 				justify-content: center;
-				background: linear-gradient(135deg, #6e29e7 0%, #8b5cf6 100%);
+				background: #2d3748;
 				border-radius: 50%;
-				box-shadow: 0 4px 20px rgba(110, 41, 231, 0.3);
 
 				svg {
-					color: white;
+					color: #cbd5e0;
 				}
 			}
 
 			h4 {
-				font-size: 1.5rem;
+				font-size: 1.125rem;
 				font-weight: 600;
 				color: #ededed;
-				margin: 0 0 1rem 0;
+				margin: 0 0 0.75rem 0;
 			}
 
 			p {
-				font-size: 1rem;
+				font-size: 0.9rem;
 				color: #a0aec0;
-				line-height: 1.6;
-				margin: 0 0 1.5rem 0;
+				line-height: 1.5;
+				margin: 0 0 1rem 0;
 			}
 
 			ul {
 				text-align: left;
 				list-style: none;
 				padding: 0;
-				margin: 0 0 1.5rem 0;
+				margin: 0 0 1rem 0;
 				max-width: 400px;
 				margin-left: auto;
 				margin-right: auto;
 
 				li {
-					padding: 0.75rem;
-					margin-bottom: 0.5rem;
-					background: rgba(110, 41, 231, 0.1);
-					border: 1px solid rgba(110, 41, 231, 0.2);
-					border-radius: 8px;
+					padding: 0.5rem 0.75rem;
+					margin-bottom: 0.375rem;
+					background: #1a202c;
+					border: 1px solid #2d3748;
+					border-radius: 6px;
 					color: #e2e8f0;
-					font-size: 0.9375rem;
+					font-size: 0.875rem;
 					transition: all 0.2s;
 
 					&:hover {
-						background: rgba(110, 41, 231, 0.15);
-						border-color: rgba(110, 41, 231, 0.3);
-						transform: translateX(4px);
+						background: #2d3748;
+						border-color: #4a5568;
 					}
 				}
 			}
@@ -3066,9 +3117,9 @@
 			.note {
 				background: rgba(251, 191, 36, 0.1);
 				border: 1px solid rgba(251, 191, 36, 0.3);
-				border-radius: 8px;
-				padding: 1rem;
-				font-size: 0.875rem;
+				border-radius: 6px;
+				padding: 0.75rem;
+				font-size: 0.8125rem;
 				color: #fbbf24;
 				margin: 0;
 

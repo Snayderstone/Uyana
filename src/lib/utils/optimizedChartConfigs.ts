@@ -307,44 +307,7 @@ export function getTopInstitucionesConfig(data: any): ChartConfiguration {
 }
 
 /**
- * 5. Macro-líneas de Investigación
- */
-export function getMacroLineasConfig(data: any): ChartConfiguration {
-	const macroLineas = data.analytics?.macroLineas || [];
-
-	return {
-		type: 'bar',
-		data: {
-			labels: macroLineas.map((m: any) => m.nombre),
-			datasets: [
-				{
-					label: 'Número de Proyectos',
-					data: macroLineas.map((m: any) => m.cantidad),
-					backgroundColor: CHART_COLORS.info,
-					borderRadius: 6
-				}
-			]
-		},
-		options: {
-			...commonOptions,
-			indexAxis: 'y' as const,
-			scales: {
-				...whiteScalesConfig,
-				x: {
-					...whiteScalesConfig.x,
-					beginAtZero: true,
-					ticks: {
-						...whiteScalesConfig.x.ticks,
-						precision: 0
-					}
-				}
-			}
-		}
-	};
-}
-
-/**
- * 6. Áreas de Conocimiento
+ * 5. Áreas de Conocimiento
  */
 export function getAreasConocimientoConfig(data: any): ChartConfiguration {
 	const areas = data.analytics?.areasConocimiento || [];
@@ -857,7 +820,6 @@ export const chartGenerators: Record<string, (data: any) => ChartConfiguration> 
 	distribucionEstado: getDistribucionEstadoConfig,
 	tiposPresupuesto: getTiposPresupuestoConfig,
 	topInstituciones: getTopInstitucionesConfig,
-	macroLineas: getMacroLineasConfig,
 	topLineas: getTopLineasConfig,
 	areasConocimiento: getAreasConocimientoConfig,
 	tiposProyecto: getTiposProyectoConfig,

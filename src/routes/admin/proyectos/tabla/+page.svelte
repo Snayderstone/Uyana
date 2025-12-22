@@ -1079,9 +1079,9 @@
 								Código
 								<span class="sort-icon">
 									{#if sortColumn === 'codigo'}
-										{sortDirection === 'asc' ? icons.sortAsc : icons.sortDesc}
+										{@html sortDirection === 'asc' ? icons.sortAsc : icons.sortDesc}
 									{:else}
-										{icons.sort}
+										{@html icons.sort}
 									{/if}
 								</span>
 							</span>
@@ -1095,9 +1095,9 @@
 								Título
 								<span class="sort-icon">
 									{#if sortColumn === 'titulo'}
-										{sortDirection === 'asc' ? icons.sortAsc : icons.sortDesc}
+										{@html sortDirection === 'asc' ? icons.sortAsc : icons.sortDesc}
 									{:else}
-										{icons.sort}
+										{@html icons.sort}
 									{/if}
 								</span>
 							</span>
@@ -1111,9 +1111,9 @@
 								Estado
 								<span class="sort-icon">
 									{#if sortColumn === 'estado'}
-										{sortDirection === 'asc' ? icons.sortAsc : icons.sortDesc}
+										{@html sortDirection === 'asc' ? icons.sortAsc : icons.sortDesc}
 									{:else}
-										{icons.sort}
+										{@html icons.sort}
 									{/if}
 								</span>
 							</span>
@@ -1127,9 +1127,9 @@
 								Fecha Inicio
 								<span class="sort-icon">
 									{#if sortColumn === 'fecha_inicio'}
-										{sortDirection === 'asc' ? icons.sortAsc : icons.sortDesc}
+										{@html sortDirection === 'asc' ? icons.sortAsc : icons.sortDesc}
 									{:else}
-										{icons.sort}
+										{@html icons.sort}
 									{/if}
 								</span>
 							</span>
@@ -1143,9 +1143,9 @@
 								Avance
 								<span class="sort-icon">
 									{#if sortColumn === 'avance'}
-										{sortDirection === 'asc' ? icons.sortAsc : icons.sortDesc}
+										{@html sortDirection === 'asc' ? icons.sortAsc : icons.sortDesc}
 									{:else}
-										{icons.sort}
+										{@html icons.sort}
 									{/if}
 								</span>
 							</span>
@@ -1159,9 +1159,9 @@
 								Presupuesto
 								<span class="sort-icon">
 									{#if sortColumn === 'presupuesto'}
-										{sortDirection === 'asc' ? icons.sortAsc : icons.sortDesc}
+										{@html sortDirection === 'asc' ? icons.sortAsc : icons.sortDesc}
 									{:else}
-										{icons.sort}
+										{@html icons.sort}
 									{/if}
 								</span>
 							</span>

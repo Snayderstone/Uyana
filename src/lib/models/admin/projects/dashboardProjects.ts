@@ -121,7 +121,6 @@ export interface ProjectsDashboardData {
 	estados: DistribucionEstado[];
 	tiposPresupuesto: TopItem[];
 	instituciones: TopItem[];
-	macroLineas: TopItem[];
 	lineasInvestigacion: TopItem[];
 	areasConocimiento: TopItem[];
 	tiposProyecto: TopItem[];

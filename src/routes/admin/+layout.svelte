@@ -178,16 +178,10 @@
 
 				<li class="nav-section-title">Catálogos</li>
 
-				<li class:active={$page.url.pathname.includes('/admin/instituciones')}>
-					<a href="/admin/instituciones">
-						<span class="icon">🏛️</span>
-						<span class="nav-text">Instituciones</span>
-					</a>
-				</li>
-				<li class:active={$page.url.pathname.includes('/admin/facultades')}>
-					<a href="/admin/facultades">
-						<span class="icon">🎓</span>
-						<span class="nav-text">Facultades</span>
+				<li class:active={$page.url.pathname.includes('/admin/catalogos')}>
+					<a href="/admin/catalogos">
+						<span class="icon">📚</span>
+						<span class="nav-text">Catálogos</span>
 					</a>
 				</li>
 

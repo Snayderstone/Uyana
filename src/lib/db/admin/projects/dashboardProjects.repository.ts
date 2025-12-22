@@ -156,26 +156,6 @@ export class AnalyticsRepository {
 	}
 
 	/**
-	 * Obtener macro-líneas de investigación
-	 */
-	static async getMacroLineasInvestigacion(): Promise<TopItem[]> {
-		const { data, error } = await supabase
-			.from('mv_macro_lineas_investigacion')
-			.select('macro_linea, cantidad, porcentaje')
-			.order('cantidad', { ascending: false });
-
-		if (error) {
-			console.error('Error fetching macro lineas:', error);
-			return [];
-		}
-		return (data || []).map((item) => ({
-			nombre: item.macro_linea,
-			cantidad: item.cantidad,
-			porcentaje: item.porcentaje
-		}));
-	}
-
-	/**
 	 * Obtener top áreas de conocimiento
 	 */
 	static async getTopAreasConocimiento(): Promise<TopItem[]> {
@@ -295,7 +275,6 @@ export class AnalyticsRepository {
 			estados,
 			tiposPresupuesto,
 			instituciones,
-			macroLineas,
 			lineasInvestigacion,
 			areasConocimiento,
 			tiposProyecto,
@@ -309,7 +288,6 @@ export class AnalyticsRepository {
 			this.getDistribucionEstado(),
 			this.getTopTiposPresupuesto(),
 			this.getTopInstituciones(),
-			this.getMacroLineasInvestigacion(),
 			this.getTopLineasInvestigacion(),
 			this.getTopAreasConocimiento(),
 			this.getTopTiposProyecto(),
@@ -325,7 +303,6 @@ export class AnalyticsRepository {
 			estados,
 			tiposPresupuesto,
 			instituciones,
-			macroLineas,
 			lineasInvestigacion,
 			areasConocimiento,
 			tiposProyecto,
