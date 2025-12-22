@@ -4,6 +4,7 @@
 	import html2canvas from 'html2canvas';
 
 	export let isOpen = false;
+	export let dashboardTitle = 'Dashboard de Proyectos';
 	export let availableCharts: Array<{
 		id: string;
 		name: string;
@@ -62,7 +63,7 @@
 		pdf.setFontSize(12);
 		pdf.setFont('helvetica', 'bold');
 		pdf.setTextColor(26, 26, 26);
-		pdf.text('Dashboard de Proyectos - Análisis de Gráficos', margin, margin + 14);
+		pdf.text(`${dashboardTitle} - Análisis de Gráficos`, margin, margin + 14);
 
 		// Número de página
 		pdf.setFontSize(8);
@@ -145,33 +146,77 @@
 			await new Promise((resolve) => setTimeout(resolve, 800));
 		}
 
-		// Buscar el chart-body (puede estar visible u oculto)
-		// Buscar el chart-body
+		// Buscar el chart-body primero
 		const chartBody = chartContainer.querySelector('.chart-body') as HTMLElement;
 		// Buscar el canvas dentro del contenedor
 		let chartCanvas = chartContainer.querySelector('canvas') as HTMLCanvasElement;
 
-		// Si no hay canvas, esperar a que se renderice
+		// Si no hay canvas, esperar un poco más por si se está renderizando
 		if (!chartCanvas && chartBody) {
-			if (chartBody) {
-				await new Promise((resolve) => setTimeout(resolve, 2000));
-				chartCanvas = chartContainer.querySelector('canvas') as HTMLCanvasElement;
+			await new Promise((resolve) => setTimeout(resolve, 1000));
+			chartCanvas = chartContainer.querySelector('canvas') as HTMLCanvasElement;
+		}
+
+		// Si aún no hay canvas, capturar el HTML directamente
+		// Esto es común en gráficos de participantes (podio, barras HTML, etc.)
+		if (!chartCanvas) {
+			try {
+				// Determinar qué elemento capturar
+				let targetElement: HTMLElement;
+
+				// Para gráficos específicos de participantes
+				if (chartId === 'top-researchers') {
+					// Capturar el podio y la lista de leaderboard
+					targetElement =
+						(chartContainer.querySelector('.podium-container') as HTMLElement) || chartContainer;
+
+					// Si hay leaderboard-list también, capturar todo el chart-card
+					const leaderboardList = chartContainer.querySelector('.leaderboard-list');
+					if (leaderboardList) {
+						targetElement = chartContainer;
+					}
+				} else if (chartBody) {
+					// Para otros gráficos, capturar el chart-body
+					targetElement = chartBody;
+				} else {
+					// Como último recurso, capturar todo el contenedor
+					targetElement = chartContainer;
+				}
+
+				// Esperar renderizado completo
+				await new Promise((resolve) => setTimeout(resolve, 500));
+
+				const canvas = await html2canvas(targetElement, {
+					scale: 2,
+					backgroundColor: '#1a1f26',
+					logging: false,
+					useCORS: true,
+					allowTaint: true,
+					imageTimeout: 0,
+					removeContainer: false
+				});
+
+				const imgData = canvas.toDataURL('image/png', 1.0);
+
+				// Restaurar estado colapsado
+				if (wasCollapsed) chartContainer.classList.add('collapsed');
+
+				return imgData;
+			} catch (error) {
+				console.error(`Error capturing HTML chart ${chartId}:`, error);
+				if (wasCollapsed) chartContainer.classList.add('collapsed');
+				return null;
 			}
 		}
 
-		if (!chartCanvas) {
-			console.warn(`Chart canvas not found for: ${chartId}`);
-			if (wasCollapsed) chartContainer.classList.add('collapsed');
-			return null;
-		}
-
-		// Esperar renderizado completo
-		await new Promise((resolve) => setTimeout(resolve, 800));
-
-		// Capturar el chart-body completo para mejor calidad
-		const targetElement = chartBody || chartCanvas;
-
+		// Si hay canvas, capturarlo como antes
 		try {
+			// Esperar renderizado completo
+			await new Promise((resolve) => setTimeout(resolve, 800));
+
+			// Capturar el chart-body completo para mejor calidad
+			const targetElement = chartBody || chartCanvas;
+
 			const canvas = await html2canvas(targetElement, {
 				scale: 2,
 				backgroundColor: '#1a1f26',
@@ -187,7 +232,7 @@
 
 			return imgData;
 		} catch (error) {
-			console.error(`Error capturing chart ${chartId}:`, error);
+			console.error(`Error capturing canvas chart ${chartId}:`, error);
 			if (wasCollapsed) chartContainer.classList.add('collapsed');
 			return null;
 		}
@@ -296,7 +341,11 @@
 			}
 
 			// Guardar PDF
-			const filename = `uyana-dashboard-proyectos-${new Date().getTime()}.pdf`;
+			const dashboardSlug = dashboardTitle
+				.toLowerCase()
+				.replace(/\s+/g, '-')
+				.replace(/[^a-z0-9-]/g, '');
+			const filename = `uyana-${dashboardSlug}-${new Date().getTime()}.pdf`;
 			pdf.save(filename);
 
 			alert('✅ PDF exportado exitosamente');
@@ -330,7 +379,11 @@
 		overview: 'Resumen General',
 		analytics: 'Análisis Detallado',
 		geographic: 'Distribución Geográfica',
-		presupuesto: 'Análisis de Presupuesto'
+		presupuesto: 'Análisis de Presupuesto',
+		facultades: 'Análisis por Facultades',
+		carreras: 'Análisis por Carreras',
+		cargos: 'Análisis por Cargos',
+		genero: 'Análisis de Género'
 	};
 </script>
 

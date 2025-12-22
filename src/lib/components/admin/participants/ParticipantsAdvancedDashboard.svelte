@@ -13,8 +13,6 @@
 	let error: string | null = null;
 	let lastUpdate = '';
 	let dashboardData: ParticipantsDashboardData | null = null;
-	let activeTab: 'overview' | 'facultades' | 'carreras' | 'cargos' | 'investigadores' | 'genero' =
-		'overview';
 	let showExportModal = false;
 	let showConfirmModal = false;
 	let chartToToggle: string | null = null;
@@ -44,7 +42,7 @@
 	// COMPUTED - Available Charts for Export
 	// ==========================================
 
-	// Charts disponibles para exportación
+	// Charts disponibles para exportación (sin prefijo 'chart-container-' porque se agrega automáticamente)
 	$: availableChartsForExport = [
 		// Overview
 		{
@@ -56,26 +54,36 @@
 		{
 			id: 'top-researchers',
 			name: 'top-researchers',
-			title: 'Top Investigadores',
-			category: 'overview'
-		},
-		{
-			id: 'gender-pie',
-			name: 'gender-pie',
-			title: 'Distribución por Género',
+			title: 'Top 20 Investigadores',
 			category: 'overview'
 		},
 
 		// Facultades
-		{ id: 'facultades', name: 'facultades', title: 'Top Facultades', category: 'facultades' },
+		{
+			id: 'facultades',
+			name: 'facultades',
+			title: 'Top 15 Facultades',
+			category: 'facultades'
+		},
 
 		// Carreras
-		{ id: 'carreras', name: 'carreras', title: 'Top Carreras', category: 'carreras' },
+		{
+			id: 'carreras',
+			name: 'carreras',
+			title: 'Top 20 Carreras',
+			category: 'carreras'
+		},
 
 		// Cargos
-		{ id: 'cargos', name: 'cargos', title: 'Top Cargos', category: 'cargos' },
+		{ id: 'cargos', name: 'cargos', title: 'Top 10 Cargos', category: 'cargos' },
 
 		// Género
+		{
+			id: 'gender-pie',
+			name: 'gender-pie',
+			title: 'Distribución por Género',
+			category: 'genero'
+		},
 		{
 			id: 'directiva-genero',
 			name: 'directiva-genero',
@@ -208,40 +216,6 @@
 		}
 	}
 
-	// Tabs configuration
-	$: tabs = [
-		{
-			id: 'overview',
-			label: 'Resumen General',
-			icon: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /></svg>`
-		},
-		{
-			id: 'facultades',
-			label: 'Facultades',
-			icon: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" /><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" /></svg>`
-		},
-		{
-			id: 'carreras',
-			label: 'Carreras',
-			icon: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="7" /><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88" /></svg>`
-		},
-		{
-			id: 'cargos',
-			label: 'Cargos',
-			icon: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2" /><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" /></svg>`
-		},
-		{
-			id: 'investigadores',
-			label: 'Top Investigadores',
-			icon: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>`
-		},
-		{
-			id: 'genero',
-			label: 'Análisis de Género',
-			icon: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="20" x2="12" y2="10" /><line x1="18" y1="20" x2="18" y2="4" /><line x1="6" y1="20" x2="6" y2="16" /></svg>`
-		}
-	];
-
 	function requestTogglePublic(chartName: string): void {
 		chartToToggle = chartName;
 		showConfirmModal = true;
@@ -351,6 +325,52 @@
 		return nombre.charAt(0).toUpperCase();
 	}
 
+	// ==========================================
+	// SOCIAL NETWORKS PARSING
+	// ==========================================
+	interface SocialNetwork {
+		type: string;
+		url: string;
+		color: string;
+		label: string;
+	}
+
+	function parseSocialNetworks(redesSociales: string | null): SocialNetwork[] {
+		if (!redesSociales) return [];
+
+		const urls = redesSociales
+			.split('|')
+			.map((url) => url.trim())
+			.filter((url) => url);
+		const networks: SocialNetwork[] = [];
+
+		urls.forEach((url) => {
+			const lowerUrl = url.toLowerCase();
+
+			if (lowerUrl.includes('orcid.org')) {
+				networks.push({ type: 'orcid', url, color: '#A6CE39', label: 'ORCID' });
+			} else if (lowerUrl.includes('researchgate.net')) {
+				networks.push({ type: 'researchgate', url, color: '#00D0AF', label: 'ResearchGate' });
+			} else if (lowerUrl.includes('scholar.google')) {
+				networks.push({ type: 'google-scholar', url, color: '#4285F4', label: 'Google Scholar' });
+			} else if (lowerUrl.includes('academia.edu')) {
+				networks.push({ type: 'academia', url, color: '#41454A', label: 'Academia.edu' });
+			} else if (lowerUrl.includes('facebook.com')) {
+				networks.push({ type: 'facebook', url, color: '#1877F2', label: 'Facebook' });
+			} else if (lowerUrl.includes('twitter.com') || lowerUrl.includes('x.com')) {
+				networks.push({ type: 'twitter', url, color: '#1DA1F2', label: 'Twitter' });
+			} else if (lowerUrl.includes('linkedin.com')) {
+				networks.push({ type: 'linkedin', url, color: '#0A66C2', label: 'LinkedIn' });
+			} else if (lowerUrl.includes('scopus.com')) {
+				networks.push({ type: 'scopus', url, color: '#E9711C', label: 'Scopus' });
+			} else {
+				networks.push({ type: 'web', url, color: '#718096', label: 'Web' });
+			}
+		});
+
+		return networks;
+	}
+
 	// Mapeo de secciones a nombres de gráficos en grafico_config
 	const chartMapping: Record<string, string> = {
 		overview: 'participantes_resumen',
@@ -420,27 +440,6 @@
 		</div>
 	</div>
 
-	<!-- Tabs Navigation -->
-	<div class="dashboard-tabs">
-		{#each tabs as tab}
-			<button
-				class="tab-button"
-				class:active={activeTab === tab.id}
-				on:click={() => {
-					if (tab.id === 'overview') activeTab = 'overview';
-					else if (tab.id === 'facultades') activeTab = 'facultades';
-					else if (tab.id === 'carreras') activeTab = 'carreras';
-					else if (tab.id === 'cargos') activeTab = 'cargos';
-					else if (tab.id === 'investigadores') activeTab = 'investigadores';
-					else if (tab.id === 'genero') activeTab = 'genero';
-				}}
-			>
-				{@html tab.icon}
-				<span>{tab.label}</span>
-			</button>
-		{/each}
-	</div>
-
 	{#if error && !loading}
 		{#if error.includes('vistas materializadas') || error.includes('SETUP_INSTRUCTIONS')}
 			<div class="setup-error-banner">
@@ -479,8 +478,9 @@
 	{#if loading && !dashboardData}
 		<LoadingState message="Cargando dashboard de participantes..." spinnerSize="large" />
 	{:else if dashboardData}
-		<!-- Tab Content -->
-		{#if activeTab === 'overview'}
+		<!-- Contenido completo sin tabs -->
+		<div class="content-wrapper">
+			<!-- SECCIÓN: ESTADÍSTICAS GENERALES -->
 			<div class="tab-content">
 				<!-- Stats Grid Card -->
 				<div class="chart-card stats-grid-card" class:collapsed={!statsGridVisible}>
@@ -594,10 +594,355 @@
 						</div>
 					{/if}
 				</div>
-			</div>
-		{:else if activeTab === 'facultades'}
-			<div class="tab-content">
-				<!-- Top Facultades -->
+
+				<!-- SECCIÓN: TOP INVESTIGADORES -->
+				<div class="chart-card" id="section-investigadores">
+					{#each [getChartConfig('investigadores')] as chartConfig}
+						<div class="chart-header">
+							<h3>{chartConfig?.titulo_display || '🏆 Top 20 Investigadores'}</h3>
+							{#if chartConfig}
+								<div class="chart-actions">
+									<button
+										class="action-icon-btn"
+										class:public={chartConfig.es_publico}
+										on:click={() => requestTogglePublic(chartConfig.nombre_grafico)}
+										title={chartConfig.es_publico ? 'Público' : 'Privado'}
+									>
+										{#if chartConfig.es_publico}
+											<svg
+												xmlns="http://www.w3.org/2000/svg"
+												width="18"
+												height="18"
+												viewBox="0 0 24 24"
+												fill="none"
+												stroke="currentColor"
+												stroke-width="2"
+											>
+												<circle cx="12" cy="12" r="10" />
+												<line x1="2" y1="12" x2="22" y2="12" />
+												<path
+													d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"
+												/>
+											</svg>
+										{:else}
+											<svg
+												xmlns="http://www.w3.org/2000/svg"
+												width="18"
+												height="18"
+												viewBox="0 0 24 24"
+												fill="none"
+												stroke="currentColor"
+												stroke-width="2"
+											>
+												<rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+												<path d="M7 11V7a5 5 0 0 1 10 0v4" />
+											</svg>
+										{/if}
+									</button>
+								</div>
+							{/if}
+						</div>
+						<!-- Podio Top 3 -->
+						{#if dashboardData.topParticipantes && dashboardData.topParticipantes.length >= 3}
+							<div class="podium-container" id="chart-container-top-researchers">
+								<!-- 2nd Place -->
+								{#each [dashboardData.topParticipantes[1]] as second}
+									<div class="podium-place second">
+										<div class="medal-container">
+											<svg class="medal-svg silver" viewBox="0 0 100 100">
+												<circle cx="50" cy="50" r="45" fill="#C0C0C0" />
+												<circle cx="50" cy="50" r="35" fill="#E8E8E8" />
+												<text
+													x="50"
+													y="65"
+													text-anchor="middle"
+													fill="#666"
+													font-size="32"
+													font-weight="bold">2</text
+												>
+											</svg>
+										</div>
+										<div class="podium-avatar">
+											<img
+												src={getAvatarUrl(second.url_foto, second.participante_nombre)}
+												alt={second.participante_nombre}
+												on:error={handleImageError}
+											/>
+										</div>
+										<h4 class="podium-name">{second.participante_nombre}</h4>
+										<p class="podium-faculty">{second.facultad_nombre}</p>
+										{#if second.redes_sociales}
+											{@const redes = parseSocialNetworks(second.redes_sociales)}
+											{#if redes.length > 0}
+												<div class="podium-social">
+													{#each redes.slice(0, 4) as red}
+														<a
+															href={red.url}
+															target="_blank"
+															rel="noopener noreferrer"
+															class="social-link-podium"
+															style="background-color: {red.color};"
+															title={red.label}
+														>
+															<svg
+																xmlns="http://www.w3.org/2000/svg"
+																width="14"
+																height="14"
+																viewBox="0 0 24 24"
+																fill="none"
+																stroke="currentColor"
+																stroke-width="2"
+																stroke-linecap="round"
+																stroke-linejoin="round"
+															>
+																<path
+																	d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"
+																/>
+																<polyline points="15 3 21 3 21 9" />
+																<line x1="10" y1="14" x2="21" y2="3" />
+															</svg>
+														</a>
+													{/each}
+												</div>
+											{/if}
+										{/if}
+										<div class="podium-stats">
+											<div class="podium-stat">
+												<span class="stat-value">{second.total_proyectos}</span>
+												<span class="stat-label">Proyectos</span>
+											</div>
+											<div class="podium-stat">
+												<span class="stat-value">{second.proyectos_como_director}</span>
+												<span class="stat-label">Director</span>
+											</div>
+										</div>
+									</div>
+								{/each}
+
+								<!-- 1st Place -->
+								{#each [dashboardData.topParticipantes[0]] as first}
+									<div class="podium-place first">
+										<div class="medal-container">
+											<svg class="medal-svg gold" viewBox="0 0 100 100">
+												<circle cx="50" cy="50" r="45" fill="#FFD700" />
+												<circle cx="50" cy="50" r="35" fill="#FFF4C1" />
+												<text
+													x="50"
+													y="65"
+													text-anchor="middle"
+													fill="#B8860B"
+													font-size="32"
+													font-weight="bold">1</text
+												>
+											</svg>
+										</div>
+										<div class="podium-avatar">
+											<img
+												src={getAvatarUrl(first.url_foto, first.participante_nombre)}
+												alt={first.participante_nombre}
+												on:error={handleImageError}
+											/>
+										</div>
+										<h4 class="podium-name">{first.participante_nombre}</h4>
+										<p class="podium-faculty">{first.facultad_nombre}</p>
+										{#if first.redes_sociales}
+											{@const redes = parseSocialNetworks(first.redes_sociales)}
+											{#if redes.length > 0}
+												<div class="podium-social">
+													{#each redes.slice(0, 4) as red}
+														<a
+															href={red.url}
+															target="_blank"
+															rel="noopener noreferrer"
+															class="social-link-podium"
+															style="background-color: {red.color};"
+															title={red.label}
+														>
+															<svg
+																xmlns="http://www.w3.org/2000/svg"
+																width="14"
+																height="14"
+																viewBox="0 0 24 24"
+																fill="none"
+																stroke="currentColor"
+																stroke-width="2"
+																stroke-linecap="round"
+																stroke-linejoin="round"
+															>
+																<path
+																	d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"
+																/>
+																<polyline points="15 3 21 3 21 9" />
+																<line x1="10" y1="14" x2="21" y2="3" />
+															</svg>
+														</a>
+													{/each}
+												</div>
+											{/if}
+										{/if}
+										<div class="podium-stats">
+											<div class="podium-stat">
+												<span class="stat-value">{first.total_proyectos}</span>
+												<span class="stat-label">Proyectos</span>
+											</div>
+											<div class="podium-stat">
+												<span class="stat-value">{first.proyectos_como_director}</span>
+												<span class="stat-label">Director</span>
+											</div>
+										</div>
+									</div>
+								{/each}
+								<!-- 3rd Place -->
+								{#each [dashboardData.topParticipantes[2]] as third}
+									<div class="podium-place third">
+										<div class="medal-container">
+											<svg class="medal-svg bronze" viewBox="0 0 100 100">
+												<circle cx="50" cy="50" r="45" fill="#CD7F32" />
+												<circle cx="50" cy="50" r="35" fill="#E6B88A" />
+												<text
+													x="50"
+													y="65"
+													text-anchor="middle"
+													fill="#8B4513"
+													font-size="32"
+													font-weight="bold">3</text
+												>
+											</svg>
+										</div>
+										<div class="podium-avatar">
+											<img
+												src={getAvatarUrl(third.url_foto, third.participante_nombre)}
+												alt={third.participante_nombre}
+												on:error={handleImageError}
+											/>
+										</div>
+										<h4 class="podium-name">{third.participante_nombre}</h4>
+										<p class="podium-faculty">{third.facultad_nombre}</p>
+										{#if third.redes_sociales}
+											{@const redes = parseSocialNetworks(third.redes_sociales)}
+											{#if redes.length > 0}
+												<div class="podium-social">
+													{#each redes.slice(0, 4) as red}
+														<a
+															href={red.url}
+															target="_blank"
+															rel="noopener noreferrer"
+															class="social-link-podium"
+															style="background-color: {red.color};"
+															title={red.label}
+														>
+															<svg
+																xmlns="http://www.w3.org/2000/svg"
+																width="14"
+																height="14"
+																viewBox="0 0 24 24"
+																fill="none"
+																stroke="currentColor"
+																stroke-width="2"
+																stroke-linecap="round"
+																stroke-linejoin="round"
+															>
+																<path
+																	d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"
+																/>
+																<polyline points="15 3 21 3 21 9" />
+																<line x1="10" y1="14" x2="21" y2="3" />
+															</svg>
+														</a>
+													{/each}
+												</div>
+											{/if}
+										{/if}
+										<div class="podium-stats">
+											<div class="podium-stat">
+												<span class="stat-value">{third.total_proyectos}</span>
+												<span class="stat-label">Proyectos</span>
+											</div>
+											<div class="podium-stat">
+												<span class="stat-value">{third.proyectos_como_director}</span>
+												<span class="stat-label">Director</span>
+											</div>
+										</div>
+									</div>
+								{/each}
+							</div>
+						{/if}
+
+						<!-- Lista del 4 al 20 -->
+						{#if dashboardData.topParticipantes && dashboardData.topParticipantes.length > 3}
+							<div class="leaderboard-list">
+								{#each dashboardData.topParticipantes.slice(3, 20) as participante, index}
+									<div class="leaderboard-item">
+										<div class="rank-badge">#{index + 4}</div>
+										<div class="participant-avatar-small">
+											<img
+												src={getAvatarUrl(participante.url_foto, participante.participante_nombre)}
+												alt={participante.participante_nombre}
+												on:error={handleImageError}
+											/>
+										</div>
+										<div class="participant-details">
+											<h5 class="participant-name">{participante.participante_nombre}</h5>
+											<p class="participant-subtitle">{participante.facultad_nombre}</p>
+											<span class="participant-cargo">{participante.cargo_principal}</span>
+											{#if participante.redes_sociales}
+												{@const redes = parseSocialNetworks(participante.redes_sociales)}
+												{#if redes.length > 0}
+													<div class="participant-social">
+														{#each redes.slice(0, 5) as red}
+															<a
+																href={red.url}
+																target="_blank"
+																rel="noopener noreferrer"
+																class="social-link-small"
+																style="background-color: {red.color};"
+																title={red.label}
+															>
+																<svg
+																	xmlns="http://www.w3.org/2000/svg"
+																	width="12"
+																	height="12"
+																	viewBox="0 0 24 24"
+																	fill="none"
+																	stroke="currentColor"
+																	stroke-width="2"
+																	stroke-linecap="round"
+																	stroke-linejoin="round"
+																>
+																	<path
+																		d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"
+																	/>
+																	<polyline points="15 3 21 3 21 9" />
+																	<line x1="10" y1="14" x2="21" y2="3" />
+																</svg>
+															</a>
+														{/each}
+													</div>
+												{/if}
+											{/if}
+										</div>
+										<div class="participant-metrics">
+											<div class="metric-item">
+												<span class="metric-value">{participante.total_proyectos}</span>
+												<span class="metric-label">Proyectos</span>
+											</div>
+											<div class="metric-item">
+												<span class="metric-value">{participante.proyectos_como_director}</span>
+												<span class="metric-label">Director</span>
+											</div>
+											<div class="metric-item">
+												<span class="metric-value">{participante.proyectos_como_investigador}</span>
+												<span class="metric-label">Investig.</span>
+											</div>
+										</div>
+									</div>
+								{/each}
+							</div>
+						{/if}
+					{/each}
+				</div>
+
+				<!-- SECCIÓN: TOP FACULTADES -->
 				<div
 					class="chart-card"
 					id="chart-container-facultades"
@@ -707,10 +1052,8 @@
 						{/if}
 					{/each}
 				</div>
-			</div>
-		{:else if activeTab === 'carreras'}
-			<div class="tab-content">
-				<!-- Top Carreras -->
+
+				<!-- SECCIÓN: TOP CARRERAS -->
 				<div class="chart-card" id="chart-container-carreras" class:collapsed={!carrerasVisible}>
 					{#each [getChartConfig('carreras')] as chartConfig}
 						<div class="chart-header">
@@ -807,10 +1150,8 @@
 						{/if}
 					{/each}
 				</div>
-			</div>
-		{:else if activeTab === 'cargos'}
-			<div class="tab-content">
-				<!-- Top Cargos -->
+
+				<!-- SECCIÓN: TOP CARGOS -->
 				<div class="chart-card" id="chart-container-cargos" class:collapsed={!cargosVisible}>
 					{#each [getChartConfig('cargos')] as chartConfig}
 						<div class="chart-header">
@@ -915,219 +1256,8 @@
 						{/if}
 					{/each}
 				</div>
-			</div>
-		{:else if activeTab === 'investigadores'}
-			<div class="tab-content">
-				<!-- Top Investigadores -->
-				<div class="chart-card" id="section-investigadores">
-					{#each [getChartConfig('investigadores')] as chartConfig}
-						<div class="chart-header">
-							<h3>{chartConfig?.titulo_display || '🏆 Leaderboard de Investigadores'}</h3>
-							{#if chartConfig}
-								<div class="chart-actions">
-									<button
-										class="action-icon-btn"
-										class:public={chartConfig.es_publico}
-										on:click={() => requestTogglePublic(chartConfig.nombre_grafico)}
-										title={chartConfig.es_publico ? 'Público' : 'Privado'}
-									>
-										{#if chartConfig.es_publico}
-											<svg
-												xmlns="http://www.w3.org/2000/svg"
-												width="18"
-												height="18"
-												viewBox="0 0 24 24"
-												fill="none"
-												stroke="currentColor"
-												stroke-width="2"
-											>
-												<circle cx="12" cy="12" r="10" />
-												<line x1="2" y1="12" x2="22" y2="12" />
-												<path
-													d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"
-												/>
-											</svg>
-										{:else}
-											<svg
-												xmlns="http://www.w3.org/2000/svg"
-												width="18"
-												height="18"
-												viewBox="0 0 24 24"
-												fill="none"
-												stroke="currentColor"
-												stroke-width="2"
-											>
-												<rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-												<path d="M7 11V7a5 5 0 0 1 10 0v4" />
-											</svg>
-										{/if}
-									</button>
-								</div>
-							{/if}
-						</div>
-						<!-- Podio Top 3 -->
-						{#if dashboardData.topParticipantes && dashboardData.topParticipantes.length >= 3}
-							<div class="podium-container" id="chart-container-top-researchers">
-								<!-- 2nd Place -->
-								{#each [dashboardData.topParticipantes[1]] as second}
-									<div class="podium-place second">
-										<div class="medal-container">
-											<svg class="medal-svg silver" viewBox="0 0 100 100">
-												<circle cx="50" cy="50" r="45" fill="#C0C0C0" />
-												<circle cx="50" cy="50" r="35" fill="#E8E8E8" />
-												<text
-													x="50"
-													y="65"
-													text-anchor="middle"
-													fill="#666"
-													font-size="32"
-													font-weight="bold">2</text
-												>
-											</svg>
-										</div>
-										<div class="podium-avatar">
-											<img
-												src={getAvatarUrl(second.url_foto, second.participante_nombre)}
-												alt={second.participante_nombre}
-												on:error={handleImageError}
-											/>
-										</div>
-										<h4 class="podium-name">{second.participante_nombre}</h4>
-										<p class="podium-faculty">{second.facultad_nombre}</p>
-										<div class="podium-stats">
-											<div class="podium-stat">
-												<span class="stat-value">{second.total_proyectos}</span>
-												<span class="stat-label">Proyectos</span>
-											</div>
-											<div class="podium-stat">
-												<span class="stat-value">{second.proyectos_como_director}</span>
-												<span class="stat-label">Director</span>
-											</div>
-										</div>
-									</div>
-								{/each}
 
-								<!-- 1st Place -->
-								{#each [dashboardData.topParticipantes[0]] as first}
-									<div class="podium-place first">
-										<div class="medal-container">
-											<svg class="medal-svg gold" viewBox="0 0 100 100">
-												<circle cx="50" cy="50" r="45" fill="#FFD700" />
-												<circle cx="50" cy="50" r="35" fill="#FFF4C1" />
-												<text
-													x="50"
-													y="65"
-													text-anchor="middle"
-													fill="#B8860B"
-													font-size="32"
-													font-weight="bold">1</text
-												>
-											</svg>
-										</div>
-										<div class="podium-avatar">
-											<img
-												src={getAvatarUrl(first.url_foto, first.participante_nombre)}
-												alt={first.participante_nombre}
-												on:error={handleImageError}
-											/>
-										</div>
-										<h4 class="podium-name">{first.participante_nombre}</h4>
-										<p class="podium-faculty">{first.facultad_nombre}</p>
-										<div class="podium-stats">
-											<div class="podium-stat">
-												<span class="stat-value">{first.total_proyectos}</span>
-												<span class="stat-label">Proyectos</span>
-											</div>
-											<div class="podium-stat">
-												<span class="stat-value">{first.proyectos_como_director}</span>
-												<span class="stat-label">Director</span>
-											</div>
-										</div>
-									</div>
-								{/each}
-								<!-- 3rd Place -->
-								{#each [dashboardData.topParticipantes[2]] as third}
-									<div class="podium-place third">
-										<div class="medal-container">
-											<svg class="medal-svg bronze" viewBox="0 0 100 100">
-												<circle cx="50" cy="50" r="45" fill="#CD7F32" />
-												<circle cx="50" cy="50" r="35" fill="#E6B88A" />
-												<text
-													x="50"
-													y="65"
-													text-anchor="middle"
-													fill="#8B4513"
-													font-size="32"
-													font-weight="bold">3</text
-												>
-											</svg>
-										</div>
-										<div class="podium-avatar">
-											<img
-												src={getAvatarUrl(third.url_foto, third.participante_nombre)}
-												alt={third.participante_nombre}
-												on:error={handleImageError}
-											/>
-										</div>
-										<h4 class="podium-name">{third.participante_nombre}</h4>
-										<p class="podium-faculty">{third.facultad_nombre}</p>
-										<div class="podium-stats">
-											<div class="podium-stat">
-												<span class="stat-value">{third.total_proyectos}</span>
-												<span class="stat-label">Proyectos</span>
-											</div>
-											<div class="podium-stat">
-												<span class="stat-value">{third.proyectos_como_director}</span>
-												<span class="stat-label">Director</span>
-											</div>
-										</div>
-									</div>
-								{/each}
-							</div>
-						{/if}
-
-						<!-- Lista del 4 al 20 -->
-						{#if dashboardData.topParticipantes && dashboardData.topParticipantes.length > 3}
-							<div class="leaderboard-list">
-								{#each dashboardData.topParticipantes.slice(3, 20) as participante, index}
-									<div class="leaderboard-item">
-										<div class="rank-badge">#{index + 4}</div>
-										<div class="participant-avatar-small">
-											<img
-												src={getAvatarUrl(participante.url_foto, participante.participante_nombre)}
-												alt={participante.participante_nombre}
-												on:error={handleImageError}
-											/>
-										</div>
-										<div class="participant-details">
-											<h5 class="participant-name">{participante.participante_nombre}</h5>
-											<p class="participant-subtitle">{participante.facultad_nombre}</p>
-											<span class="participant-cargo">{participante.cargo_principal}</span>
-										</div>
-										<div class="participant-metrics">
-											<div class="metric-item">
-												<span class="metric-value">{participante.total_proyectos}</span>
-												<span class="metric-label">Proyectos</span>
-											</div>
-											<div class="metric-item">
-												<span class="metric-value">{participante.proyectos_como_director}</span>
-												<span class="metric-label">Director</span>
-											</div>
-											<div class="metric-item">
-												<span class="metric-value">{participante.proyectos_como_investigador}</span>
-												<span class="metric-label">Investig.</span>
-											</div>
-										</div>
-									</div>
-								{/each}
-							</div>
-						{/if}
-					{/each}
-				</div>
-			</div>
-		{:else if activeTab === 'genero'}
-			<div class="tab-content">
-				<!-- Análisis de Género -->
+				<!-- SECCIÓN: ANÁLISIS DE GÉNERO -->
 				<div class="gender-analysis">
 					<!-- Distribución por Género (Pie Chart) -->
 					{#each [getChartConfig('gender-pie')] as chartConfig}
@@ -1497,12 +1627,16 @@
 					{/each}
 				</div>
 			</div>
-		{/if}
+		</div>
 	{/if}
 </div>
 
 <!-- Export Modal -->
-<ExportPDFModal bind:isOpen={showExportModal} availableCharts={availableChartsForExport} />
+<ExportPDFModal
+	bind:isOpen={showExportModal}
+	dashboardTitle="Dashboard de Participantes"
+	availableCharts={availableChartsForExport}
+/>
 
 <style lang="scss">
 	/* ========== DASHBOARD CONTAINER ========== */
@@ -1691,67 +1825,11 @@
 		}
 	}
 
-	// Tabs
-	.dashboard-tabs {
+	// Content wrapper
+	.content-wrapper {
 		display: flex;
-		gap: 0.5rem;
-		margin-bottom: 2rem;
-		border-bottom: 2px solid rgba(var(--color--text-rgb), 0.08);
-		overflow-x: auto;
-		scrollbar-width: thin;
-
-		&::-webkit-scrollbar {
-			height: 4px;
-		}
-
-		&::-webkit-scrollbar-track {
-			background: rgba(var(--color--text-rgb), 0.05);
-		}
-
-		&::-webkit-scrollbar-thumb {
-			background: rgba(var(--color--text-rgb), 0.2);
-			border-radius: 2px;
-
-			&:hover {
-				background: rgba(var(--color--text-rgb), 0.3);
-			}
-		}
-	}
-
-	.tab-button {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		padding: 1rem 1.5rem;
-		background: transparent;
-		border: none;
-		border-bottom: 3px solid transparent;
-		color: var(--color--text-shade);
-		font-weight: 600;
-		font-size: 0.875rem;
-		cursor: pointer;
-		transition: all 0.2s var(--ease-out-3);
-		white-space: nowrap;
-		font-family: var(--font--default);
-
-		:global(svg) {
-			width: 18px;
-			height: 18px;
-		}
-
-		&:hover {
-			color: var(--color--primary);
-			background: rgba(var(--color--primary-rgb), 0.05);
-		}
-
-		&.active {
-			color: var(--color--primary);
-			border-bottom-color: var(--color--primary);
-		}
-	}
-
-	.tab-content {
-		animation: fadeIn 0.3s var(--ease-out-3);
+		flex-direction: column;
+		gap: 2rem;
 	}
 
 	// Stats Grid
@@ -2122,6 +2200,36 @@
 		text-transform: capitalize;
 	}
 
+	.podium-social {
+		display: flex;
+		gap: 0.5rem;
+		justify-content: center;
+		margin: 0.75rem 0;
+		flex-wrap: wrap;
+	}
+
+	.social-link-podium {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 28px;
+		height: 28px;
+		border-radius: 6px;
+		color: white;
+		transition: all 0.2s ease;
+		text-decoration: none;
+	}
+
+	.social-link-podium:hover {
+		transform: translateY(-2px);
+		box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+	}
+
+	.social-link-podium svg {
+		width: 14px;
+		height: 14px;
+	}
+
 	.podium-stats {
 		display: flex;
 		gap: 1rem;
@@ -2236,6 +2344,35 @@
 		font-size: 0.75rem;
 		font-weight: 500;
 		text-transform: capitalize;
+	}
+
+	.participant-social {
+		display: flex;
+		gap: 0.375rem;
+		margin-top: 0.5rem;
+		flex-wrap: wrap;
+	}
+
+	.social-link-small {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 24px;
+		height: 24px;
+		border-radius: 5px;
+		color: white;
+		transition: all 0.2s ease;
+		text-decoration: none;
+	}
+
+	.social-link-small:hover {
+		transform: translateY(-2px);
+		box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
+	}
+
+	.social-link-small svg {
+		width: 12px;
+		height: 12px;
 	}
 
 	.participant-metrics {

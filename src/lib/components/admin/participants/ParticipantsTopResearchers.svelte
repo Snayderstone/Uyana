@@ -2,6 +2,52 @@
 	export let topParticipantes: any[] = [];
 	export let getAvatarUrl: (url: string | null, name: string) => string;
 	export let handleImageError: (event: Event) => void;
+
+	/**
+	 * Parse and classify social networks
+	 */
+	interface SocialNetwork {
+		type: string;
+		url: string;
+		color: string;
+		label: string;
+	}
+
+	function parseSocialNetworks(redesSociales: string | null): SocialNetwork[] {
+		if (!redesSociales) return [];
+
+		const urls = redesSociales
+			.split('|')
+			.map((url) => url.trim())
+			.filter((url) => url);
+		const networks: SocialNetwork[] = [];
+
+		urls.forEach((url) => {
+			const lowerUrl = url.toLowerCase();
+
+			if (lowerUrl.includes('orcid.org')) {
+				networks.push({ type: 'orcid', url, color: '#A6CE39', label: 'ORCID' });
+			} else if (lowerUrl.includes('researchgate.net')) {
+				networks.push({ type: 'researchgate', url, color: '#00D0AF', label: 'ResearchGate' });
+			} else if (lowerUrl.includes('scholar.google')) {
+				networks.push({ type: 'google-scholar', url, color: '#4285F4', label: 'Google Scholar' });
+			} else if (lowerUrl.includes('academia.edu')) {
+				networks.push({ type: 'academia', url, color: '#41454A', label: 'Academia.edu' });
+			} else if (lowerUrl.includes('facebook.com')) {
+				networks.push({ type: 'facebook', url, color: '#1877F2', label: 'Facebook' });
+			} else if (lowerUrl.includes('twitter.com') || lowerUrl.includes('x.com')) {
+				networks.push({ type: 'twitter', url, color: '#1DA1F2', label: 'Twitter' });
+			} else if (lowerUrl.includes('linkedin.com')) {
+				networks.push({ type: 'linkedin', url, color: '#0A66C2', label: 'LinkedIn' });
+			} else if (lowerUrl.includes('scopus.com')) {
+				networks.push({ type: 'scopus', url, color: '#E9711C', label: 'Scopus' });
+			} else {
+				networks.push({ type: 'web', url, color: '#718096', label: 'Web' });
+			}
+		});
+
+		return networks;
+	}
 </script>
 
 {#if topParticipantes && topParticipantes.length >= 3}
@@ -29,6 +75,39 @@
 				</div>
 				<h4 class="podium-name">{second.participante_nombre}</h4>
 				<p class="podium-faculty">{second.facultad_nombre || 'Sin facultad'}</p>
+				{#if second.redes_sociales}
+					{@const redes = parseSocialNetworks(second.redes_sociales)}
+					{#if redes.length > 0}
+						<div class="podium-social">
+							{#each redes.slice(0, 4) as red}
+								<a
+									href={red.url}
+									target="_blank"
+									rel="noopener noreferrer"
+									class="social-link"
+									style="background-color: {red.color};"
+									title={red.label}
+								>
+									<svg
+										xmlns="http://www.w3.org/2000/svg"
+										width="14"
+										height="14"
+										viewBox="0 0 24 24"
+										fill="none"
+										stroke="currentColor"
+										stroke-width="2"
+										stroke-linecap="round"
+										stroke-linejoin="round"
+									>
+										<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+										<polyline points="15 3 21 3 21 9" />
+										<line x1="10" y1="14" x2="21" y2="3" />
+									</svg>
+								</a>
+							{/each}
+						</div>
+					{/if}
+				{/if}
 				<div class="podium-stats">
 					<div class="podium-stat">
 						<span class="stat-value">{second.total_proyectos || 0}</span>
@@ -69,6 +148,39 @@
 				</div>
 				<h4 class="podium-name">{first.participante_nombre}</h4>
 				<p class="podium-faculty">{first.facultad_nombre || 'Sin facultad'}</p>
+				{#if first.redes_sociales}
+					{@const redes = parseSocialNetworks(first.redes_sociales)}
+					{#if redes.length > 0}
+						<div class="podium-social">
+							{#each redes.slice(0, 4) as red}
+								<a
+									href={red.url}
+									target="_blank"
+									rel="noopener noreferrer"
+									class="social-link"
+									style="background-color: {red.color};"
+									title={red.label}
+								>
+									<svg
+										xmlns="http://www.w3.org/2000/svg"
+										width="14"
+										height="14"
+										viewBox="0 0 24 24"
+										fill="none"
+										stroke="currentColor"
+										stroke-width="2"
+										stroke-linecap="round"
+										stroke-linejoin="round"
+									>
+										<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+										<polyline points="15 3 21 3 21 9" />
+										<line x1="10" y1="14" x2="21" y2="3" />
+									</svg>
+								</a>
+							{/each}
+						</div>
+					{/if}
+				{/if}
 				<div class="podium-stats">
 					<div class="podium-stat">
 						<span class="stat-value">{first.total_proyectos || 0}</span>
@@ -109,6 +221,39 @@
 				</div>
 				<h4 class="podium-name">{third.participante_nombre}</h4>
 				<p class="podium-faculty">{third.facultad_nombre || 'Sin facultad'}</p>
+				{#if third.redes_sociales}
+					{@const redes = parseSocialNetworks(third.redes_sociales)}
+					{#if redes.length > 0}
+						<div class="podium-social">
+							{#each redes.slice(0, 4) as red}
+								<a
+									href={red.url}
+									target="_blank"
+									rel="noopener noreferrer"
+									class="social-link"
+									style="background-color: {red.color};"
+									title={red.label}
+								>
+									<svg
+										xmlns="http://www.w3.org/2000/svg"
+										width="14"
+										height="14"
+										viewBox="0 0 24 24"
+										fill="none"
+										stroke="currentColor"
+										stroke-width="2"
+										stroke-linecap="round"
+										stroke-linejoin="round"
+									>
+										<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+										<polyline points="15 3 21 3 21 9" />
+										<line x1="10" y1="14" x2="21" y2="3" />
+									</svg>
+								</a>
+							{/each}
+						</div>
+					{/if}
+				{/if}
 				<div class="podium-stats">
 					<div class="podium-stat">
 						<span class="stat-value">{third.total_proyectos || 0}</span>
@@ -126,7 +271,7 @@
 	<!-- Resto de Investigadores (4-15) -->
 	{#if topParticipantes.length > 3}
 		<div class="researchers-list">
-			<h3 class="list-title">Top Investigadores #4-15</h3>
+			<h3 class="list-title">Resto de Investigadores</h3>
 			<div class="researchers-grid">
 				{#each topParticipantes.slice(3) as participant, index}
 					<div class="researcher-card" class:highlight={index < 2}>
@@ -141,6 +286,39 @@
 						<div class="researcher-info">
 							<h4 class="researcher-name">{participant.participante_nombre}</h4>
 							<p class="researcher-faculty">{participant.facultad_nombre || 'Sin facultad'}</p>
+							{#if participant.redes_sociales}
+								{@const redes = parseSocialNetworks(participant.redes_sociales)}
+								{#if redes.length > 0}
+									<div class="researcher-social">
+										{#each redes.slice(0, 5) as red}
+											<a
+												href={red.url}
+												target="_blank"
+												rel="noopener noreferrer"
+												class="social-link-small"
+												style="background-color: {red.color};"
+												title={red.label}
+											>
+												<svg
+													xmlns="http://www.w3.org/2000/svg"
+													width="12"
+													height="12"
+													viewBox="0 0 24 24"
+													fill="none"
+													stroke="currentColor"
+													stroke-width="2"
+													stroke-linecap="round"
+													stroke-linejoin="round"
+												>
+													<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+													<polyline points="15 3 21 3 21 9" />
+													<line x1="10" y1="14" x2="21" y2="3" />
+												</svg>
+											</a>
+										{/each}
+									</div>
+								{/if}
+							{/if}
 							<div class="researcher-stats">
 								<span class="stat-item">
 									<strong>{participant.total_proyectos || 0}</strong> proyectos
@@ -291,8 +469,38 @@
 		font-size: 0.875rem;
 		color: #6b7280;
 		text-align: center;
-		margin: 0 0 1rem 0;
+		margin: 0 0 0.75rem 0;
 		font-family: var(--font--default);
+	}
+
+	.podium-social {
+		display: flex;
+		gap: 0.5rem;
+		justify-content: center;
+		margin-bottom: 1rem;
+		flex-wrap: wrap;
+	}
+
+	.social-link {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 28px;
+		height: 28px;
+		border-radius: 6px;
+		color: white;
+		transition: all 0.2s ease;
+		text-decoration: none;
+	}
+
+	.social-link:hover {
+		transform: translateY(-2px);
+		box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+	}
+
+	.social-link svg {
+		width: 14px;
+		height: 14px;
 	}
 
 	.podium-stats {
@@ -408,6 +616,35 @@
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
+	}
+
+	.researcher-social {
+		display: flex;
+		gap: 0.375rem;
+		margin-bottom: 0.5rem;
+		flex-wrap: wrap;
+	}
+
+	.social-link-small {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 24px;
+		height: 24px;
+		border-radius: 5px;
+		color: white;
+		transition: all 0.2s ease;
+		text-decoration: none;
+	}
+
+	.social-link-small:hover {
+		transform: translateY(-2px);
+		box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
+	}
+
+	.social-link-small svg {
+		width: 12px;
+		height: 12px;
 	}
 
 	.researcher-stats {

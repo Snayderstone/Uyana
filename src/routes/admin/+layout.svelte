@@ -88,8 +88,8 @@
 
 		<nav class="sidebar-nav">
 			<ul>
-				<li class:active={$page.url.pathname === '/admin'}>
-					<a href="/admin">
+				<li class:active={$page.url.pathname === '/admin/resumen'}>
+					<a href="/admin/resumen">
 						<span class="icon">📊</span>
 						<span class="nav-text">Resumen</span>
 					</a>
