@@ -41,6 +41,8 @@
 
 	let hasStarted = false; // ✅ solo true cuando Play o slider
 	let periodType: 'year' | 'month' = 'year';
+	let selectedYear: string | null = null;
+	let availableYears: string[] = [];
 
 	// =========================
 	// PARSERS (DOBLE)
@@ -105,63 +107,62 @@
 		];
 		return `${names[Math.max(1, Math.min(12, mm)) - 1]} ${y}`;
 	}
+	// =========================
+	// AÑOS DISPONIBLES
+	// =========================
+	$: availableYears = (() => {
+		if (!proyectos?.length) return [];
+
+		const years = new Set<string>();
+
+		for (const p of proyectos) {
+			const y =
+				p.anio_inicio != null
+					? String(p.anio_inicio)
+					: parseYearMonth(p.fecha_inicio ?? null)?.y?.toString();
+
+			if (y) years.add(y);
+		}
+
+		return Array.from(years).sort();
+	})();
+	$: if (periodType === 'month' && !selectedYear && availableYears.length > 0) {
+		selectedYear = availableYears[availableYears.length - 1];
+	}
 
 	// =========================
 	// SERIES (AÑOS / MESES)
 	// =========================
-	$: buildSeries();
+	$: {
+		// ✅ estas 3 líneas fuerzan la dependencia reactiva
+		proyectos;
+		periodType;
+		selectedYear;
+
+		buildSeries();
+	}
+
 	function buildSeries() {
 		if (!proyectos?.length) {
 			series = [];
 			currentIndex = 0;
 			progress = 0;
-			console.log(
-				'[timeline] ejemplo presupuesto:',
-				series[0]?.presupuesto,
-				'maxBudget:',
-				maxBudget
-			);
 			return;
 		}
 
-		// guardamos el key actual para intentar mantener selección
 		const prevKey = series[currentIndex]?.key ?? null;
 
-		const map = new Map<string, SeriePoint>();
-
-		for (const p of proyectos) {
-			let key: string | null = null;
-			let label: string | null = null;
-
-			if (periodType === 'year') {
-				key = yearKeyFrom(p);
-				label = key;
-			} else {
-				key = monthKeyFrom(p.fecha_inicio ?? null);
-				label = key ? monthLabel(key) : null;
-			}
-
-			if (!key || !label) continue;
-
-			if (!map.has(key)) {
-				map.set(key, { key, label, proyectos: 0, presupuesto: 0 });
-			}
-			const item = map.get(key)!;
-			item.proyectos += 1;
-			const raw = (p as any).monto_presupuesto_total;
-			const budget = Number(raw);
-			item.presupuesto += Number.isFinite(budget) ? budget : 0;
-		}
-
-		// orden
-		const arr = Array.from(map.values()).sort((a, b) => {
-			// year: "2020" vs month "2020-03"
-			return a.key.localeCompare(b.key);
-		});
+		// ✅ aquí decides cuál construir
+		const arr =
+			periodType === 'year'
+				? buildYearSeries()
+				: selectedYear
+				? buildMonthSeries(selectedYear)
+				: [];
 
 		series = arr;
 
-		// restaurar índice si key existe
+		// índice / progress
 		if (prevKey) {
 			const idx = series.findIndex((s) => s.key === prevKey);
 			currentIndex = idx >= 0 ? idx : 0;
@@ -169,16 +170,64 @@
 			currentIndex = 0;
 		}
 
-		// progress
 		progress = series.length > 1 ? currentIndex / (series.length - 1) : 0;
-
-		// si cambió la serie y estaba corriendo, dejamos correr; si no, paramos limpio
 		if (!playing) stop();
 
-		// recalcular max
+		// max
 		maxProjects = series.length > 0 ? Math.max(...series.map((s) => s.proyectos), 1) : 1;
-		const budgets = series.map((s) => (Number.isFinite(s.presupuesto) ? s.presupuesto : 0));
-		maxBudget = budgets.length > 0 ? Math.max(...budgets, 1) : 1;
+		maxBudget = series.length > 0 ? Math.max(...series.map((s) => s.presupuesto), 1) : 1;
+
+		// 🔥 DEBUG QUE NO FALLA:
+		console.log('[timeline] periodType:', periodType, 'selectedYear:', selectedYear);
+		console.log(
+			'[timeline] first keys:',
+			series.slice(0, 6).map((s) => s.key)
+		);
+	}
+
+	function buildYearSeries(): SeriePoint[] {
+		const map = new Map<string, SeriePoint>();
+
+		for (const p of proyectos) {
+			const key = yearKeyFrom(p);
+			if (!key) continue;
+
+			if (!map.has(key)) map.set(key, { key, label: key, proyectos: 0, presupuesto: 0 });
+
+			const item = map.get(key)!;
+			item.proyectos += 1;
+
+			const budget = Number((p as any).monto_presupuesto_total);
+			item.presupuesto += Number.isFinite(budget) ? budget : 0;
+		}
+
+		return Array.from(map.values()).sort((a, b) => a.key.localeCompare(b.key));
+	}
+
+	function buildMonthSeries(year: string): SeriePoint[] {
+		const map = new Map<string, SeriePoint>();
+
+		for (const p of proyectos) {
+			const ym = parseYearMonth(p.fecha_inicio ?? null);
+			if (!ym) continue;
+
+			// ✅ filtro por año seleccionado
+			if (String(ym.y) !== year) continue;
+
+			// ✅ key mensual SIEMPRE "YYYY-MM"
+			const key = `${ym.y}-${String(ym.m).padStart(2, '0')}`;
+			const label = monthLabel(key);
+
+			if (!map.has(key)) map.set(key, { key, label, proyectos: 0, presupuesto: 0 });
+
+			const item = map.get(key)!;
+			item.proyectos += 1;
+
+			const budget = Number((p as any).monto_presupuesto_total);
+			item.presupuesto += Number.isFinite(budget) ? budget : 0;
+		}
+
+		return Array.from(map.values()).sort((a, b) => a.key.localeCompare(b.key));
 	}
 
 	// =========================
@@ -234,8 +283,16 @@
 	}
 
 	function setPeriod(t: 'year' | 'month') {
+		console.log('[timeline] setPeriod ->', t);
 		periodType = t;
-		// al cambiar de modo, reiniciamos el avance visual (para evitar “saltos raros”)
+
+		if (t === 'month') {
+			// si no hay año seleccionado, usamos el último disponible
+			if (!selectedYear && availableYears.length > 0) {
+				selectedYear = availableYears[availableYears.length - 1];
+			}
+		}
+
 		restart();
 	}
 
@@ -293,6 +350,16 @@
 
 	<!-- Toggle Año / Mes -->
 	<div class="period-toggle">
+		{#if periodType === 'month'}
+			<div class="year-selector">
+				<label>Año:</label>
+				<select bind:value={selectedYear} on:change={() => restart()}>
+					{#each availableYears as y}
+						<option value={y}>{y}</option>
+					{/each}
+				</select>
+			</div>
+		{/if}
 		<button class:active={periodType === 'year'} on:click={() => setPeriod('year')}>Años</button>
 		<button class:active={periodType === 'month'} on:click={() => setPeriod('month')}>Meses</button>
 	</div>
@@ -538,5 +605,19 @@
 		pointer-events: none;
 		right: 14px;
 		bottom: 14px;
+	}
+	.year-selector {
+		display: flex;
+		gap: 8px;
+		align-items: center;
+		font-weight: 700;
+	}
+
+	.year-selector select {
+		padding: 4px 8px;
+		border-radius: 8px;
+		border: none;
+		font-weight: 700;
+		background: var(--color--card-background);
 	}
 </style>
