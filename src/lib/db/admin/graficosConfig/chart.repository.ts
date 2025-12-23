@@ -15,7 +15,7 @@ export const AdminChartsRepository = {
 		const { data, error } = await supabase
 			.from('grafico_config')
 			.select('*')
-			.order('orden', { ascending: true });
+			.order('id', { ascending: true });
 
 		if (error) {
 			console.error('Error al obtener configuraciones de gráficos:', error);
@@ -33,7 +33,7 @@ export const AdminChartsRepository = {
 			.from('grafico_config')
 			.select('*')
 			.eq('es_publico', true)
-			.order('orden', { ascending: true });
+			.order('id', { ascending: true });
 
 		if (error) {
 			console.error('Error al obtener gráficos públicos:', error);
@@ -95,24 +95,5 @@ export const AdminChartsRepository = {
 		return await this.updateChartConfig(nombre_grafico, {
 			es_publico: !config.es_publico
 		});
-	},
-
-	/**
-	 * Actualizar orden de múltiples gráficos
-	 */
-	async updateMultipleOrders(
-		updates: Array<{ nombre_grafico: string; orden: number }>
-	): Promise<boolean> {
-		try {
-			const promises = updates.map((update) =>
-				this.updateChartConfig(update.nombre_grafico, { orden: update.orden })
-			);
-
-			await Promise.all(promises);
-			return true;
-		} catch (error) {
-			console.error('Error al actualizar órdenes de gráficos:', error);
-			return false;
-		}
 	}
 };

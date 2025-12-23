@@ -23,11 +23,11 @@ export const GET: RequestHandler = async ({ url }) => {
 		if (category) {
 			if (category === 'proyectos') {
 				// Para proyectos, excluimos los gráficos de participantes
-				// Incluye: overview, presupuesto, y cualquier otro tab_categoria que no sea de participantes
-				charts = charts.filter((chart) => !chart.tab_categoria.startsWith('participantes_'));
+				// Incluye: gráficos cuyo nombre empiece con 'proyectos_'
+				charts = charts.filter((chart) => chart.nombre_grafico.startsWith('proyectos_'));
 			} else if (category === 'participantes') {
-				// Para participantes, filtramos por tab_categoria que empiece con 'participantes_'
-				charts = charts.filter((chart) => chart.tab_categoria.startsWith('participantes_'));
+				// Para participantes, filtramos por nombre_grafico que empiece con 'participantes_'
+				charts = charts.filter((chart) => chart.nombre_grafico.startsWith('participantes_'));
 			}
 		}
 

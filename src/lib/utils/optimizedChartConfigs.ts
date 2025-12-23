@@ -635,54 +635,12 @@ export function getTopLineasConfig(data: any): ChartConfiguration {
 /**
  * 13. Resumen Ejecutivo (Stats Cards)
  */
-export function getResumenEjecutivoConfig(data: any): ChartConfiguration {
-	const resumen = data.analytics?.resumen || {};
-
-	// Gráfico de barras con métricas clave
-	return {
-		type: 'bar',
-		data: {
-			labels: ['Finalizados', 'En Ejecución', 'En Cierre', 'Total'],
-			datasets: [
-				{
-					label: 'Cantidad de Proyectos',
-					data: [
-						resumen.proyectos_finalizados || 0,
-						resumen.proyectos_en_ejecucion || 0,
-						resumen.proyectos_en_cierre || 0,
-						resumen.total_proyectos || 0
-					],
-					backgroundColor: [
-						CHART_COLORS.success,
-						CHART_COLORS.primary,
-						CHART_COLORS.warning,
-						CHART_COLORS.info
-					],
-					borderRadius: 6
-				}
-			]
-		},
-		options: {
-			...commonOptions,
-			scales: {
-				...whiteScalesConfig,
-				y: {
-					...whiteScalesConfig.y,
-					beginAtZero: true,
-					ticks: {
-						...whiteScalesConfig.y.ticks,
-						precision: 0
-					}
-				}
-			},
-			plugins: {
-				...commonOptions.plugins,
-				legend: {
-					display: false
-				}
-			}
-		}
-	};
+/**
+ * 13. Resumen Ejecutivo - NO ES UN GRÁFICO, ES UN GRID DE CARDS
+ * Retorna null para indicar que debe renderizarse como componente especial
+ */
+export function getResumenEjecutivoConfig(data: any): ChartConfiguration | null {
+	return null;
 }
 
 /**
@@ -690,8 +648,6 @@ export function getResumenEjecutivoConfig(data: any): ChartConfiguration {
  */
 export function getTopProyectosPresupuestoConfig(data: any): ChartConfiguration {
 	const proyectos = data.analytics?.topProyectosPresupuesto || [];
-
-	console.log('📊 Top Proyectos Presupuesto - Datos recibidos:', proyectos.length, 'proyectos');
 
 	// Si no hay datos, retornar configuración vacía
 	if (!proyectos || proyectos.length === 0) {
@@ -814,18 +770,19 @@ export function getTopProyectosPresupuestoConfig(data: any): ChartConfiguration 
 /**
  * Mapeo de nombres de gráficos a funciones
  */
-export const chartGenerators: Record<string, (data: any) => ChartConfiguration> = {
-	proyectosPorAnio: getProyectosPorAnioConfig,
-	distribucionTemporal: getDistribucionTemporalConfig,
-	distribucionEstado: getDistribucionEstadoConfig,
-	tiposPresupuesto: getTiposPresupuestoConfig,
-	topInstituciones: getTopInstitucionesConfig,
-	topLineas: getTopLineasConfig,
-	areasConocimiento: getAreasConocimientoConfig,
-	tiposProyecto: getTiposProyectoConfig,
-	distribucionAvance: getDistribucionAvanceConfig,
-	distribucionDuracion: getDistribucionDuracionConfig,
-	distribucionPresupuesto: getDistribucionPresupuestoConfig,
-	resumenEjecutivo: getResumenEjecutivoConfig,
-	top_presupuesto_proyectos: getTopProyectosPresupuestoConfig
+export const chartGenerators: Record<string, (data: any) => ChartConfiguration | null> = {
+	// Proyectos - con nuevo prefijo
+	proyectos_por_anio: getProyectosPorAnioConfig,
+	proyectos_distribucion_temporal: getDistribucionTemporalConfig,
+	proyectos_distribucion_estado: getDistribucionEstadoConfig,
+	proyectos_tipos_presupuesto: getTiposPresupuestoConfig,
+	proyectos_top_instituciones: getTopInstitucionesConfig,
+	proyectos_top_lineas: getTopLineasConfig,
+	proyectos_areas_conocimiento: getAreasConocimientoConfig,
+	proyectos_tipos_proyecto: getTiposProyectoConfig,
+	proyectos_distribucion_avance: getDistribucionAvanceConfig,
+	proyectos_distribucion_duracion: getDistribucionDuracionConfig,
+	proyectos_distribucion_presupuesto: getDistribucionPresupuestoConfig,
+	proyectos_resumen_ejecutivo: getResumenEjecutivoConfig,
+	proyectos_top_presupuesto: getTopProyectosPresupuestoConfig
 };

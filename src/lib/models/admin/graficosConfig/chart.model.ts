@@ -10,7 +10,6 @@ export interface GraficoConfig {
 	titulo_display: string;
 	descripcion: string | null;
 	es_publico: boolean;
-	orden: number;
 	tipo_grafico:
 		| 'bar'
 		| 'line'
@@ -19,25 +18,14 @@ export interface GraficoConfig {
 		| 'radar'
 		| 'horizontalBar'
 		| 'map'
-		| 'timeline';
-	tab_categoria:
-		| 'overview'
-		| 'analytics'
-		| 'geographic'
-		| 'presupuesto'
-		| 'participantes_overview'
-		| 'participantes_facultades'
-		| 'participantes_carreras'
-		| 'participantes_cargos'
-		| 'participantes_investigadores'
-		| 'participantes_genero';
+		| 'timeline'
+		| 'cards';
 	creado_en: string;
 	actualizado_en: string;
 }
 
 export interface UpdateGraficoConfigDTO {
 	es_publico?: boolean;
-	orden?: number;
 	titulo_display?: string;
 	descripcion?: string;
 }

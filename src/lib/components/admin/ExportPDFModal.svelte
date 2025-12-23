@@ -113,16 +113,23 @@
 			return null;
 		}
 
-		// Caso especial: stats-grid (no tiene canvas, es HTML puro)
-		if (chartId === 'stats-grid' || chartId === 'participants-stats-grid') {
+		// Caso especial: stats-grid y resumenEjecutivo (no tienen canvas, son HTML puro)
+		if (
+			chartId === 'stats-grid' ||
+			chartId === 'participants-stats-grid' ||
+			chartId === 'resumenEjecutivo'
+		) {
 			try {
-				// Buscar el contenedor interno de stats si existe
-				const statsContainer = chartContainer.querySelector('.stats-grid') || chartContainer;
+				// Buscar el contenedor interno de stats/resumen si existe
+				const innerContainer =
+					chartContainer.querySelector('.stats-grid') ||
+					chartContainer.querySelector('.resumen-grid') ||
+					chartContainer;
 
 				// Esperar un momento para asegurar renderizado
 				await new Promise((resolve) => setTimeout(resolve, 500));
 
-				const canvas = await html2canvas(statsContainer as HTMLElement, {
+				const canvas = await html2canvas(innerContainer as HTMLElement, {
 					scale: 2,
 					backgroundColor: '#1a1f26',
 					logging: false,
@@ -134,7 +141,7 @@
 
 				return imgData;
 			} catch (error) {
-				console.error(`Error capturing stats-grid (${chartId}):`, error);
+				console.error(`Error capturing stats/resumen grid (${chartId}):`, error);
 				return null;
 			}
 		}
@@ -376,10 +383,11 @@
 	const categoryNames: Record<string, string> = {
 		indices: 'Índices Generales',
 		basicas: 'Estadísticas Básicas de Proyectos',
+		presupuesto: 'Análisis de Presupuesto',
+		participantes: 'Análisis de Participantes',
 		overview: 'Resumen General',
 		analytics: 'Análisis Detallado',
 		geographic: 'Distribución Geográfica',
-		presupuesto: 'Análisis de Presupuesto',
 		facultades: 'Análisis por Facultades',
 		carreras: 'Análisis por Carreras',
 		cargos: 'Análisis por Cargos',
