@@ -283,9 +283,11 @@
 
 	function restyleLayer() {
 		if (!geoLayer) return;
+		/*
 		geoLayer.eachLayer((layer: any) => {
 			geoLayer.resetStyle(layer); // resetea al estilo base antes de aplicar el nuevo
 		});
+		*/
 		geoLayer.setStyle(styleForFeature);
 
 		// Si hay una facultad destacada, aplicar estilo especial
@@ -440,7 +442,7 @@
 		}
 	})();
 
-	$: restyleLayer(); // se ejecuta cuando cambian reactivos usados en styleForFeature
+	//$: restyleLayer(); // se ejecuta cuando cambian reactivos usados en styleForFeature
 
 	// Método para limpiar todos los resaltados
 	export function clearHighlights() {

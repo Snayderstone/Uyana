@@ -18,6 +18,7 @@
 	import { NetworkService } from '$lib/services/network.service';
 	import NetworkPanel from '$lib/components/molecules/MapNetworkPanel.svelte';
 	import { tick } from 'svelte';
+	import TimeLineProject from '$lib/components/molecules/TimeLineProject.svelte';
 
 	const dispatch = createEventDispatcher();
 
@@ -87,7 +88,7 @@
 	let showFiltersPanel = false;
 	let showResultsPanel = false;
 	let showStatsPanel = false; // Mostrar estadísticas por defecto
-	let activePanelTab: 'filters' | 'results' | 'network' = 'filters';
+	let activePanelTab: 'filters' | 'results' | 'network' | 'timeline' = 'filters';
 
 	// Estadísticas para la leyenda
 	let minProyectos = 0;
@@ -106,6 +107,10 @@
 	let networkData = null;
 	let facultyOptions: string[] = [];
 	let institutionOptions: string[] = [];
+	// Estado del panel de línea de tiempo
+	let showTimelinePanel = false;
+	let timelineYear: number | null = null;
+	let timelineValueById: Record<string, number> = {};
 
 	onMount(async () => {
 		const rows = await ProjectService.getProjectsByInstitutionForMap();
@@ -114,6 +119,7 @@
 
 	$: facultyOptions = Object.keys(centroidesByLevel.faculty || {}).sort();
 	$: institutionOptions = nombresInstituciones || [];
+	$: timelineHasData = Object.keys(timelineValueById).length > 0;
 
 	// Cuando cambia el nivel del mapa (facultad/institución), limpiamos selección y filtros actuales
 	$: if (mapLevel !== lastMapLevel) {
@@ -123,6 +129,58 @@
 		highlightedFacultad = null;
 		mapLevel;
 	}
+	function handleTimelineChange(detail: { periodType: 'year' | 'month'; key: string }) {
+		const { periodType, key } = detail;
+
+		// Conteo acumulado HASTA ese periodo (año o mes)
+		const countByKey: Record<string, number> = {};
+
+		for (const p of proyectos as any[]) {
+			// 1) decidir si el proyecto entra según el periodo
+			let projectPeriodKey: string | null = null;
+
+			if (periodType === 'year') {
+				if (p.anio_inicio) projectPeriodKey = String(p.anio_inicio);
+				else if (p.fecha_inicio) {
+					// doble parser simple aquí también
+					const iso = /^(\d{4})-(\d{2})-(\d{2})$/.exec(p.fecha_inicio);
+					if (iso) projectPeriodKey = iso[1];
+					else {
+						const parts = String(p.fecha_inicio).split('/');
+						if (parts.length === 3) projectPeriodKey = parts[2];
+					}
+				}
+			} else {
+				// month: "YYYY-MM"
+				if (p.fecha_inicio) {
+					const iso = /^(\d{4})-(\d{2})-(\d{2})$/.exec(p.fecha_inicio);
+					if (iso) projectPeriodKey = `${iso[1]}-${iso[2]}`;
+					else {
+						const parts = String(p.fecha_inicio).split('/');
+						if (parts.length === 3) {
+							const mm = String(Number(parts[1])).padStart(2, '0');
+							projectPeriodKey = `${parts[2]}-${mm}`;
+						}
+					}
+				}
+			}
+
+			if (!projectPeriodKey) continue;
+
+			// acumulado hasta "key"
+			if (projectPeriodKey > key) continue;
+
+			// 2) contar en la entidad (faculty o institution)
+			const rawName =
+				mapLevel === 'faculty' ? p.facultad_o_entidad_o_area_responsable : p.institucion;
+
+			const entityKey = getEntityKey(mapLevel, rawName);
+			countByKey[entityKey] = (countByKey[entityKey] ?? 0) + 1;
+		}
+
+		timelineValueById = countByKey;
+	}
+
 	$: hasActiveFilters = filteredProyectos.length > 0 && filteredProyectos.length < proyectos.length;
 	// Recalcular estadísticas para la leyenda y el resumen según el nivel del mapa
 	$: {
@@ -506,9 +564,11 @@
 				<ProjectsChoropleth
 					{map}
 					{mapLevel}
+					{proyectos}
 					{filteredProyectos}
 					{highlightedFacultad}
 					{hasActiveFilters}
+					externalValueById={showTimelinePanel && timelineHasData ? timelineValueById : null}
 					on:viewFacultyProjects={handleViewFacultyProjects}
 					on:mapClick={handleMapClick}
 					on:centroidesReady={handleCentroidesReady}
@@ -532,6 +592,7 @@
 			<!-- Controles de mapa integrados -->
 			<div class="map-controls">
 				<div class="map-level-toggle">
+					<!-- Botón para ver por facultades -->
 					<button
 						class="map-control-btn"
 						class:active={mapLevel === 'faculty'}
@@ -555,7 +616,6 @@
 							<path d="M4 4h12l-2 4 2 4H4" />
 						</svg>
 					</button>
-
 					<button
 						class="map-control-btn"
 						class:active={mapLevel === 'institution'}
@@ -814,12 +874,44 @@
 						<line x1="16.5" y1="8.5" x2="13.5" y2="15" />
 					</svg>
 				</button>
+				<button
+					class="map-control-btn"
+					class:active={showTimelinePanel}
+					on:click={() => {
+						showTimelinePanel = !showTimelinePanel;
+						activePanelTab = 'timeline';
+						// cerrar otros paneles
+						showFiltersPanel = false;
+						showResultsPanel = false;
+						showNetworkPanel = false;
+						setTimeout(() => map?.invalidateSize(), 300);
+					}}
+					aria-label="Mostrar línea de tiempo"
+					title="Línea de tiempo"
+				>
+					<!-- Ícono play + timeline -->
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="20"
+						height="20"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+					>
+						<polygon points="5 3 19 12 5 21 5 3" />
+					</svg>
+				</button>
 			</div>
-
 			<!-- Panel lateral integrado -->
 			<div
 				class="map-side-panel"
-				class:visible={showFiltersPanel || showResultsPanel || showNetworkPanel}
+				class:visible={showFiltersPanel ||
+					showResultsPanel ||
+					showNetworkPanel ||
+					showTimelinePanel}
 			>
 				<!-- Pestaña de filtros -->
 				{#if activePanelTab === 'filters'}
@@ -920,7 +1012,11 @@
 					<!-- 🔹 Aquí va el contenido que se desliza -->
 					<div class="panel-content results-panel">
 						{#if showDashboard}
-							<ProjectsDashboard proyectos={filteredProyectos} totalGeneral={proyectos.length} proyectosTotales={proyectos}/>
+							<ProjectsDashboard
+								proyectos={filteredProyectos}
+								totalGeneral={proyectos.length}
+								proyectosTotales={proyectos}
+							/>
 						{:else}
 							<ProjectsDetail
 								proyectos={filteredProyectos}
@@ -940,6 +1036,17 @@
 						on:applyNetwork={handleApplyNetwork}
 						on:clearNetwork={() => (networkData = null)}
 						on:close={() => (showNetworkPanel = false)}
+					/>
+				{/if}
+				{#if activePanelTab === 'timeline'}
+					<TimeLineProject
+						{proyectos}
+						{mapLevel}
+						on:change={(e) => handleTimelineChange(e.detail)}
+						on:reset={() => {
+							timelineYear = null;
+							timelineValueById = {};
+						}}
 					/>
 				{/if}
 			</div>

@@ -372,6 +372,16 @@ async function buildFlatProjects(): Promise<ProyectoFlat[]> {
         anioInicio = fecha.getFullYear();
       }
     }
+    let anioMesInicio: string | null = null;
+    if (fechaInicioPlaneada) {
+      const fecha = new Date(fechaInicioPlaneada);
+      if (!Number.isNaN(fecha.getTime())) {
+        const y = fecha.getFullYear();
+        const m = String(fecha.getMonth() + 1).padStart(2, '0');
+        anioMesInicio = `${y}-${m}`;
+      }
+    }
+
 
     const tieneAcreditados = acreditadosCount > 0;
 
@@ -429,6 +439,7 @@ async function buildFlatProjects(): Promise<ProyectoFlat[]> {
       paises_instituciones: paisesByProject.get(projectId)
         ? Array.from(paisesByProject.get(projectId)!).sort()
         : (institucionPais && institucionPais !== 'Sin país' ? [institucionPais] : []),
+      anio_mes_inicio: anioMesInicio,
     };
   });
 

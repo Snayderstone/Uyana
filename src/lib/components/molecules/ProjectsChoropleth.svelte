@@ -23,6 +23,8 @@
 	export let mapLevel: MapLevel = 'faculty';
 	// Indica si el padre tiene filtros activos (filteredProyectos != todos)
 	export let hasActiveFilters: boolean = false;
+	export let externalValueById: Record<string, number> | null = null;
+
 	// Mapa de centroides de facultades
 	let centroides: Record<string, [number, number]> = {};
 	let rankingData: { facultad: string; cantidad: number; center: [number, number] }[] = [];
@@ -636,58 +638,68 @@
 	}
 	// Actualizar los valores cuando cambien los proyectos filtrados
 	$: {
-		// 🔹 Si hay filtros activos, usamos SIEMPRE los proyectos filtrados
-		if (hasActiveFilters && filteredProyectos.length > 0) {
-			const key = `${mapLevel}-${JSON.stringify(
-				filteredProyectos.map((p) => p.id || p.titulo).sort()
-			)}`;
+		// ✅ 0) Si viene un valueById externo (timeline), se usa y listo
+		if (externalValueById) {
+			valueById = externalValueById;
+			memoizedFilteredProyectos.key = `external-${mapLevel}`;
+			memoizedFilteredProyectos.data = externalValueById;
+		}
 
-			if (memoizedFilteredProyectos.key !== key) {
-				console.info(
-					`Recalculando valores del mapa (nivel=${mapLevel}) - cambio en proyectos filtrados`
-				);
+		// ✅ 1) Si NO viene externo, usa TU lógica actual intacta
+		else {
+			// 🔹 Si hay filtros activos, usamos SIEMPRE los proyectos filtrados
+			if (hasActiveFilters && filteredProyectos.length > 0) {
+				const key = `${mapLevel}-${JSON.stringify(
+					filteredProyectos.map((p) => p.id || p.titulo).sort()
+				)}`;
 
-				const counts: Record<string, number> = {};
+				if (memoizedFilteredProyectos.key !== key) {
+					console.info(
+						`Recalculando valores del mapa (nivel=${mapLevel}) - cambio en proyectos filtrados`
+					);
 
-				filteredProyectos.forEach((proyecto: any) => {
-					if (mapLevel === 'faculty') {
-						const rawName = proyecto.facultad_o_entidad_o_area_responsable;
-						const entityKey = getEntityKey('faculty', rawName || 'No especificado');
-						counts[entityKey] = (counts[entityKey] || 0) + 1;
-					} else {
-						// 🔹 A nivel institución: contar TODAS las instituciones relacionadas
-						const nombres: string[] =
-							Array.isArray(proyecto.instituciones_relacionadas) &&
-							proyecto.instituciones_relacionadas.length > 0
-								? proyecto.instituciones_relacionadas
-								: [proyecto.institucion];
+					const counts: Record<string, number> = {};
 
-						nombres.filter(Boolean).forEach((nombre: string) => {
-							const entityKey = getEntityKey('institution', nombre);
+					filteredProyectos.forEach((proyecto: any) => {
+						if (mapLevel === 'faculty') {
+							const rawName = proyecto.facultad_o_entidad_o_area_responsable;
+							const entityKey = getEntityKey('faculty', rawName || 'No especificado');
 							counts[entityKey] = (counts[entityKey] || 0) + 1;
-						});
-					}
-				});
+						} else {
+							// 🔹 A nivel institución: contar TODAS las instituciones relacionadas
+							const nombres: string[] =
+								Array.isArray(proyecto.instituciones_relacionadas) &&
+								proyecto.instituciones_relacionadas.length > 0
+									? proyecto.instituciones_relacionadas
+									: [proyecto.institucion];
 
-				memoizedFilteredProyectos.key = key;
-				memoizedFilteredProyectos.data = counts;
-				valueById = counts;
-			}
-		} else if (proyectosPorFacultad.length > 0) {
-			// 🔹 Sin filtros activos → usamos los datos agregados devueltos por ProjectService
-			const key = `all-${mapLevel}`;
-			if (memoizedFilteredProyectos.key !== key) {
-				console.info(`Usando datos completos de proyectos para nivel=${mapLevel}`);
+							nombres.filter(Boolean).forEach((nombre: string) => {
+								const entityKey = getEntityKey('institution', nombre);
+								counts[entityKey] = (counts[entityKey] || 0) + 1;
+							});
+						}
+					});
 
-				const counts: Record<string, number> = {};
-				proyectosPorFacultad.forEach((item) => {
-					const entityKey = getEntityKey(mapLevel, item.facultad);
-					counts[entityKey] = item.cantidad;
-				});
+					memoizedFilteredProyectos.key = key;
+					memoizedFilteredProyectos.data = counts;
+					valueById = counts;
+				}
+			} else if (proyectosPorFacultad.length > 0) {
+				// 🔹 Sin filtros activos → usamos los datos agregados devueltos por ProjectService
+				const key = `all-${mapLevel}`;
+				if (memoizedFilteredProyectos.key !== key) {
+					console.info(`Usando datos completos de proyectos para nivel=${mapLevel}`);
 
-				memoizedFilteredProyectos.key = key;
-				memoizedFilteredProyectos.data = counts;
-				valueById = counts;
+					const counts: Record<string, number> = {};
+					proyectosPorFacultad.forEach((item) => {
+						const entityKey = getEntityKey(mapLevel, item.facultad);
+						counts[entityKey] = item.cantidad;
+					});
+
+					memoizedFilteredProyectos.key = key;
+					memoizedFilteredProyectos.data = counts;
+					valueById = counts;
+				}
 			}
 		}
 	}

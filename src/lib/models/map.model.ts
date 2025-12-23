@@ -50,3 +50,9 @@ export type ProjectMapModel2 = {
     count?: number;
   };
 };
+
+export interface TimelinePoint {
+	date: Date;
+	value: number;
+	meta?: any; // proyectos, presupuesto, etc
+}
