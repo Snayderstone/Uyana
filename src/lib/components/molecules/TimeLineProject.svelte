@@ -620,4 +620,10 @@
 		font-weight: 700;
 		background: var(--color--card-background);
 	}
+	.chart polyline {
+		transition: stroke-dashoffset 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+	}
+	.chart circle {
+		transition: cx 0.4s ease, cy 0.4s ease, opacity 0.3s ease;
+	}
 </style>
