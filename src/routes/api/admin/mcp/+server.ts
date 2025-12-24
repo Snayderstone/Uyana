@@ -211,9 +211,9 @@ export const GET: RequestHandler = async ({ request, url }) => {
 					version: '2.0.0',
 					description: 'Servidor MCP para la plataforma UYANA',
 					endpoints: {
-						stats: '/api/mcp?action=stats',
-						health: '/api/mcp?action=health',
-						events: '/api/mcp?action=events'
+						stats: '/api/admin/mcp?action=stats',
+						health: '/api/admin/mcp?action=health',
+						events: '/api/admin/mcp?action=events'
 					},
 					documentation: 'https://docs.uyana.com/mcp'
 				});
