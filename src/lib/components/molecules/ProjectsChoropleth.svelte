@@ -294,13 +294,6 @@
 		const facultad = props?.facultad_o_entidad_o_area_responsable || id || 'Entidad';
 		const icono = props?.icono || '🎓';
 		const cantidad = value ?? 0;
-		const decano = props?.decano || '';
-		const subdecano = props?.subdecano || '';
-		//recuperar carreras si existen y acortarla
-		let carreras = props?.carreras || '';
-		if (typeof carreras === 'string' && carreras.length > 60) {
-			carreras = carreras.substring(0, 57) + '...';
-		}
 		const level: MapLevel = props?.level || mapLevel;
 		// 🔹 Elegimos la lista base:
 		//    - si hay proyectos filtrados → usamos esos
@@ -334,7 +327,6 @@
 		const proyectosCerrados = proyectosEntidad.filter(
 			(p) => p.estado !== 'En ejecución' && p.estado !== 'En cierre'
 		).length;
-		const promedioDuracion = calcularPromedioDuracion(proyectosEntidad);
 
 		// Determinamos el color según el número de proyectos
 		const colorClass = cantidad > 15 ? 'high' : cantidad > 7 ? 'medium' : 'low';
@@ -349,54 +341,53 @@
 		// Determinar el número óptimo de proyectos a mostrar (adaptativo)
 		const maxProyectos = cantidad > 10 ? 2 : 3;
 
-		// Lista de proyectos adaptativa
-		const proyectosListaHTML =
-			proyectosEntidad.length > 0
-				? `<div class="proyecto-lista">
-          <h4>Proyectos recientes (${proyectosEntidad.length}):</h4>
-          <ul>
-            ${proyectosOrdenados
-							.slice(0, maxProyectos)
-							.map((p, idx) => {
-								// Determinar el color del estado
-								const estadoClass =
-									p.estado === 'En ejecución'
-										? 'estado-activo'
-										: p.estado === 'En cierre'
-										? 'estado-cierre'
-										: 'estado-cerrado';
+		// 🔹 Comparación institucional (Esta entidad vs promedio general)
+		const promedioUCE =
+			proyectos.length > 0 ? proyectos.length / (proyectosPorFacultad.length || 1) : 0;
 
-								// Acortar título para que sea más compacto
-								const maxTitleLength = 35;
-								const shortTitle =
-									p.titulo.length > maxTitleLength
-										? p.titulo.substring(0, maxTitleLength) + '...'
-										: p.titulo;
+		// Evitar división por cero
+		const ratio = promedioUCE > 0 ? cantidad / promedioUCE : 0;
 
-								// Añadimos animación escalonada y mejoras visuales
-								return `
-                    <li style="--item-index: ${idx}" class="proyecto-item">
-                      <strong>${shortTitle}</strong>
-                      <div class="proyecto-meta">
-                        <span class="estado-badge ${estadoClass}">${p.estado || 'Sin estado'}</span>
-                        <span class="fecha-badge" title="Fecha inicio">${
-													p.fecha_inicio || 'N/D'
-												}</span>
-                      </div>
-                    </li>
-                  `;
-							})
-							.join('')}
-            ${
-							proyectosEntidad.length > maxProyectos
-								? `<li class="ver-mas"><em>Y ${
-										proyectosEntidad.length - maxProyectos
-								  } más...</em></li>`
-								: ''
-						}
-          </ul>
-        </div>`
-				: '<div class="no-proyectos">No hay proyectos registrados en esta facultad</div>';
+		// Porcentaje vs promedio (ej: +100%)
+		const porcentaje = promedioUCE > 0 ? Math.round((cantidad / promedioUCE - 1) * 100) : 0;
+
+		// Texto y flecha
+		const flecha = porcentaje > 0 ? '↑' : porcentaje < 0 ? '↓' : '→';
+		const textoComparacion =
+			porcentaje > 0
+				? `${flecha} +${porcentaje}% sobre el promedio`
+				: porcentaje < 0
+				? `${flecha} ${porcentaje}% bajo el promedio`
+				: `${flecha} Igual al promedio`;
+
+		// Barras proporcionales (máximo = la mayor de las dos)
+		const maxBarBase = Math.max(cantidad, promedioUCE, 1);
+		const barFacultad = Math.round((cantidad / maxBarBase) * 100);
+		const barPromedio = Math.round((promedioUCE / maxBarBase) * 100);
+
+		const comparacionHTML = `
+  <div class="comparacion-block">
+    <h4>Comparación institucional</h4>
+
+    <div class="comparacion-row">
+      <span class="comparacion-label">Esta entidad</span>
+      <div class="comparacion-bar">
+        <div class="comparacion-fill facultad" style="width: ${barFacultad}%"></div>
+      </div>
+      <span class="comparacion-value">${cantidad}</span>
+    </div>
+
+    <div class="comparacion-row">
+      <span class="comparacion-label">Promedio UCE</span>
+      <div class="comparacion-bar">
+        <div class="comparacion-fill promedio" style="width: ${barPromedio}%"></div>
+      </div>
+      <span class="comparacion-value">${promedioUCE.toFixed(1)}</span>
+    </div>
+
+    <div class="comparacion-footer">${textoComparacion}</div>
+  </div>
+`;
 
 		// Gráfico simple de distribución de estados
 		const distribucionEstados =
@@ -431,51 +422,8 @@
       <span class="faculty-count stat-highlight-${colorClass}">${cantidad}</span>
     </div>
     
-    <div class="faculty-stats">
-      ${
-				decano
-					? `
-            <div class="stat">
-              <span class="stat-label">Decano:</span>
-              <span class="stat-value">${decano}</span>
-            </div>
-          `
-					: ''
-			}
-      ${
-				subdecano && !carreras
-					? `
-            <div class="stat">
-              <span class="stat-label">Subdecano:</span>
-              <span class="stat-value">${subdecano}</span>
-            </div>
-          `
-					: ''
-			}
-      ${
-				carreras
-					? `
-            <div class="stat">
-              <span class="stat-label">Carreras:</span>
-              <span class="stat-value">${carreras}</span>
-            </div>
-          `
-					: ''
-			}
-      ${
-				proyectosEntidad.length > 0
-					? `
-            <div class="stat">
-              <span class="stat-label">Promedio duración:</span>
-              <span class="stat-value">${promedioDuracion} meses</span>
-            </div>
-          `
-					: ''
-			}
-    </div>
-    
     ${proyectosEntidad.length > 0 ? distribucionEstados : ''}
-    ${proyectosListaHTML}
+    ${comparacionHTML}
     
     <div class="popup-footer">
       <button class="view-all-btn" onclick="(function() {
@@ -1242,5 +1190,65 @@
 	:global(.popup-dashboard-container.right) {
 		left: 100%; /* pegado a la derecha */
 		margin-left: 10px;
+	}
+	:global(.comparacion-block) {
+		margin-top: 8px;
+	}
+
+	:global(.comparacion-block h4) {
+		margin: 5px 0 8px;
+		font-weight: 600;
+		font-size: 0.95rem;
+		color: var(--color--text);
+		border-bottom: 1px solid color-mix(in srgb, var(--color--text) 10%, transparent);
+		padding-bottom: 5px;
+	}
+
+	:global(.comparacion-row) {
+		display: grid;
+		grid-template-columns: 90px 1fr 45px;
+		align-items: center;
+		gap: 8px;
+		margin: 6px 0;
+		font-size: 0.8rem;
+	}
+
+	:global(.comparacion-label) {
+		color: var(--color--text-shade);
+		font-weight: 600;
+	}
+
+	:global(.comparacion-value) {
+		text-align: right;
+		font-weight: 700;
+		color: var(--color--text);
+	}
+
+	:global(.comparacion-bar) {
+		height: 10px;
+		border-radius: 6px;
+		overflow: hidden;
+		background: color-mix(in srgb, var(--color--text) 8%, transparent);
+	}
+
+	:global(.comparacion-fill) {
+		height: 100%;
+		border-radius: 6px;
+	}
+
+	:global(.comparacion-fill.facultad) {
+		background: var(--color--primary);
+	}
+
+	:global(.comparacion-fill.promedio) {
+		background: color-mix(in srgb, var(--color--text-shade) 60%, white);
+	}
+
+	:global(.comparacion-footer) {
+		margin-top: 6px;
+		font-size: 0.75rem;
+		font-weight: 700;
+		color: var(--color--primary);
+		text-align: center;
 	}
 </style>
