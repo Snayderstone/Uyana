@@ -42,6 +42,12 @@
 			icon="participants"
 		/>
 
+		<StatsCard
+			label="No Especifica Acreditación"
+			value={stats.total_acreditado_no_especifica?.toLocaleString() || '0'}
+			icon="participants"
+		/>
+
 		<StatsCard label="Tasa de Acreditación" value="{tasaAcreditacion}%" icon="acredited" />
 
 		<!-- Row 2: Distribución por género -->

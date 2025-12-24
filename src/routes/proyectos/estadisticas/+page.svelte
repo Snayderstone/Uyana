@@ -3,7 +3,7 @@
 	import PublicChartsSection from '$lib/components/organisms/PublicChartsSection.svelte';
 	import type { GraficoConfig } from '$lib/models/admin/graficosConfig/chart.model';
 	import { type DashboardData } from '$lib/utils/chartConfigs';
-	import { chartGenerators } from '$lib/utils/optimizedChartConfigs';
+	import { chartGenerators } from '$lib/utils/projectsOptimizedChartConfigs';
 
 	interface PageData {
 		charts: GraficoConfig[];

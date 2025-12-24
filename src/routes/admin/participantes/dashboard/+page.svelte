@@ -2,11 +2,12 @@
 	import { onMount } from 'svelte';
 	import DashboardHeader from '$lib/components/admin/participants/DashboardHeader.svelte';
 	import ResumenEjecutivo from '$lib/components/admin/participants/ResumenEjecutivo.svelte';
+	import ParticipantsLeaderboard from '$lib/components/admin/participants/ParticipantsLeaderboard.svelte';
 	import ChartCard from '$lib/components/admin/participants/ChartCard.svelte';
 	import ExportPDFModal from '$lib/components/admin/ExportPDFModal.svelte';
 	import VisibilityConfirmModal from '$lib/components/molecules/VisibilityConfirmModal.svelte';
 	import { participantsDashboardStore } from '$lib/components/admin/participants/useDashboardData';
-	import { participantsChartGenerators } from '$lib/utils/participants/optimizedChartConfigs';
+	import { participantsChartGenerators } from '$lib/utils/participantsOptimizedChartConfigs';
 	import type { GraficoConfig } from '$lib/models/admin';
 
 	let showExportModal = false;
@@ -82,9 +83,6 @@
 
 			{#if config.nombre_grafico === 'participantes_resumen' && dashboardData.stats}
 				<div class="dashboard-section">
-					<div class="section-header">
-						<h2>Resumen Ejecutivo</h2>
-					</div>
 					<ChartCard
 						chartId={config.nombre_grafico}
 						title={config.titulo_display}
@@ -98,6 +96,23 @@
 						bind:this={chartRefs[config.nombre_grafico]}
 					>
 						<ResumenEjecutivo stats={dashboardData.stats} />
+					</ChartCard>
+				</div>
+			{:else if config.nombre_grafico === 'participantes_leaderboard' && dashboardData.topParticipantes}
+				<div class="dashboard-section">
+					<ChartCard
+						chartId={config.nombre_grafico}
+						title={config.titulo_display}
+						config={null}
+						visible={isVisible}
+						isPublic={config.es_publico}
+						isWide={true}
+						height={0}
+						onToggleVisibility={() => participantsDashboardStore.toggleChart(config.nombre_grafico)}
+						onTogglePublic={() => requestTogglePublic(config.nombre_grafico)}
+						bind:this={chartRefs[config.nombre_grafico]}
+					>
+						<ParticipantsLeaderboard participants={dashboardData.topParticipantes} />
 					</ChartCard>
 				</div>
 			{:else if chartConfig}
@@ -141,17 +156,6 @@
 
 	.dashboard-section {
 		margin-bottom: 2rem;
-	}
-
-	.section-header {
-		margin-bottom: 1.5rem;
-	}
-
-	.section-header h2 {
-		font-size: 1.5rem;
-		font-weight: 700;
-		color: var(--color--text);
-		margin: 0;
 	}
 
 	.error-message {

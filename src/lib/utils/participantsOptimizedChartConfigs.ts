@@ -401,64 +401,11 @@ export function getCargosGeneroConfig(data: any): ChartConfiguration {
 }
 
 /**
- * 7. Top Participantes con más proyectos
+ * 7. Top Participantes con más proyectos (Leaderboard)
+ * Retorna null para indicar que se debe usar el componente ParticipantsLeaderboard
  */
-export function getTopParticipantesProyectosConfig(data: any): ChartConfiguration {
-	const participantes = data.topParticipantes || [];
-	const sorted = [...participantes].sort((a, b) => b.total_proyectos - a.total_proyectos);
-	const top = sorted.slice(0, 20);
-
-	return {
-		type: 'bar',
-		data: {
-			labels: top.map((p: any) =>
-				p.participante_nombre.length > 30
-					? p.participante_nombre.substring(0, 30) + '...'
-					: p.participante_nombre
-			),
-			datasets: [
-				{
-					label: 'Total Proyectos',
-					data: top.map((p: any) => p.total_proyectos),
-					backgroundColor: CHART_COLORS.info,
-					borderRadius: 6
-				}
-			]
-		},
-		options: {
-			...commonOptions,
-			indexAxis: 'y' as const,
-			scales: {
-				...whiteScalesConfig,
-				x: {
-					...whiteScalesConfig.x,
-					beginAtZero: true,
-					ticks: {
-						...whiteScalesConfig.x.ticks,
-						precision: 0
-					}
-				}
-			},
-			plugins: {
-				...commonOptions.plugins,
-				tooltip: {
-					...commonOptions.plugins.tooltip,
-					callbacks: {
-						afterLabel: function (context: any) {
-							const idx = context.dataIndex;
-							const p = top[idx];
-							return [
-								`Como Director: ${p.proyectos_como_director}`,
-								`Como Investigador: ${p.proyectos_como_investigador}`,
-								`Carrera: ${p.carrera_nombre}`,
-								`Facultad: ${p.facultad_nombre}`
-							];
-						}
-					}
-				}
-			}
-		}
-	};
+export function getTopParticipantesProyectosConfig(data: any): ChartConfiguration | null {
+	return null; // El componente ParticipantsLeaderboard lo maneja
 }
 
 /**
@@ -516,11 +463,15 @@ export function getDistribucionAcreditacionConfig(data: any): ChartConfiguration
 	return {
 		type: 'doughnut',
 		data: {
-			labels: ['Acreditados', 'No Acreditados'],
+			labels: ['Acreditados', 'No Acreditados', 'Acreditados No Especifica'],
 			datasets: [
 				{
-					data: [stats.total_acreditados, stats.total_no_acreditados],
-					backgroundColor: [CHART_COLORS.success, CHART_COLORS.warning],
+					data: [
+						stats.total_acreditados,
+						stats.total_no_acreditados,
+						stats.total_acreditado_no_especifica
+					],
+					backgroundColor: [CHART_COLORS.success, CHART_COLORS.warning, CHART_COLORS.info],
 					borderWidth: 2,
 					borderColor: '#ffffff'
 				}

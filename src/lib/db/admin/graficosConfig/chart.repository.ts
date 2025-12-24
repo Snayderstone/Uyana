@@ -43,6 +43,7 @@ export const AdminChartsRepository = {
 		return data || [];
 	},
 
+	
 	/**
 	 * Obtener configuración de un gráfico específico
 	 */

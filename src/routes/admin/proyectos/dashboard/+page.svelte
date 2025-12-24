@@ -7,7 +7,7 @@
 	import ExportPDFModal from '$lib/components/admin/ExportPDFModal.svelte';
 	import VisibilityConfirmModal from '$lib/components/molecules/VisibilityConfirmModal.svelte';
 	import { dashboardStore } from '$lib/components/admin/projects/useDashboardData';
-	import { chartGenerators } from '$lib/utils/optimizedChartConfigs';
+	import { chartGenerators } from '$lib/utils/projectsOptimizedChartConfigs';
 	import type { GraficoConfig } from '$lib/models/admin';
 
 	// ==========================================

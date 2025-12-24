@@ -11,8 +11,10 @@ export interface ParticipantsStats {
 	total_participantes: number;
 	total_acreditados: number;
 	total_no_acreditados: number;
+	total_acreditado_no_especifica : number;
 	total_masculino: number;
 	total_femenino: number;
+	total_genero_no_especifica: number;
 	total_otro_genero: number;
 }
 
