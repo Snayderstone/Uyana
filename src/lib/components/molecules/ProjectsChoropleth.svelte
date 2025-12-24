@@ -1039,15 +1039,15 @@
 	}
 
 	:global(.barra-activo) {
-		background: var(--color--primary);
+		background: var(--color--callout-accent--info);
 	}
 
 	:global(.barra-cierre) {
-		background: color-mix(in srgb, var(--color--primary) 60%, white);
+		background: color-mix(in srgb, var(--color--callout-accent--warning) 100%, white);
 	}
 
 	:global(.barra-cerrado) {
-		background: color-mix(in srgb, var(--color--text-shade) 60%, white);
+		background: color-mix(in srgb, var(--color--callout-accent--error) 100%, white);
 	}
 
 	:global(.distribucion-legend) {
@@ -1076,11 +1076,11 @@
 	}
 
 	:global(.color-dot.cierre) {
-		background: color-mix(in srgb, var(--color--primary) 60%, white);
+		background: color-mix(in srgb, var(--color--callout-accent--warning) 60%, white);
 	}
 
 	:global(.color-dot.cerrado) {
-		background: color-mix(in srgb, var(--color--text-shade) 60%, white);
+		background: color-mix(in srgb, var(--color--callout-accent--error) 60%, white);
 	}
 
 	/* Mejorar la animación de entrada para elementos de la lista */
@@ -1228,7 +1228,7 @@
 		height: 10px;
 		border-radius: 6px;
 		overflow: hidden;
-		background: color-mix(in srgb, var(--color--text) 8%, transparent);
+		background: color-mix(in srgb, var(--color--text) 38%, transparent);
 	}
 
 	:global(.comparacion-fill) {
@@ -1241,14 +1241,14 @@
 	}
 
 	:global(.comparacion-fill.promedio) {
-		background: color-mix(in srgb, var(--color--text-shade) 60%, white);
+		background: color-mix(in srgb, var(--color--callout-accent--success) 90%, white);
 	}
 
 	:global(.comparacion-footer) {
 		margin-top: 6px;
 		font-size: 0.75rem;
 		font-weight: 700;
-		color: var(--color--primary);
+		color: var(--color--text);
 		text-align: center;
 	}
 </style>
