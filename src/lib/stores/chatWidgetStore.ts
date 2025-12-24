@@ -151,7 +151,7 @@ export const chatWidgetActions = {
 	 * Establece la visibilidad del widget
 	 */
 	setVisible(visible: boolean): void {
-		console.log('👁️ Estableciendo visibilidad:', visible);
+		// console.log('👁️ Estableciendo visibilidad:', visible);
 		chatWidgetState.update((state) => ({
 			...state,
 			isVisible: visible
@@ -224,7 +224,7 @@ export const chatWidgetActions = {
 	 * Marca que la página se ha cargado completamente
 	 */
 	setPageLoaded(loaded: boolean): void {
-		console.log('📄 Página cargada:', loaded);
+		// console.log('📄 Página cargada:', loaded);
 		chatWidgetState.update((state) => ({
 			...state,
 			pageLoaded: loaded
@@ -235,7 +235,7 @@ export const chatWidgetActions = {
 	 * Controla la transición de aparición del widget
 	 */
 	setShowWithTransition(show: boolean): void {
-		console.log('✨ Mostrar con transición:', show);
+		// console.log('✨ Mostrar con transición:', show);
 		chatWidgetState.update((state) => ({
 			...state,
 			showWithTransition: show

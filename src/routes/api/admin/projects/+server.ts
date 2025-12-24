@@ -9,14 +9,35 @@
  */
 
 import { json, type RequestHandler } from '@sveltejs/kit';
-import { AdminProjectsService } from '$lib/services/admin/projects.service';
-import type { CreateProyectoDTO, ApiResponseDTO } from '$lib/models/admin/dtos';
+import { AdminProjectsService } from '$lib/services/admin/projects/projects.service';
+import type { CreateProyectoDTO, ApiResponseDTO } from '$lib/models/admin';
 
 /**
  * GET - Listar todos los proyectos con paginación y filtros
+ * Usa all=true para traer todos los registros sin límite
  */
 export const GET: RequestHandler = async ({ url }) => {
 	try {
+		const all = url.searchParams.get('all') === 'true';
+
+		if (all) {
+			// Obtener TODOS los proyectos sin límite
+			const data = await AdminProjectsService.getAllProjects();
+			return json({
+				success: true,
+				data: {
+					data: data,
+					pagination: {
+						page: 1,
+						limit: data.length,
+						total: data.length,
+						total_pages: 1
+					}
+				}
+			});
+		}
+
+		// Paginación normal
 		const page = parseInt(url.searchParams.get('page') || '1');
 		const limit = parseInt(url.searchParams.get('limit') || '10');
 
@@ -31,10 +52,12 @@ export const GET: RequestHandler = async ({ url }) => {
 		};
 
 		const result = await AdminProjectsService.listProjects(page, limit, filters);
+		const stats = await AdminProjectsService.getProjectStats();
 
 		return json({
 			success: true,
-			data: result
+			data: result,
+			stats: stats
 		});
 	} catch (error) {
 		console.error('Error al listar proyectos:', error);

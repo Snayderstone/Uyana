@@ -3,6 +3,7 @@
 	import InvestigadoresList from '$lib/components/organisms/InvestigadoresList.svelte';
 	import SparklingHighlight from '$lib/components/molecules/SparklingHighlight.svelte';
 	import type { Investigador } from '$lib/models/investigator.model';
+	
 
 	export let data: {
 		investigadores: Investigador[];

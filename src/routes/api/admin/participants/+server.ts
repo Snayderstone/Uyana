@@ -6,27 +6,73 @@
  */
 
 import { json, type RequestHandler } from '@sveltejs/kit';
-import { AdminParticipantsService } from '$lib/services/admin/participants.service';
-import type { CreateParticipanteDTO, ApiResponseDTO } from '$lib/models/admin/dtos';
+import { AdminParticipantsService } from '$lib/services/admin/participants/participants.service';
+import type { CreateParticipanteDTO, ApiResponseDTO } from '$lib/models/admin';
 
 /**
  * GET - Listar participantes con paginación y filtros
+ * Usa all=true para traer todos los registros sin límite (múltiples páginas automáticas)
  */
 export const GET: RequestHandler = async ({ url }) => {
 	try {
+		const all = url.searchParams.get('all') === 'true';
+
+		if (all) {
+			// Obtener TODOS los participantes sin límite
+			const data = await AdminParticipantsService.getAllParticipants();
+			return json({
+				success: true,
+				data: {
+					data: data,
+					pagination: {
+						page: 1,
+						limit: data.length,
+						total: data.length,
+						total_pages: 1
+					}
+				}
+			});
+		}
+
+		// Paginación normal
 		const page = parseInt(url.searchParams.get('page') || '1');
 		const limit = parseInt(url.searchParams.get('limit') || '10');
 		const acreditado = url.searchParams.get('acreditado');
+
+		console.log('🔍 API received acreditado param:', {
+			raw: acreditado,
+			type: typeof acreditado,
+			isTruthy: !!acreditado,
+			equalTrue: acreditado === 'true',
+			equalFalse: acreditado === 'false',
+			equalNull: acreditado === 'null'
+		});
+
+		// Handle acreditado parameter: null string -> null, true/false strings -> booleans
+		let acreditadoValue: boolean | null | undefined = undefined;
+		if (acreditado === 'null') {
+			acreditadoValue = null; // Filter for NULL values in database
+		} else if (acreditado === 'true') {
+			acreditadoValue = true;
+		} else if (acreditado === 'false') {
+			acreditadoValue = false;
+		}
 
 		const filters = {
 			nombre: url.searchParams.get('nombre') || undefined,
 			email: url.searchParams.get('email') || undefined,
 			genero: url.searchParams.get('genero') || undefined,
-			acreditado: acreditado ? acreditado === 'true' : undefined,
+			acreditado: acreditadoValue,
+			facultad_id: url.searchParams.get('facultad_id')
+				? parseInt(url.searchParams.get('facultad_id')!)
+				: undefined,
 			carrera_id: url.searchParams.get('carrera_id')
 				? parseInt(url.searchParams.get('carrera_id')!)
-				: undefined
+				: undefined,
+			carrera_nombre: url.searchParams.get('carrera_nombre') || undefined
 		};
+
+		console.log('📋 API filters object:', filters);
 
 		const result = await AdminParticipantsService.listParticipants(page, limit, filters);
 

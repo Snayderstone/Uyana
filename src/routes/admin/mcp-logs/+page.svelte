@@ -94,261 +94,445 @@
 </svelte:head>
 
 <div class="mcp-logs-page">
-	<header>
-		<h1>MCP Logs Monitor</h1>
-
-		<div class="filter-bar">
-			<div class="filter-group">
-				<label for="filter-level">Nivel:</label>
-				<select id="filter-level" bind:value={filterLevel} on:change={refreshLogs}>
-					<option value="">Todos</option>
-					<option value="DEBUG">DEBUG</option>
-					<option value="INFO">INFO</option>
-					<option value="WARN">WARN</option>
-					<option value="ERROR">ERROR</option>
-				</select>
-			</div>
-
-			<div class="filter-group">
-				<label for="filter-source">Fuente:</label>
-				<input
-					type="text"
-					id="filter-source"
-					placeholder="Ej: MCP_CLIENT"
-					bind:value={filterSource}
-					on:input={refreshLogs}
-				/>
-			</div>
-
-			<div class="filter-group">
-				<label for="filter-operation">Operación:</label>
-				<input
-					type="text"
-					id="filter-operation"
-					placeholder="Ej: REQUEST_START"
-					bind:value={filterOperation}
-					on:input={refreshLogs}
-				/>
-			</div>
-
-			<div class="filter-group">
-				<label for="filter-message">Mensaje:</label>
-				<input
-					type="text"
-					id="filter-message"
-					placeholder="Buscar texto..."
-					bind:value={filterMessage}
-					on:input={refreshLogs}
-				/>
-			</div>
+	<!-- Top Bar -->
+	<div class="top-bar">
+		<div class="breadcrumb">
+			<span class="muted">Sistema</span>
+			<span class="separator">/</span>
+			<span>MCP Logs</span>
 		</div>
-
-		<div class="actions">
-			<label class="auto-scroll" for="auto-scroll-checkbox">
-				<input id="auto-scroll-checkbox" type="checkbox" bind:checked={autoScroll} />
-				Auto-scroll
+		<div class="top-actions">
+			<label class="auto-scroll-toggle">
+				<input type="checkbox" bind:checked={autoScroll} />
+				<span class="toggle-label">Auto-scroll</span>
 			</label>
-
-			<div class="log-level-selector">
-				<label for="log-level">Nivel de logging:</label>
-				<select
-					id="log-level"
-					on:change={(e) => changeLogLevel(e.currentTarget ? e.currentTarget.value : '1')}
+			<button class="btn-icon" on:click={refreshLogs} title="Refresh">
+				<svg
+					xmlns="http://www.w3.org/2000/svg"
+					fill="none"
+					viewBox="0 0 24 24"
+					stroke-width="1.5"
+					stroke="currentColor"
 				>
-					<option value="0">DEBUG</option>
-					<option value="1" selected>INFO</option>
-					<option value="2">WARN</option>
-					<option value="3">ERROR</option>
-				</select>
-			</div>
-
-			<button class="clear-logs" on:click={clearLogs}>Limpiar logs</button>
-			<button class="refresh-logs" on:click={refreshLogs}>Refrescar</button>
+					<path
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"
+					/>
+				</svg>
+			</button>
+			<button class="btn-clear" on:click={clearLogs}>Clear logs</button>
 		</div>
-	</header>
+	</div>
 
-	<main bind:this={logContainer}>
+	<!-- Filters Bar -->
+	<div class="filters-bar">
+		<div class="filter-item">
+			<label for="filter-level">Level</label>
+			<select id="filter-level" bind:value={filterLevel} on:change={refreshLogs}>
+				<option value="">All</option>
+				<option value="DEBUG">DEBUG</option>
+				<option value="INFO">INFO</option>
+				<option value="WARN">WARN</option>
+				<option value="ERROR">ERROR</option>
+			</select>
+		</div>
+
+		<div class="filter-item">
+			<label for="filter-source">Source</label>
+			<input
+				id="filter-source"
+				type="text"
+				placeholder="Filter by source..."
+				bind:value={filterSource}
+				on:input={refreshLogs}
+			/>
+		</div>
+
+		<div class="filter-item">
+			<label for="filter-operation">Operation</label>
+			<input
+				id="filter-operation"
+				type="text"
+				placeholder="Filter by operation..."
+				bind:value={filterOperation}
+				on:input={refreshLogs}
+			/>
+		</div>
+
+		<div class="filter-item">
+			<label for="filter-message">Message</label>
+			<input
+				id="filter-message"
+				type="text"
+				placeholder="Search message..."
+				bind:value={filterMessage}
+				on:input={refreshLogs}
+			/>
+		</div>
+
+		<div class="filter-item">
+			<label for="log-level-select">Log Level</label>
+			<select
+				id="log-level-select"
+				on:change={(e) => changeLogLevel(e.currentTarget?.value || '1')}
+			>
+				<option value="0">DEBUG</option>
+				<option value="1" selected>INFO</option>
+				<option value="2">WARN</option>
+				<option value="3">ERROR</option>
+			</select>
+		</div>
+	</div>
+
+	<!-- Logs Container -->
+	<div class="logs-wrapper" bind:this={logContainer}>
 		{#if logs.length === 0}
-			<div class="no-logs">No hay logs disponibles</div>
+			<div class="empty-state">
+				<svg
+					xmlns="http://www.w3.org/2000/svg"
+					fill="none"
+					viewBox="0 0 24 24"
+					stroke-width="1.5"
+					stroke="currentColor"
+				>
+					<path
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"
+					/>
+				</svg>
+				<p>No logs available</p>
+				<span>Logs will appear here when MCP operations are executed</span>
+			</div>
 		{:else}
-			<pre class="logs-container">
+			<div class="logs-content">
 				{#each logs as log}
 					<div
-						class="log-entry"
-						class:debug-log={log.includes('[DEBUG]')}
-						class:info-log={log.includes('[INFO]')}
-						class:warn-log={log.includes('[WARN]')}
-						class:error-log={log.includes('[ERROR]')}>
+						class="log-line"
+						class:debug={log.includes('[DEBUG]')}
+						class:info={log.includes('[INFO]')}
+						class:warn={log.includes('[WARN]')}
+						class:error={log.includes('[ERROR]')}
+					>
 						{log}
 					</div>
 				{/each}
-			</pre>
+			</div>
 		{/if}
-	</main>
+	</div>
 
-	<footer>
-		<div class="stats">
-			Mostrando {logs.length} logs
+	<!-- Status Bar -->
+	<div class="status-bar">
+		<div class="status-item">
+			<span class="status-label">Total:</span>
+			<span class="status-value">{logs.length} logs</span>
 		</div>
-	</footer>
+		<div class="status-item">
+			<span class="status-label">Filtered:</span>
+			<span class="status-value">{logs.length} shown</span>
+		</div>
+	</div>
 </div>
 
-<style>
+<style lang="scss">
 	.mcp-logs-page {
 		display: flex;
 		flex-direction: column;
 		height: 100vh;
-		padding: 1rem;
-		background-color: #f5f5f5;
-		color: #333;
-		font-family: 'Courier New', monospace;
+		background: #0f1419;
+		color: #ededed;
+		font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
 	}
 
-	header {
-		background-color: #333;
-		color: white;
-		padding: 1rem;
-		border-radius: 8px 8px 0 0;
-	}
-
-	h1 {
-		margin: 0 0 1rem 0;
-		font-size: 1.5rem;
-	}
-
-	.filter-bar {
-		display: flex;
-		gap: 1rem;
-		flex-wrap: wrap;
-		margin-bottom: 1rem;
-	}
-
-	.filter-group {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-	}
-
-	input,
-	select {
-		padding: 0.5rem;
-		border: 1px solid #555;
-		background-color: #444;
-		color: white;
-		border-radius: 4px;
-	}
-
-	.actions {
-		display: flex;
-		gap: 1rem;
-		align-items: center;
-		flex-wrap: wrap;
-	}
-
-	button {
-		padding: 0.5rem 1rem;
-		background-color: #555;
-		border: none;
-		color: white;
-		cursor: pointer;
-		border-radius: 4px;
-	}
-
-	button:hover {
-		background-color: #666;
-	}
-
-	.clear-logs {
-		background-color: #b71c1c;
-	}
-
-	.clear-logs:hover {
-		background-color: #d32f2f;
-	}
-
-	.refresh-logs {
-		background-color: #1976d2;
-	}
-
-	.refresh-logs:hover {
-		background-color: #2196f3;
-	}
-
-	main {
-		flex: 1;
-		overflow-y: auto;
-		background-color: #1e1e1e;
-		color: #d4d4d4;
-		border-radius: 0 0 8px 8px;
-		padding: 1rem;
-	}
-
-	.logs-container {
-		margin: 0;
-		white-space: pre-wrap;
-		font-size: 0.875rem;
-		line-height: 1.5;
-	}
-
-	.log-entry {
-		padding: 0.25rem 0;
-		border-bottom: 1px solid #333;
-	}
-
-	.debug-log {
-		color: #9cdcfe;
-	}
-
-	.info-log {
-		color: #6a9955;
-	}
-
-	.warn-log {
-		color: #dcdcaa;
-	}
-
-	.error-log {
-		color: #f14c4c;
-	}
-
-	footer {
-		background-color: #333;
-		color: white;
-		padding: 0.5rem 1rem;
-		border-radius: 0 0 8px 8px;
+	.top-bar {
+		background: #1a1f26;
+		border-bottom: 1px solid #2d3748;
+		padding: 1rem 2rem;
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
+		flex-shrink: 0;
 	}
 
-	.no-logs {
-		display: flex;
-		justify-content: center;
-		align-items: center;
-		height: 100%;
-		color: #777;
-		font-style: italic;
-	}
-
-	.auto-scroll {
+	.breadcrumb {
 		display: flex;
 		align-items: center;
 		gap: 0.5rem;
+		font-size: 0.875rem;
+		color: #ededed;
+
+		.muted {
+			color: #6b7280;
+		}
+
+		.separator {
+			color: #4b5563;
+		}
+	}
+
+	.top-actions {
+		display: flex;
+		gap: 0.75rem;
+		align-items: center;
+	}
+
+	.auto-scroll-toggle {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		font-size: 0.8125rem;
+		color: #9ca3af;
+		cursor: pointer;
+		user-select: none;
+
+		input[type='checkbox'] {
+			width: 1rem;
+			height: 1rem;
+			cursor: pointer;
+			accent-color: #10b981;
+		}
+
+		.toggle-label {
+			font-family: 'SF Mono', Monaco, monospace;
+		}
+	}
+
+	.btn-icon {
+		background: transparent;
+		border: 1px solid #374151;
+		color: #9ca3af;
+		width: 2rem;
+		height: 2rem;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		border-radius: 6px;
+		cursor: pointer;
+		transition: all 0.15s;
+
+		svg {
+			width: 1rem;
+			height: 1rem;
+		}
+
+		&:hover {
+			border-color: #10b981;
+			color: #10b981;
+		}
+	}
+
+	.btn-clear {
+		background: transparent;
+		border: 1px solid #374151;
+		color: #ef4444;
+		padding: 0.5rem 0.75rem;
+		border-radius: 6px;
+		cursor: pointer;
+		font-size: 0.8125rem;
+		font-family: 'SF Mono', Monaco, monospace;
+		transition: all 0.15s;
+
+		&:hover {
+			border-color: #ef4444;
+			background: rgba(239, 68, 68, 0.1);
+		}
+	}
+
+	.filters-bar {
+		background: #151a1f;
+		border-bottom: 1px solid #2d3748;
+		padding: 1rem 2rem;
+		display: flex;
+		gap: 1rem;
+		flex-wrap: wrap;
+		align-items: flex-end;
+		flex-shrink: 0;
+	}
+
+	.filter-item {
+		display: flex;
+		flex-direction: column;
+		gap: 0.375rem;
+		min-width: 140px;
+
+		label {
+			font-size: 0.6875rem;
+			font-weight: 600;
+			text-transform: uppercase;
+			letter-spacing: 0.05em;
+			color: #6b7280;
+		}
+
+		input,
+		select {
+			background: #1a1f26;
+			border: 1px solid #374151;
+			color: #ededed;
+			padding: 0.5rem 0.75rem;
+			border-radius: 6px;
+			font-size: 0.8125rem;
+			font-family: 'SF Mono', Monaco, monospace;
+			transition: all 0.15s;
+
+			&:focus {
+				outline: none;
+				border-color: #10b981;
+			}
+
+			&::placeholder {
+				color: #4b5563;
+			}
+		}
+
+		select {
+			cursor: pointer;
+		}
+	}
+
+	.logs-wrapper {
+		flex: 1;
+		overflow-y: auto;
+		background: #0f1419;
+		position: relative;
+	}
+
+	.empty-state {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		height: 100%;
+		gap: 1rem;
+		color: #6b7280;
+
+		svg {
+			width: 3rem;
+			height: 3rem;
+			color: #4b5563;
+		}
+
+		p {
+			margin: 0;
+			font-size: 1rem;
+			font-weight: 600;
+			color: #9ca3af;
+		}
+
+		span {
+			font-size: 0.875rem;
+			color: #6b7280;
+		}
+	}
+
+	.logs-content {
+		font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Courier New', monospace;
+		font-size: 0.8125rem;
+		line-height: 1.6;
+		padding: 1rem;
+	}
+
+	.log-line {
+		padding: 0.375rem 0.75rem;
+		margin: 0.125rem 0;
+		border-radius: 4px;
+		white-space: pre-wrap;
+		word-break: break-all;
+		background: rgba(255, 255, 255, 0.02);
+		border-left: 2px solid transparent;
+		transition: all 0.1s;
+
+		&:hover {
+			background: rgba(255, 255, 255, 0.04);
+		}
+
+		&.debug {
+			color: #60a5fa;
+			border-left-color: #3b82f6;
+		}
+
+		&.info {
+			color: #10b981;
+			border-left-color: #10b981;
+		}
+
+		&.warn {
+			color: #fbbf24;
+			border-left-color: #f59e0b;
+		}
+
+		&.error {
+			color: #ef4444;
+			border-left-color: #dc2626;
+			background: rgba(239, 68, 68, 0.05);
+		}
+	}
+
+	.status-bar {
+		background: #1a1f26;
+		border-top: 1px solid #2d3748;
+		padding: 0.75rem 2rem;
+		display: flex;
+		gap: 2rem;
+		align-items: center;
+		flex-shrink: 0;
+	}
+
+	.status-item {
+		display: flex;
+		gap: 0.5rem;
+		align-items: center;
+		font-size: 0.8125rem;
+		font-family: 'SF Mono', Monaco, monospace;
+
+		.status-label {
+			color: #6b7280;
+		}
+
+		.status-value {
+			color: #ededed;
+			font-weight: 600;
+		}
+	}
+
+	/* Custom Scrollbar */
+	.logs-wrapper::-webkit-scrollbar {
+		width: 8px;
+	}
+
+	.logs-wrapper::-webkit-scrollbar-track {
+		background: #0f1419;
+	}
+
+	.logs-wrapper::-webkit-scrollbar-thumb {
+		background: #374151;
+		border-radius: 4px;
+
+		&:hover {
+			background: #4b5563;
+		}
 	}
 
 	@media (max-width: 768px) {
-		.filter-bar {
+		.top-bar,
+		.filters-bar,
+		.status-bar {
+			padding: 1rem;
+		}
+
+		.filters-bar {
 			flex-direction: column;
-			gap: 0.5rem;
+			align-items: stretch;
 		}
 
-		.filter-group {
-			width: 100%;
+		.filter-item {
+			min-width: 100%;
 		}
 
-		.actions {
+		.status-bar {
 			flex-direction: column;
 			align-items: flex-start;
+			gap: 0.5rem;
 		}
 	}
 </style>

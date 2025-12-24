@@ -7,8 +7,8 @@
  */
 
 import { json, type RequestHandler } from '@sveltejs/kit';
-import { AdminParticipantsService } from '$lib/services/admin/participants.service';
-import type { UpdateParticipanteDTO, ApiResponseDTO } from '$lib/models/admin/dtos';
+import { AdminParticipantsService } from '$lib/services/admin/participants/participants.service';
+import type { UpdateParticipanteDTO, ApiResponseDTO } from '$lib/models/admin';
 
 /**
  * GET - Obtener un participante por ID

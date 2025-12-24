@@ -7,8 +7,8 @@
  */
 
 import { json, type RequestHandler } from '@sveltejs/kit';
-import { AdminBlogRepository } from '$lib/db/admin/blog.repository';
-import type { UpdateBlogCategoriaDTO } from '$lib/models/admin/dtos';
+import { AdminBlogService } from '$lib/services/admin/blog/blog.service';
+import type { UpdateBlogCategoriaDTO } from '$lib/models/admin';
 
 /**
  * GET - Obtener una categoría por ID
@@ -27,7 +27,7 @@ export const GET: RequestHandler = async ({ params }) => {
 			);
 		}
 
-		const categoria = await AdminBlogRepository.getCategoriaById(id);
+		const categoria = await AdminBlogService.getCategoriaById(id);
 
 		if (!categoria) {
 			return json(
@@ -75,7 +75,7 @@ export const PUT: RequestHandler = async ({ params, request }) => {
 		const body = (await request.json()) as UpdateBlogCategoriaDTO;
 
 		// Verificar que la categoría existe
-		const existingCategoria = await AdminBlogRepository.getCategoriaById(id);
+		const existingCategoria = await AdminBlogService.getCategoriaById(id);
 		if (!existingCategoria) {
 			return json(
 				{
@@ -88,7 +88,7 @@ export const PUT: RequestHandler = async ({ params, request }) => {
 
 		// Si se actualiza el slug, verificar que no esté en uso
 		if (body.slug && body.slug !== existingCategoria.slug) {
-			const slugInUse = await AdminBlogRepository.getCategoriaBySlug(body.slug);
+			const slugInUse = await AdminBlogService.getCategoriaBySlug(body.slug);
 			if (slugInUse && slugInUse.id !== id) {
 				return json(
 					{
@@ -101,7 +101,7 @@ export const PUT: RequestHandler = async ({ params, request }) => {
 			}
 		}
 
-		const categoria = await AdminBlogRepository.updateCategoria(id, body);
+		const categoria = await AdminBlogService.updateCategoria(id, body);
 
 		if (!categoria) {
 			return json(
@@ -147,7 +147,7 @@ export const DELETE: RequestHandler = async ({ params }) => {
 			);
 		}
 
-		const success = await AdminBlogRepository.deleteCategoria(id);
+		const success = await AdminBlogService.deleteCategoria(id);
 
 		if (!success) {
 			return json(

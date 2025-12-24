@@ -7,8 +7,8 @@
  */
 
 import { json, type RequestHandler } from '@sveltejs/kit';
-import { AdminProjectsService } from '$lib/services/admin/projects.service';
-import type { UpdateProyectoDTO, ApiResponseDTO } from '$lib/models/admin/dtos';
+import { AdminProjectsService } from '$lib/services/admin/projects/projects.service';
+import type { UpdateProyectoDTO, ApiResponseDTO } from '$lib/models/admin';
 
 /**
  * GET - Obtener un proyecto por ID

@@ -6,15 +6,15 @@
  */
 
 import { json, type RequestHandler } from '@sveltejs/kit';
-import { AdminBlogRepository } from '$lib/db/admin/blog.repository';
-import type { CreateBlogCategoriaDTO } from '$lib/models/admin/dtos';
+import { AdminBlogService } from '$lib/services/admin/blog/blog.service';
+import type { CreateBlogCategoriaDTO } from '$lib/models/admin';
 
 /**
  * GET - Listar todas las categorías
  */
 export const GET: RequestHandler = async () => {
 	try {
-		const categorias = await AdminBlogRepository.listCategorias();
+		const categorias = await AdminBlogService.listCategorias();
 
 		return json({
 			success: true,
@@ -55,7 +55,7 @@ export const POST: RequestHandler = async ({ request }) => {
 		}
 
 		// Verificar si el slug ya existe
-		const existingCategoria = await AdminBlogRepository.getCategoriaBySlug(body.slug);
+		const existingCategoria = await AdminBlogService.getCategoriaBySlug(body.slug);
 		if (existingCategoria) {
 			return json(
 				{
@@ -67,7 +67,7 @@ export const POST: RequestHandler = async ({ request }) => {
 			);
 		}
 
-		const categoria = await AdminBlogRepository.createCategoria(body);
+		const categoria = await AdminBlogService.createCategoria(body);
 
 		if (!categoria) {
 			return json(
