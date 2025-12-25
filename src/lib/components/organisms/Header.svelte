@@ -13,7 +13,7 @@
 		</a>
 
 		<div class="links">
-			<a href="/map">Mapa(Proyectos)</a>
+			<a href="/map">Proyectos</a>
 		</div>
 
 		<div class="links">
