@@ -8,14 +8,17 @@
 
 import { json, type RequestHandler } from '@sveltejs/kit';
 import { AdminChartsRepository } from '$lib/db/admin/graficosConfig/chart.repository';
+import { requireAdmin, jsonError } from '$lib/utils/auth.utils';
 
 /**
  * GET - Listar todas las configuraciones de gráficos
  * Query params:
  *   - category: filtrar por categoría (ej: "participantes", "proyectos")
  */
-export const GET: RequestHandler = async ({ url }) => {
+export const GET: RequestHandler = async (event) => {
 	try {
+		await requireAdmin(event);
+		const { url } = event;
 		const category = url.searchParams.get('category');
 		let charts = await AdminChartsRepository.getAllChartConfigs();
 
@@ -35,7 +38,10 @@ export const GET: RequestHandler = async ({ url }) => {
 			success: true,
 			data: charts
 		});
-	} catch (error) {
+	} catch (error: any) {
+		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
+			return jsonError('No autorizado', 401);
+		}
 		console.error('Error al obtener configuraciones de gráficos:', error);
 		return json(
 			{

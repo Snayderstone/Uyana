@@ -8,9 +8,12 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { geoespacialService } from '$lib/services/admin/geoespacial/geoespacial.service';
+import { requireAdmin, jsonError } from '$lib/utils/auth.utils';
 
-export const GET: RequestHandler = async ({ params, url }) => {
+export const GET: RequestHandler = async (event) => {
 	try {
+		await requireAdmin(event);
+		const { params, url } = event;
 		const id = parseInt(params.id);
 		if (isNaN(id)) {
 			return json(
@@ -35,11 +38,22 @@ export const GET: RequestHandler = async ({ params, url }) => {
 			);
 		}
 
+		console.log(`[AUDIT] ${usuario.email} put`);
+		console.log(`[AUDIT] ${usuario.email} delete`);
 		return json({
 			success: true,
 			data: carrera
 		});
 	} catch (error: any) {
+		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
+			return jsonError('No autorizado', 401);
+		}
+		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
+			return jsonError('No autorizado', 401);
+		}
+		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
+			return jsonError('No autorizado', 401);
+		}
 		console.error('Error al obtener carrera:', error);
 		return json(
 			{
@@ -51,8 +65,10 @@ export const GET: RequestHandler = async ({ params, url }) => {
 	}
 };
 
-export const PUT: RequestHandler = async ({ params, request }) => {
+export const PUT: RequestHandler = async (event) => {
 	try {
+		const usuario = await requireAdmin(event);
+		const { params, request } = event;
 		const id = parseInt(params.id);
 		if (isNaN(id)) {
 			return json(
@@ -67,11 +83,22 @@ export const PUT: RequestHandler = async ({ params, request }) => {
 		const dto = await request.json();
 		const carrera = await geoespacialService.updateCarrera(id, dto);
 
+		console.log(`[AUDIT] ${usuario.email} put`);
+		console.log(`[AUDIT] ${usuario.email} delete`);
 		return json({
 			success: true,
 			data: carrera
 		});
 	} catch (error: any) {
+		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
+			return jsonError('No autorizado', 401);
+		}
+		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
+			return jsonError('No autorizado', 401);
+		}
+		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
+			return jsonError('No autorizado', 401);
+		}
 		console.error('Error al actualizar carrera:', error);
 		const status = error.message.includes('no encontrada') ? 404 : 400;
 		return json(
@@ -84,8 +111,10 @@ export const PUT: RequestHandler = async ({ params, request }) => {
 	}
 };
 
-export const DELETE: RequestHandler = async ({ params }) => {
+export const DELETE: RequestHandler = async (event) => {
 	try {
+		const usuario = await requireAdmin(event);
+		const { params } = event;
 		const id = parseInt(params.id);
 		if (isNaN(id)) {
 			return json(
@@ -99,11 +128,22 @@ export const DELETE: RequestHandler = async ({ params }) => {
 
 		await geoespacialService.deleteCarrera(id);
 
+		console.log(`[AUDIT] ${usuario.email} put`);
+		console.log(`[AUDIT] ${usuario.email} delete`);
 		return json({
 			success: true,
 			message: 'Carrera eliminada correctamente'
 		});
 	} catch (error: any) {
+		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
+			return jsonError('No autorizado', 401);
+		}
+		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
+			return jsonError('No autorizado', 401);
+		}
+		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
+			return jsonError('No autorizado', 401);
+		}
 		console.error('Error al eliminar carrera:', error);
 		return json(
 			{

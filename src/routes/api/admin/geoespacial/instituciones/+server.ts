@@ -7,17 +7,27 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { geoespacialService } from '$lib/services/admin/geoespacial/geoespacial.service';
+import { requireAdmin, jsonError } from '$lib/utils/auth.utils';
 
-export const GET: RequestHandler = async ({ url }) => {
+export const GET: RequestHandler = async (event) => {
 	try {
+		await requireAdmin(event);
+		const { url } = event;
 		const includeRelations = url.searchParams.get('include') === 'facultades';
 		const instituciones = await geoespacialService.getAllInstituciones(includeRelations);
 
+		console.log(`[AUDIT] ${usuario.email} post`);
 		return json({
 			success: true,
 			data: instituciones
 		});
 	} catch (error: any) {
+		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
+			return jsonError('No autorizado', 401);
+		}
+		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
+			return jsonError('No autorizado', 401);
+		}
 		console.error('Error al obtener instituciones:', error);
 		return json(
 			{
@@ -29,11 +39,14 @@ export const GET: RequestHandler = async ({ url }) => {
 	}
 };
 
-export const POST: RequestHandler = async ({ request }) => {
+export const POST: RequestHandler = async (event) => {
 	try {
+		const usuario = await requireAdmin(event);
+		const { request } = event;
 		const dto = await request.json();
 		const institucion = await geoespacialService.createInstitucion(dto);
 
+		console.log(`[AUDIT] ${usuario.email} post`);
 		return json(
 			{
 				success: true,
@@ -42,6 +55,12 @@ export const POST: RequestHandler = async ({ request }) => {
 			{ status: 201 }
 		);
 	} catch (error: any) {
+		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
+			return jsonError('No autorizado', 401);
+		}
+		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
+			return jsonError('No autorizado', 401);
+		}
 		console.error('Error al crear institución:', error);
 		return json(
 			{

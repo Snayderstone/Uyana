@@ -12,12 +12,15 @@ import { json, type RequestHandler } from '@sveltejs/kit';
 import { AdminImportExportService } from '$lib/services/admin/import-export.service';
 import * as XLSX from 'xlsx';
 import Papa from 'papaparse';
+import { requireAdmin, jsonError } from '$lib/utils/auth.utils';
 
 /**
  * GET - Exportar proyectos en diferentes formatos
  */
-export const GET: RequestHandler = async ({ url }) => {
+export const GET: RequestHandler = async (event) => {
 	try {
+		await requireAdmin(event);
+		const { url } = event;
 		// Obtener parámetros
 		const format = url.searchParams.get('format') || 'json';
 		const idsParam = url.searchParams.get('ids');
@@ -49,7 +52,10 @@ export const GET: RequestHandler = async ({ url }) => {
 						{ status: 400 }
 					);
 				}
-			} catch (error) {
+			} catch (error: any) {
+		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
+			return jsonError('No autorizado', 401);
+		}
 				return json(
 					{
 						success: false,
@@ -125,7 +131,10 @@ export const GET: RequestHandler = async ({ url }) => {
 			},
 			{ status: 500 }
 		);
-	} catch (error) {
+	} catch (error: any) {
+		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
+			return jsonError('No autorizado', 401);
+		}
 		console.error('Error al exportar proyectos:', error);
 		return json(
 			{

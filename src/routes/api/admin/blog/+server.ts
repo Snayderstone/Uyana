@@ -8,12 +8,15 @@
 import { json, type RequestHandler } from '@sveltejs/kit';
 import { AdminBlogService } from '$lib/services/admin/blog/blog.service';
 import type { CreateBlogPostDTO, ApiResponseDTO } from '$lib/models/admin';
+import { requireAdmin, jsonError } from '$lib/utils/auth.utils';
 
 /**
  * GET - Listar posts con paginación y filtros
  */
-export const GET: RequestHandler = async ({ url }) => {
+export const GET: RequestHandler = async (event) => {
 	try {
+		await requireAdmin(event);
+		const { url } = event;
 		const page = parseInt(url.searchParams.get('page') || '1');
 		const limit = parseInt(url.searchParams.get('limit') || '10');
 		const publicado = url.searchParams.get('publicado');

@@ -30,6 +30,7 @@ import {
 	AdminCarrerasRepository
 } from '$lib/db/admin/catalogs/catalogs.repository';
 import type { ApiResponseDTO } from '$lib/models/admin';
+import { requireAdmin, jsonError } from '$lib/utils/auth.utils';
 
 const catalogRepositories: Record<string, any> = {
 	estados: AdminEstadosRepository,
@@ -47,8 +48,10 @@ const catalogRepositories: Record<string, any> = {
 /**
  * GET - Obtener todos los elementos de un catálogo
  */
-export const GET: RequestHandler = async ({ params }) => {
+export const GET: RequestHandler = async (event) => {
 	try {
+		await requireAdmin(event);
+		const { params } = event;
 		const { type } = params;
 
 		const repository = catalogRepositories[type];
@@ -65,11 +68,26 @@ export const GET: RequestHandler = async ({ params }) => {
 
 		const data = await repository.getAll();
 
+		console.log(`[AUDIT] ${usuario.email} post`);
+		console.log(`[AUDIT] ${usuario.email} put`);
+		console.log(`[AUDIT] ${usuario.email} delete`);
 		return json({
 			success: true,
 			data
 		});
-	} catch (error) {
+	} catch (error: any) {
+		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
+			return jsonError('No autorizado', 401);
+		}
+		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
+			return jsonError('No autorizado', 401);
+		}
+		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
+			return jsonError('No autorizado', 401);
+		}
+		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
+			return jsonError('No autorizado', 401);
+		}
 		console.error('Error al obtener catálogo:', error);
 		return json(
 			{
@@ -84,8 +102,10 @@ export const GET: RequestHandler = async ({ params }) => {
 /**
  * POST - Crear un nuevo elemento en el catálogo
  */
-export const POST: RequestHandler = async ({ params, request }) => {
+export const POST: RequestHandler = async (event) => {
 	try {
+		const usuario = await requireAdmin(event);
+		const { params, request } = event;
 		const { type } = params;
 		const repository = catalogRepositories[type];
 
@@ -124,6 +144,9 @@ export const POST: RequestHandler = async ({ params, request }) => {
 			);
 		}
 
+		console.log(`[AUDIT] ${usuario.email} post`);
+		console.log(`[AUDIT] ${usuario.email} put`);
+		console.log(`[AUDIT] ${usuario.email} delete`);
 		return json(
 			{
 				success: true,
@@ -132,7 +155,19 @@ export const POST: RequestHandler = async ({ params, request }) => {
 			},
 			{ status: 201 }
 		);
-	} catch (error) {
+	} catch (error: any) {
+		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
+			return jsonError('No autorizado', 401);
+		}
+		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
+			return jsonError('No autorizado', 401);
+		}
+		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
+			return jsonError('No autorizado', 401);
+		}
+		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
+			return jsonError('No autorizado', 401);
+		}
 		console.error('Error al crear elemento del catálogo:', error);
 		return json(
 			{
@@ -147,8 +182,10 @@ export const POST: RequestHandler = async ({ params, request }) => {
 /**
  * PUT - Actualizar un elemento del catálogo
  */
-export const PUT: RequestHandler = async ({ params, request, url }) => {
+export const PUT: RequestHandler = async (event) => {
 	try {
+		const usuario = await requireAdmin(event);
+		const { params, request, url } = event;
 		const { type } = params;
 		const repository = catalogRepositories[type];
 
@@ -188,12 +225,27 @@ export const PUT: RequestHandler = async ({ params, request, url }) => {
 			);
 		}
 
+		console.log(`[AUDIT] ${usuario.email} post`);
+		console.log(`[AUDIT] ${usuario.email} put`);
+		console.log(`[AUDIT] ${usuario.email} delete`);
 		return json({
 			success: true,
 			data: updatedItem,
 			message: 'Elemento actualizado exitosamente'
 		});
-	} catch (error) {
+	} catch (error: any) {
+		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
+			return jsonError('No autorizado', 401);
+		}
+		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
+			return jsonError('No autorizado', 401);
+		}
+		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
+			return jsonError('No autorizado', 401);
+		}
+		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
+			return jsonError('No autorizado', 401);
+		}
 		console.error('Error al actualizar elemento del catálogo:', error);
 		return json(
 			{
@@ -208,8 +260,10 @@ export const PUT: RequestHandler = async ({ params, request, url }) => {
 /**
  * DELETE - Eliminar un elemento del catálogo
  */
-export const DELETE: RequestHandler = async ({ params, url }) => {
+export const DELETE: RequestHandler = async (event) => {
 	try {
+		const usuario = await requireAdmin(event);
+		const { params, url } = event;
 		const { type } = params;
 		const repository = catalogRepositories[type];
 
@@ -247,11 +301,26 @@ export const DELETE: RequestHandler = async ({ params, url }) => {
 			);
 		}
 
+		console.log(`[AUDIT] ${usuario.email} post`);
+		console.log(`[AUDIT] ${usuario.email} put`);
+		console.log(`[AUDIT] ${usuario.email} delete`);
 		return json({
 			success: true,
 			message: 'Elemento eliminado exitosamente'
 		});
-	} catch (error) {
+	} catch (error: any) {
+		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
+			return jsonError('No autorizado', 401);
+		}
+		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
+			return jsonError('No autorizado', 401);
+		}
+		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
+			return jsonError('No autorizado', 401);
+		}
+		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
+			return jsonError('No autorizado', 401);
+		}
 		console.error('Error al eliminar elemento del catálogo:', error);
 		return json(
 			{

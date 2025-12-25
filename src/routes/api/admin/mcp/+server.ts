@@ -4,6 +4,7 @@ import { processMcpRequest, deleteSession, getServerStats } from '$lib/mcp-core/
 import { McpValidation, JsonRpcErrorCodes } from '$lib/mcp-core/shared/types';
 import type { JsonRpcRequest } from '$lib/mcp-core/shared/types';
 import { mcpLogger } from '$lib/mcp-core/shared/mcpLogger';
+import { requireAdmin, jsonError } from '$lib/utils/auth.utils';
 
 /**
  * Cabecera para el ID de sesión MCP
@@ -13,7 +14,10 @@ const SESSION_ID_HEADER = 'mcp-session-id';
 /**
  * Manejador de solicitudes POST para llamadas MCP
  */
-export const POST: RequestHandler = async ({ request, getClientAddress }) => {
+export const POST: RequestHandler = async (event) => {
+	try {
+		const usuario = await requireAdmin(event);
+		const { request, getClientAddress } = event;
 	const startTime = Date.now();
 	const requestId = `api-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
 
@@ -149,7 +153,16 @@ export const POST: RequestHandler = async ({ request, getClientAddress }) => {
 				'X-Response-Time': `${totalDuration}ms`
 			}
 		});
-	} catch (error) {
+	} catch (error: any) {
+		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
+			return jsonError('No autorizado', 401);
+		}
+		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
+			return jsonError('No autorizado', 401);
+		}
+		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
+			return jsonError('No autorizado', 401);
+		}
 		const totalDuration = Date.now() - startTime;
 
 		mcpLogger.error('API_MCP', 'CRITICAL_ERROR', 'Error crítico en API MCP', {
@@ -179,8 +192,10 @@ export const POST: RequestHandler = async ({ request, getClientAddress }) => {
 /**
  * Manejador de solicitudes GET para estado del servidor y eventos SSE
  */
-export const GET: RequestHandler = async ({ request, url }) => {
+export const GET: RequestHandler = async (event) => {
 	try {
+		await requireAdmin(event);
+		const { request, url } = event;
 		const searchParams = url.searchParams;
 		const action = searchParams.get('action');
 
@@ -218,7 +233,16 @@ export const GET: RequestHandler = async ({ request, url }) => {
 					documentation: 'https://docs.uyana.com/mcp'
 				});
 		}
-	} catch (error) {
+	} catch (error: any) {
+		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
+			return jsonError('No autorizado', 401);
+		}
+		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
+			return jsonError('No autorizado', 401);
+		}
+		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
+			return jsonError('No autorizado', 401);
+		}
 		console.error('Error en GET /api/mcp:', error);
 		return json({ error: 'Error interno del servidor' }, { status: 500 });
 	}
@@ -227,8 +251,10 @@ export const GET: RequestHandler = async ({ request, url }) => {
 /**
  * Manejador de solicitudes DELETE para terminar sesiones
  */
-export const DELETE: RequestHandler = async ({ request }) => {
+export const DELETE: RequestHandler = async (event) => {
 	try {
+		const usuario = await requireAdmin(event);
+		const { request } = event;
 		const sessionId = request.headers.get(SESSION_ID_HEADER);
 
 		if (!sessionId) {
@@ -245,6 +271,8 @@ export const DELETE: RequestHandler = async ({ request }) => {
 		const deleted = deleteSession(sessionId);
 
 		if (deleted) {
+			console.log(`[AUDIT] ${usuario.email} post`);
+			console.log(`[AUDIT] ${usuario.email} delete`);
 			return json({
 				success: true,
 				message: 'Sesión terminada correctamente',
@@ -260,7 +288,16 @@ export const DELETE: RequestHandler = async ({ request }) => {
 				{ status: 404 }
 			);
 		}
-	} catch (error) {
+	} catch (error: any) {
+		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
+			return jsonError('No autorizado', 401);
+		}
+		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
+			return jsonError('No autorizado', 401);
+		}
+		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
+			return jsonError('No autorizado', 401);
+		}
 		console.error('Error en DELETE /api/mcp:', error);
 		return json({ error: 'Error interno del servidor' }, { status: 500 });
 	}
@@ -300,7 +337,16 @@ function createSSEResponse(request: Request): Response {
 							timestamp: Date.now()
 						})}\n\n`
 					);
-				} catch (error) {
+				} catch (error: any) {
+		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
+			return jsonError('No autorizado', 401);
+		}
+		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
+			return jsonError('No autorizado', 401);
+		}
+		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
+			return jsonError('No autorizado', 401);
+		}
 					// La conexión se cerró, limpiar el intervalo
 					clearInterval(pingInterval);
 				}

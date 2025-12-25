@@ -8,12 +8,15 @@
 
 import { json, type RequestHandler } from '@sveltejs/kit';
 import { AdminBlogService } from '$lib/services/admin/blog/blog.service';
+import { requireAdmin, jsonError } from '$lib/utils/auth.utils';
 
 /**
  * GET - Obtener una etiqueta por ID
  */
-export const GET: RequestHandler = async ({ params }) => {
+export const GET: RequestHandler = async (event) => {
 	try {
+		await requireAdmin(event);
+		const { params } = event;
 		const id = parseInt(params.id);
 
 		if (isNaN(id)) {
@@ -38,11 +41,22 @@ export const GET: RequestHandler = async ({ params }) => {
 			);
 		}
 
+		console.log(`[AUDIT] ${usuario.email} put`);
+		console.log(`[AUDIT] ${usuario.email} delete`);
 		return json({
 			success: true,
 			data: etiqueta
 		});
-	} catch (error) {
+	} catch (error: any) {
+		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
+			return jsonError('No autorizado', 401);
+		}
+		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
+			return jsonError('No autorizado', 401);
+		}
+		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
+			return jsonError('No autorizado', 401);
+		}
 		console.error('Error al obtener etiqueta:', error);
 		return json(
 			{
@@ -57,8 +71,10 @@ export const GET: RequestHandler = async ({ params }) => {
 /**
  * PUT - Actualizar una etiqueta
  */
-export const PUT: RequestHandler = async ({ params, request }) => {
+export const PUT: RequestHandler = async (event) => {
 	try {
+		const usuario = await requireAdmin(event);
+		const { params, request } = event;
 		const id = parseInt(params.id);
 
 		if (isNaN(id)) {
@@ -100,12 +116,23 @@ export const PUT: RequestHandler = async ({ params, request }) => {
 			);
 		}
 
+		console.log(`[AUDIT] ${usuario.email} put`);
+		console.log(`[AUDIT] ${usuario.email} delete`);
 		return json({
 			success: true,
 			data: etiqueta,
 			message: 'Etiqueta actualizada exitosamente'
 		});
-	} catch (error) {
+	} catch (error: any) {
+		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
+			return jsonError('No autorizado', 401);
+		}
+		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
+			return jsonError('No autorizado', 401);
+		}
+		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
+			return jsonError('No autorizado', 401);
+		}
 		console.error('Error al actualizar etiqueta:', error);
 		return json(
 			{
@@ -121,8 +148,10 @@ export const PUT: RequestHandler = async ({ params, request }) => {
 /**
  * DELETE - Eliminar una etiqueta
  */
-export const DELETE: RequestHandler = async ({ params }) => {
+export const DELETE: RequestHandler = async (event) => {
 	try {
+		const usuario = await requireAdmin(event);
+		const { params } = event;
 		const id = parseInt(params.id);
 
 		if (isNaN(id)) {
@@ -159,11 +188,22 @@ export const DELETE: RequestHandler = async ({ params }) => {
 			);
 		}
 
+		console.log(`[AUDIT] ${usuario.email} put`);
+		console.log(`[AUDIT] ${usuario.email} delete`);
 		return json({
 			success: true,
 			message: 'Etiqueta eliminada exitosamente'
 		});
-	} catch (error) {
+	} catch (error: any) {
+		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
+			return jsonError('No autorizado', 401);
+		}
+		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
+			return jsonError('No autorizado', 401);
+		}
+		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
+			return jsonError('No autorizado', 401);
+		}
 		console.error('Error al eliminar etiqueta:', error);
 		return json(
 			{

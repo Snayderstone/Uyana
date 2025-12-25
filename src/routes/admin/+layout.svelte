@@ -5,6 +5,9 @@
 	import '$lib/scss/global.scss';
 	import ThemeToggle from '$lib/components/molecules/ThemeToggle.svelte';
 	import Logo from '$lib/components/atoms/Logo.svelte';
+	import { usuarioStore, logout } from '$lib/stores/auth.store';
+
+	export let data;
 
 	let sidebarVisible = false;
 	let showUserMenu = false;
@@ -12,12 +15,8 @@
 	let proyectosExpanded = false;
 	let participantesExpanded = false;
 
-	// Usuario hardcoded (TODO: integrar con auth real)
-	let user = {
-		nombre: 'Admin UCE',
-		email: 'admin@uce.edu.ec',
-		avatar: 'https://ui-avatars.com/api/?name=Admin+UCE&background=6E29E7&color=fff&size=128'
-	};
+	// Usuario desde el servidor (autenticado)
+	$: user = data.usuario || $usuarioStore;
 
 	function toggleSidebar() {
 		sidebarVisible = !sidebarVisible;
@@ -27,10 +26,10 @@
 		showUserMenu = !showUserMenu;
 	}
 
-	function handleLogout() {
+	async function handleLogout() {
 		showUserMenu = false;
-		alert('Cerrando sesión...');
-		goto('/');
+		await logout();
+		goto('/login');
 	}
 
 	function handleSettings() {
@@ -229,28 +228,36 @@
 			<div class="header-right">
 				<ThemeToggle />
 
-				<div class="user-profile">
-					<button class="user-avatar-btn" on:click={toggleUserMenu} aria-label="Menú de usuario">
-						<img src={user.avatar} alt={user.nombre} class="avatar" />
-					</button>
+				{#if user}
+					<div class="user-profile">
+						<button class="user-avatar-btn" on:click={toggleUserMenu} aria-label="Menú de usuario">
+							{#if user.avatar}
+								<img src={user.avatar} alt={user.nombre} class="avatar" />
+							{:else}
+								<div class="avatar-placeholder">
+									{user.nombre?.charAt(0).toUpperCase() || 'A'}
+								</div>
+							{/if}
+						</button>
 
-					{#if showUserMenu}
-						<div class="user-menu">
-							<div class="user-info">
-								<div class="user-name">{user.nombre}</div>
-								<div class="user-email">{user.email}</div>
+						{#if showUserMenu}
+							<div class="user-menu">
+								<div class="user-info">
+									<div class="user-name">{user.nombre}</div>
+									<div class="user-email">{user.email}</div>
+								</div>
+								<button class="user-menu-item" on:click={handleSettings}>
+									<span class="icon">⚙️</span>
+									Configuración
+								</button>
+								<button class="user-menu-item logout" on:click={handleLogout}>
+									<span class="icon">🚪</span>
+									Cerrar sesión
+								</button>
 							</div>
-							<button class="user-menu-item" on:click={handleSettings}>
-								<span class="icon">⚙️</span>
-								Configuración
-							</button>
-							<button class="user-menu-item logout" on:click={handleLogout}>
-								<span class="icon">🚪</span>
-								Cerrar sesión
-							</button>
-						</div>
-					{/if}
-				</div>
+						{/if}
+					</div>
+				{/if}
 			</div>
 		</header>
 
@@ -533,6 +540,19 @@
 		height: 40px;
 		border-radius: 50%;
 		display: block;
+	}
+
+	.avatar-placeholder {
+		width: 40px;
+		height: 40px;
+		border-radius: 50%;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+		color: white;
+		font-weight: 600;
+		font-size: 1rem;
 	}
 
 	.user-menu {

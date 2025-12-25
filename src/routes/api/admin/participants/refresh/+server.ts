@@ -6,6 +6,7 @@
 
 import { json, type RequestHandler } from '@sveltejs/kit';
 import { AdminParticipantsService } from '$lib/services/admin/participants/participants.service';
+import { requireAdmin, jsonError } from '$lib/utils/auth.utils';
 
 /**
  * POST - Refrescar todas las vistas materializadas de participantes
@@ -31,11 +32,15 @@ export const POST: RequestHandler = async () => {
 
 		console.log('✅ Vistas materializadas refrescadas correctamente');
 
+		console.log(`[AUDIT] ${usuario.email} post`);
 		return json({
 			success: true,
 			message: 'Vistas materializadas refrescadas correctamente'
 		});
-	} catch (error) {
+	} catch (error: any) {
+		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
+			return jsonError('No autorizado', 401);
+		}
 		console.error('❌ Error crítico al refrescar vistas:', error);
 
 		const errorMessage = error instanceof Error ? error.message : String(error);

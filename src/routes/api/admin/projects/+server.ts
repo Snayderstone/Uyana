@@ -11,13 +11,16 @@
 import { json, type RequestHandler } from '@sveltejs/kit';
 import { AdminProjectsService } from '$lib/services/admin/projects/projects.service';
 import type { CreateProyectoDTO, ApiResponseDTO } from '$lib/models/admin';
+import { requireAdmin, jsonError } from '$lib/utils/auth.utils';
 
 /**
  * GET - Listar todos los proyectos con paginación y filtros
  * Usa all=true para traer todos los registros sin límite
  */
-export const GET: RequestHandler = async ({ url }) => {
+export const GET: RequestHandler = async (event) => {
 	try {
+		await requireAdmin(event);
+		const { url } = event;
 		const all = url.searchParams.get('all') === 'true';
 
 		if (all) {
@@ -59,7 +62,10 @@ export const GET: RequestHandler = async ({ url }) => {
 			data: result,
 			stats: stats
 		});
-	} catch (error) {
+	} catch (error: any) {
+		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
+			return jsonError('No autorizado', 401);
+		}
 		console.error('Error al listar proyectos:', error);
 		return json(
 			{
@@ -74,8 +80,10 @@ export const GET: RequestHandler = async ({ url }) => {
 /**
  * POST - Crear un nuevo proyecto
  */
-export const POST: RequestHandler = async ({ request }) => {
+export const POST: RequestHandler = async (event) => {
 	try {
+		const usuario = await requireAdmin(event);
+		const { request } = event;
 		const body = (await request.json()) as CreateProyectoDTO;
 
 		// Validar campos
@@ -117,6 +125,7 @@ export const POST: RequestHandler = async ({ request }) => {
 			);
 		}
 
+		console.log(`[AUDIT] ${usuario.email} creó proyecto: ${proyecto.id}`);
 		return json(
 			{
 				success: true,
@@ -125,7 +134,10 @@ export const POST: RequestHandler = async ({ request }) => {
 			},
 			{ status: 201 }
 		);
-	} catch (error) {
+	} catch (error: any) {
+		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
+			return jsonError('No autorizado', 401);
+		}
 		console.error('Error al crear proyecto:', error);
 		return json(
 			{

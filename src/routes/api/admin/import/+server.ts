@@ -9,6 +9,7 @@ import { AdminImportExportService } from '$lib/services/admin/import-export.serv
 import * as XLSX from 'xlsx';
 import Papa from 'papaparse';
 import type { ImportProyectoRowDTO } from '$lib/models/admin';
+import { requireAdmin, jsonError } from '$lib/utils/auth.utils';
 
 /**
  * POST - Importar proyectos desde archivo Excel o CSV
@@ -17,8 +18,10 @@ import type { ImportProyectoRowDTO } from '$lib/models/admin';
  * 1. FormData con archivo (multipart/form-data)
  * 2. JSON con array de datos
  */
-export const POST: RequestHandler = async ({ request }) => {
+export const POST: RequestHandler = async (event) => {
 	try {
+		const usuario = await requireAdmin(event);
+		const { request } = event;
 		const contentType = request.headers.get('content-type') || '';
 		let rows: ImportProyectoRowDTO[] = [];
 
@@ -151,7 +154,10 @@ export const POST: RequestHandler = async ({ request }) => {
 			},
 			{ status: statusCode }
 		);
-	} catch (error) {
+	} catch (error: any) {
+		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
+			return jsonError('No autorizado', 401);
+		}
 		console.error('Error al importar proyectos:', error);
 		return json(
 			{

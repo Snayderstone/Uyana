@@ -3,6 +3,7 @@ import type { RequestHandler } from '@sveltejs/kit';
 import { createDeepSeekProvider } from '$lib/ai/models/deepseek';
 import type { AIMessage } from '$lib/ai/aiManager';
 import { env } from '$env/dynamic/private';
+import { requireAdmin, jsonError } from '$lib/utils/auth.utils';
 
 /**
  * Función para detectar si una consulta necesita herramientas MCP
@@ -96,7 +97,13 @@ async function invocarHerramientaMCP(
 		}
 
 		return null;
-	} catch (error) {
+	} catch (error: any) {
+		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
+			return jsonError('No autorizado', 401);
+		}
+		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
+			return jsonError('No autorizado', 401);
+		}
 		console.error('Error al invocar herramienta MCP:', error);
 		return null;
 	}
@@ -105,8 +112,10 @@ async function invocarHerramientaMCP(
 /**
  * Manejador para consultas de IA usando DeepSeek
  */
-export const POST: RequestHandler = async ({ request }) => {
+export const POST: RequestHandler = async (event) => {
 	try {
+		const usuario = await requireAdmin(event);
+		const { request } = event;
 		// Validar Content-Type
 		const contentType = request.headers.get('content-type');
 		if (!contentType || !contentType.includes('application/json')) {
@@ -188,6 +197,7 @@ export const POST: RequestHandler = async ({ request }) => {
 			options
 		);
 
+		console.log(`[AUDIT] ${usuario.email} post`);
 		return json({
 			success: true,
 			data: {
@@ -195,7 +205,13 @@ export const POST: RequestHandler = async ({ request }) => {
 				mcpToolUsed: usedMCPTool
 			}
 		});
-	} catch (error) {
+	} catch (error: any) {
+		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
+			return jsonError('No autorizado', 401);
+		}
+		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
+			return jsonError('No autorizado', 401);
+		}
 		console.error('Error en consulta de IA:', error);
 
 		const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
@@ -235,7 +251,13 @@ export const GET: RequestHandler = async () => {
 			details: healthCheck.details,
 			timestamp: Date.now()
 		});
-	} catch (error) {
+	} catch (error: any) {
+		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
+			return jsonError('No autorizado', 401);
+		}
+		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
+			return jsonError('No autorizado', 401);
+		}
 		console.error('Error en health check de IA:', error);
 
 		return json(

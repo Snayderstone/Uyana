@@ -8,6 +8,7 @@
 import { json, type RequestHandler } from '@sveltejs/kit';
 import { AdminBlogService } from '$lib/services/admin/blog/blog.service';
 import type { CreateBlogCategoriaDTO } from '$lib/models/admin';
+import { requireAdmin, jsonError } from '$lib/utils/auth.utils';
 
 /**
  * GET - Listar todas las categorías
@@ -16,11 +17,18 @@ export const GET: RequestHandler = async () => {
 	try {
 		const categorias = await AdminBlogService.listCategorias();
 
+		console.log(`[AUDIT] ${usuario.email} post`);
 		return json({
 			success: true,
 			data: categorias
 		});
-	} catch (error) {
+	} catch (error: any) {
+		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
+			return jsonError('No autorizado', 401);
+		}
+		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
+			return jsonError('No autorizado', 401);
+		}
 		console.error('Error al listar categorías:', error);
 		return json(
 			{
@@ -35,8 +43,10 @@ export const GET: RequestHandler = async () => {
 /**
  * POST - Crear una nueva categoría
  */
-export const POST: RequestHandler = async ({ request }) => {
+export const POST: RequestHandler = async (event) => {
 	try {
+		const usuario = await requireAdmin(event);
+		const { request } = event;
 		const body = (await request.json()) as CreateBlogCategoriaDTO;
 
 		// Validar campos obligatorios
@@ -79,6 +89,7 @@ export const POST: RequestHandler = async ({ request }) => {
 			);
 		}
 
+		console.log(`[AUDIT] ${usuario.email} post`);
 		return json(
 			{
 				success: true,
@@ -87,7 +98,13 @@ export const POST: RequestHandler = async ({ request }) => {
 			},
 			{ status: 201 }
 		);
-	} catch (error) {
+	} catch (error: any) {
+		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
+			return jsonError('No autorizado', 401);
+		}
+		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
+			return jsonError('No autorizado', 401);
+		}
 		console.error('Error al crear categoría:', error);
 		return json(
 			{

@@ -7,12 +7,15 @@
 
 import { json, type RequestHandler } from '@sveltejs/kit';
 import { AdminChartsRepository } from '$lib/db/admin/graficosConfig/chart.repository';
+import { requireAdmin, jsonError } from '$lib/utils/auth.utils';
 
 /**
  * GET - Obtener configuración de un gráfico específico
  */
-export const GET: RequestHandler = async ({ params }) => {
+export const GET: RequestHandler = async (event) => {
 	try {
+		await requireAdmin(event);
+		const { params } = event;
 		const chart = await AdminChartsRepository.getChartConfigByName(params.name!);
 
 		if (!chart) {
@@ -29,7 +32,10 @@ export const GET: RequestHandler = async ({ params }) => {
 			success: true,
 			data: chart
 		});
-	} catch (error) {
+	} catch (error: any) {
+		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
+			return jsonError('No autorizado', 401);
+		}
 		console.error('Error al obtener configuración del gráfico:', error);
 		return json(
 			{

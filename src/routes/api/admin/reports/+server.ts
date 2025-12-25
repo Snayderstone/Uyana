@@ -12,12 +12,15 @@
 
 import { json, type RequestHandler } from '@sveltejs/kit';
 import { AdminReportsService } from '$lib/services/admin/reports.service';
+import { requireAdmin, jsonError } from '$lib/utils/auth.utils';
 
 /**
  * GET - Generar informe de proyecto(s)
  */
-export const GET: RequestHandler = async ({ url }) => {
+export const GET: RequestHandler = async (event) => {
 	try {
+		await requireAdmin(event);
+		const { url } = event;
 		const format = url.searchParams.get('format') || 'pdf';
 		const type = url.searchParams.get('type') || 'consolidated';
 		const idParam = url.searchParams.get('id');
@@ -119,7 +122,10 @@ export const GET: RequestHandler = async ({ url }) => {
 							{ status: 400 }
 						);
 					}
-				} catch (error) {
+				} catch (error: any) {
+		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
+			return jsonError('No autorizado', 401);
+		}
 					return json(
 						{
 							success: false,
@@ -143,7 +149,10 @@ export const GET: RequestHandler = async ({ url }) => {
 				}
 			});
 		}
-	} catch (error) {
+	} catch (error: any) {
+		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
+			return jsonError('No autorizado', 401);
+		}
 		console.error('Error al generar informe:', error);
 
 		const errorMessage = error instanceof Error ? error.message : 'Error desconocido';

@@ -8,13 +8,16 @@
 import { json, type RequestHandler } from '@sveltejs/kit';
 import { AdminParticipantsService } from '$lib/services/admin/participants/participants.service';
 import type { CreateParticipanteDTO, ApiResponseDTO } from '$lib/models/admin';
+import { requireAdmin, jsonError } from '$lib/utils/auth.utils';
 
 /**
  * GET - Listar participantes con paginación y filtros
  * Usa all=true para traer todos los registros sin límite (múltiples páginas automáticas)
  */
-export const GET: RequestHandler = async ({ url }) => {
+export const GET: RequestHandler = async (event) => {
 	try {
+		await requireAdmin(event);
+		const { url } = event;
 		const all = url.searchParams.get('all') === 'true';
 
 		if (all) {
@@ -95,8 +98,10 @@ export const GET: RequestHandler = async ({ url }) => {
 /**
  * POST - Crear un nuevo participante
  */
-export const POST: RequestHandler = async ({ request }) => {
+export const POST: RequestHandler = async (event) => {
 	try {
+		const usuario = await requireAdmin(event);
+		const { request } = event;
 		const body = (await request.json()) as CreateParticipanteDTO;
 
 		// Validar campos

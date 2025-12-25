@@ -9,12 +9,15 @@
 import { json, type RequestHandler } from '@sveltejs/kit';
 import { AdminParticipantsService } from '$lib/services/admin/participants/participants.service';
 import type { UpdateParticipanteDTO, ApiResponseDTO } from '$lib/models/admin';
+import { requireAdmin, jsonError } from '$lib/utils/auth.utils';
 
 /**
  * GET - Obtener un participante por ID
  */
-export const GET: RequestHandler = async ({ params }) => {
+export const GET: RequestHandler = async (event) => {
 	try {
+		await requireAdmin(event);
+		const { params } = event;
 		const id = parseInt(params.id);
 
 		if (isNaN(id)) {
@@ -39,11 +42,22 @@ export const GET: RequestHandler = async ({ params }) => {
 			);
 		}
 
+		console.log(`[AUDIT] ${usuario.email} put`);
+		console.log(`[AUDIT] ${usuario.email} delete`);
 		return json({
 			success: true,
 			data: participante
 		});
-	} catch (error) {
+	} catch (error: any) {
+		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
+			return jsonError('No autorizado', 401);
+		}
+		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
+			return jsonError('No autorizado', 401);
+		}
+		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
+			return jsonError('No autorizado', 401);
+		}
 		console.error('Error al obtener participante:', error);
 		return json(
 			{
@@ -58,8 +72,10 @@ export const GET: RequestHandler = async ({ params }) => {
 /**
  * PUT - Actualizar un participante
  */
-export const PUT: RequestHandler = async ({ params, request }) => {
+export const PUT: RequestHandler = async (event) => {
 	try {
+		const usuario = await requireAdmin(event);
+		const { params, request } = event;
 		const id = parseInt(params.id);
 
 		if (isNaN(id)) {
@@ -116,12 +132,23 @@ export const PUT: RequestHandler = async ({ params, request }) => {
 			);
 		}
 
+		console.log(`[AUDIT] ${usuario.email} put`);
+		console.log(`[AUDIT] ${usuario.email} delete`);
 		return json({
 			success: true,
 			data: participante,
 			message: 'Participante actualizado exitosamente'
 		});
-	} catch (error) {
+	} catch (error: any) {
+		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
+			return jsonError('No autorizado', 401);
+		}
+		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
+			return jsonError('No autorizado', 401);
+		}
+		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
+			return jsonError('No autorizado', 401);
+		}
 		console.error('Error al actualizar participante:', error);
 		return json(
 			{
@@ -136,8 +163,10 @@ export const PUT: RequestHandler = async ({ params, request }) => {
 /**
  * DELETE - Eliminar un participante
  */
-export const DELETE: RequestHandler = async ({ params }) => {
+export const DELETE: RequestHandler = async (event) => {
 	try {
+		const usuario = await requireAdmin(event);
+		const { params } = event;
 		const id = parseInt(params.id);
 
 		if (isNaN(id)) {
@@ -175,11 +204,22 @@ export const DELETE: RequestHandler = async ({ params }) => {
 			);
 		}
 
+		console.log(`[AUDIT] ${usuario.email} put`);
+		console.log(`[AUDIT] ${usuario.email} delete`);
 		return json({
 			success: true,
 			message: 'Participante eliminado exitosamente'
 		});
-	} catch (error) {
+	} catch (error: any) {
+		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
+			return jsonError('No autorizado', 401);
+		}
+		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
+			return jsonError('No autorizado', 401);
+		}
+		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
+			return jsonError('No autorizado', 401);
+		}
 		console.error('Error al eliminar participante:', error);
 		return json(
 			{

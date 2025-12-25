@@ -8,6 +8,7 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from '../dashboard/$types';
 import { AnalyticsRepository } from '$lib/db/admin/projects/dashboardProjects.repository';
+import { requireAdmin, jsonError } from '$lib/utils/auth.utils';
 
 /**
  * GET - Obtener todas las estadísticas de analytics
@@ -20,7 +21,10 @@ export const GET: RequestHandler = async () => {
 			success: true,
 			data: analytics
 		});
-	} catch (error) {
+	} catch (error: any) {
+		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
+			return jsonError('No autorizado', 401);
+		}
 		console.error('Error fetching analytics:', error);
 		return json(
 			{

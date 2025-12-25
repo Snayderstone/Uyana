@@ -6,6 +6,7 @@
 
 import { json, type RequestHandler } from '@sveltejs/kit';
 import { AdminParticipantsService } from '$lib/services/admin/participants/participants.service';
+import { requireAdmin, jsonError } from '$lib/utils/auth.utils';
 
 /**
  * GET - Obtener todos los datos del dashboard usando vistas materializadas
@@ -35,7 +36,10 @@ export const GET: RequestHandler = async () => {
 			success: true,
 			data: dashboardData
 		});
-	} catch (error) {
+	} catch (error: any) {
+		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
+			return jsonError('No autorizado', 401);
+		}
 		console.error('❌ Error al obtener datos del dashboard:', error);
 		return json(
 			{

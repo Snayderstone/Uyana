@@ -7,9 +7,12 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { geoespacialService } from '$lib/services/admin/geoespacial/geoespacial.service';
+import { requireAdmin, jsonError } from '$lib/utils/auth.utils';
 
-export const GET: RequestHandler = async ({ url }) => {
+export const GET: RequestHandler = async (event) => {
 	try {
+		await requireAdmin(event);
+		const { url } = event;
 		const includeRelations = url.searchParams.get('include') === 'relations';
 		const facultadId = url.searchParams.get('facultad_id');
 
@@ -20,11 +23,18 @@ export const GET: RequestHandler = async ({ url }) => {
 			carreras = await geoespacialService.getAllCarreras(includeRelations);
 		}
 
+		console.log(`[AUDIT] ${usuario.email} post`);
 		return json({
 			success: true,
 			data: carreras
 		});
 	} catch (error: any) {
+		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
+			return jsonError('No autorizado', 401);
+		}
+		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
+			return jsonError('No autorizado', 401);
+		}
 		console.error('Error al obtener carreras:', error);
 		return json(
 			{
@@ -36,11 +46,14 @@ export const GET: RequestHandler = async ({ url }) => {
 	}
 };
 
-export const POST: RequestHandler = async ({ request }) => {
+export const POST: RequestHandler = async (event) => {
 	try {
+		const usuario = await requireAdmin(event);
+		const { request } = event;
 		const dto = await request.json();
 		const carrera = await geoespacialService.createCarrera(dto);
 
+		console.log(`[AUDIT] ${usuario.email} post`);
 		return json(
 			{
 				success: true,
@@ -49,6 +62,12 @@ export const POST: RequestHandler = async ({ request }) => {
 			{ status: 201 }
 		);
 	} catch (error: any) {
+		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
+			return jsonError('No autorizado', 401);
+		}
+		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
+			return jsonError('No autorizado', 401);
+		}
 		console.error('Error al crear carrera:', error);
 		return json(
 			{

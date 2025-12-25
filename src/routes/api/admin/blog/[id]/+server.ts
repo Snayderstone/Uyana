@@ -9,12 +9,15 @@
 import { json, type RequestHandler } from '@sveltejs/kit';
 import { AdminBlogService } from '$lib/services/admin/blog/blog.service';
 import type { UpdateBlogPostDTO, ApiResponseDTO } from '$lib/models/admin';
+import { requireAdmin, jsonError } from '$lib/utils/auth.utils';
 
 /**
  * GET - Obtener un post por ID
  */
-export const GET: RequestHandler = async ({ params }) => {
+export const GET: RequestHandler = async (event) => {
 	try {
+		await requireAdmin(event);
+		const { params } = event;
 		const id = parseInt(params.id);
 
 		if (isNaN(id)) {
@@ -39,11 +42,22 @@ export const GET: RequestHandler = async ({ params }) => {
 			);
 		}
 
+		console.log(`[AUDIT] ${usuario.email} put`);
+		console.log(`[AUDIT] ${usuario.email} delete`);
 		return json({
 			success: true,
 			data: post
 		});
-	} catch (error) {
+	} catch (error: any) {
+		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
+			return jsonError('No autorizado', 401);
+		}
+		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
+			return jsonError('No autorizado', 401);
+		}
+		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
+			return jsonError('No autorizado', 401);
+		}
 		console.error('Error al obtener post:', error);
 		return json(
 			{
@@ -58,8 +72,10 @@ export const GET: RequestHandler = async ({ params }) => {
 /**
  * PUT - Actualizar un post
  */
-export const PUT: RequestHandler = async ({ params, request }) => {
+export const PUT: RequestHandler = async (event) => {
 	try {
+		const usuario = await requireAdmin(event);
+		const { params, request } = event;
 		const id = parseInt(params.id);
 
 		if (isNaN(id)) {
@@ -101,12 +117,23 @@ export const PUT: RequestHandler = async ({ params, request }) => {
 			);
 		}
 
+		console.log(`[AUDIT] ${usuario.email} put`);
+		console.log(`[AUDIT] ${usuario.email} delete`);
 		return json({
 			success: true,
 			data: post,
 			message: 'Post actualizado exitosamente'
 		});
-	} catch (error) {
+	} catch (error: any) {
+		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
+			return jsonError('No autorizado', 401);
+		}
+		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
+			return jsonError('No autorizado', 401);
+		}
+		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
+			return jsonError('No autorizado', 401);
+		}
 		console.error('Error al actualizar post:', error);
 		return json(
 			{
@@ -121,8 +148,10 @@ export const PUT: RequestHandler = async ({ params, request }) => {
 /**
  * DELETE - Eliminar un post
  */
-export const DELETE: RequestHandler = async ({ params }) => {
+export const DELETE: RequestHandler = async (event) => {
 	try {
+		const usuario = await requireAdmin(event);
+		const { params } = event;
 		const id = parseInt(params.id);
 
 		if (isNaN(id)) {
@@ -160,11 +189,22 @@ export const DELETE: RequestHandler = async ({ params }) => {
 			);
 		}
 
+		console.log(`[AUDIT] ${usuario.email} put`);
+		console.log(`[AUDIT] ${usuario.email} delete`);
 		return json({
 			success: true,
 			message: 'Post eliminado exitosamente'
 		});
-	} catch (error) {
+	} catch (error: any) {
+		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
+			return jsonError('No autorizado', 401);
+		}
+		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
+			return jsonError('No autorizado', 401);
+		}
+		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
+			return jsonError('No autorizado', 401);
+		}
 		console.error('Error al eliminar post:', error);
 		return json(
 			{

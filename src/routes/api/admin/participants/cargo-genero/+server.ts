@@ -6,12 +6,15 @@
 
 import { json, type RequestHandler } from '@sveltejs/kit';
 import { AdminParticipantsService } from '$lib/services/admin/participants/participants.service';
+import { requireAdmin, jsonError } from '$lib/utils/auth.utils';
 
 /**
  * GET - Obtener distribución de asignaciones por cargo y género
  */
-export const GET: RequestHandler = async ({ url }) => {
+export const GET: RequestHandler = async (event) => {
 	try {
+		await requireAdmin(event);
+		const { url } = event;
 		const limit = parseInt(url.searchParams.get('limit') || '10');
 
 		console.log(`📊 Obteniendo cargo × género (top ${limit})...`);
@@ -24,7 +27,10 @@ export const GET: RequestHandler = async ({ url }) => {
 			success: true,
 			data
 		});
-	} catch (error) {
+	} catch (error: any) {
+		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
+			return jsonError('No autorizado', 401);
+		}
 		console.error('❌ Error al obtener cargo × género:', error);
 		return json(
 			{

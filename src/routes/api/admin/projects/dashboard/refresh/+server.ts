@@ -7,6 +7,7 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { AnalyticsRepository } from '$lib/db/admin/projects/dashboardProjects.repository';
+import { requireAdmin, jsonError } from '$lib/utils/auth.utils';
 
 /**
  * POST - Refrescar todas las vistas materializadas
@@ -20,12 +21,16 @@ export const POST: RequestHandler = async () => {
 
 		const duration = Date.now() - startTime;
 
+		console.log(`[AUDIT] ${usuario.email} post`);
 		return json({
 			success: true,
 			message: 'Vistas materializadas actualizadas correctamente',
 			duration_ms: duration
 		});
-	} catch (error) {
+	} catch (error: any) {
+		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
+			return jsonError('No autorizado', 401);
+		}
 		console.error('Error refreshing analytics views:', error);
 		return json(
 			{
