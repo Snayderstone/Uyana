@@ -1,7 +1,6 @@
 <script lang="ts">
 	import ProjectMapExplorer from '$lib/components/organisms/ProjectMapExplorer.svelte';
 	import ProjectDashboard from '$lib/components/organisms/ProjectDashboard.svelte';
-	import MapParticipantsExplorer from '$lib/components/organisms/MapParticipantsExplorer.svelte';
 	import { onMount } from 'svelte';
 	import { fade, fly } from 'svelte/transition';
 	import type { PageData } from './$types';
@@ -29,7 +28,7 @@
 		pageHeight = window.innerHeight - 120;
 	}
 
-	function setTab(tab: 'map' | 'dashboard' | 'participants') {
+	function setTab(tab: 'map' | 'dashboard') {
 		activeTab = tab;
 	}
 </script>
@@ -74,27 +73,6 @@
 			</button>
 			<button
 				class="tab-button"
-				class:active={activeTab === 'participants'}
-				on:click={() => setTab('participants')}
-			>
-				<svg
-					xmlns="http://www.w3.org/2000/svg"
-					width="18"
-					height="18"
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					stroke-width="2"
-					stroke-linecap="round"
-					stroke-linejoin="round"
-				>
-					<circle cx="12" cy="7" r="4" />
-					<path d="M5.5 21a8.38 8.38 0 0 1 13 0" />
-				</svg>
-				Mapa de Participantes
-			</button>
-			<button
-				class="tab-button"
 				class:active={activeTab === 'dashboard'}
 				on:click={() => setTab('dashboard')}
 			>
@@ -130,12 +108,6 @@
 	{:else if activeTab === 'dashboard'}
 		<div class="dashboard-container" in:fade={{ duration: 300 }} out:fade={{ duration: 200 }}>
 			<ProjectDashboard />
-		</div>
-	{:else if activeTab === 'participants'}
-		<div class="map-container" in:fade={{ duration: 300 }} out:fade={{ duration: 200 }}>
-			<!-- Aún no existe este componente -->
-			<!-- Después lo crearemos -->
-			<MapParticipantsExplorer />
 		</div>
 	{/if}
 </div>
