@@ -12,7 +12,7 @@ import { requireAdmin, jsonError } from '$lib/utils/auth.utils';
 
 export const GET: RequestHandler = async (event) => {
 	try {
-		await requireAdmin(event);
+		const usuario = await requireAdmin(event);
 		const { params, url } = event;
 		const id = parseInt(params.id);
 		if (isNaN(id)) {
@@ -38,19 +38,12 @@ export const GET: RequestHandler = async (event) => {
 			);
 		}
 
-		console.log(`[AUDIT] ${usuario.email} put`);
-		console.log(`[AUDIT] ${usuario.email} delete`);
+		console.log(`[AUDIT] ${usuario.email} obtuvo facultad ${id}`);
 		return json({
 			success: true,
 			data: facultad
 		});
 	} catch (error: any) {
-		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
-			return jsonError('No autorizado', 401);
-		}
-		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
-			return jsonError('No autorizado', 401);
-		}
 		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
 			return jsonError('No autorizado', 401);
 		}
@@ -83,19 +76,12 @@ export const PUT: RequestHandler = async (event) => {
 		const dto = await request.json();
 		const facultad = await geoespacialService.updateFacultad(id, dto);
 
-		console.log(`[AUDIT] ${usuario.email} put`);
-		console.log(`[AUDIT] ${usuario.email} delete`);
+		console.log(`[AUDIT] ${usuario.email} actualizó facultad ${id}`);
 		return json({
 			success: true,
 			data: facultad
 		});
 	} catch (error: any) {
-		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
-			return jsonError('No autorizado', 401);
-		}
-		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
-			return jsonError('No autorizado', 401);
-		}
 		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
 			return jsonError('No autorizado', 401);
 		}
@@ -128,19 +114,12 @@ export const DELETE: RequestHandler = async (event) => {
 
 		await geoespacialService.deleteFacultad(id);
 
-		console.log(`[AUDIT] ${usuario.email} put`);
-		console.log(`[AUDIT] ${usuario.email} delete`);
+		console.log(`[AUDIT] ${usuario.email} eliminó facultad ${id}`);
 		return json({
 			success: true,
 			message: 'Facultad eliminada correctamente'
 		});
 	} catch (error: any) {
-		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
-			return jsonError('No autorizado', 401);
-		}
-		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
-			return jsonError('No autorizado', 401);
-		}
 		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
 			return jsonError('No autorizado', 401);
 		}

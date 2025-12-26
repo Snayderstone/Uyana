@@ -11,7 +11,7 @@ import { requireAdmin, jsonError } from '$lib/utils/auth.utils';
 
 export const GET: RequestHandler = async (event) => {
 	try {
-		await requireAdmin(event);
+		const usuario = await requireAdmin(event);
 		const { url } = event;
 		const includeRelations = url.searchParams.get('include') === 'carreras';
 		const institucionId = url.searchParams.get('institucion_id');
@@ -23,15 +23,12 @@ export const GET: RequestHandler = async (event) => {
 			facultades = await geoespacialService.getAllFacultades(includeRelations);
 		}
 
-		console.log(`[AUDIT] ${usuario.email} post`);
+		console.log(`[AUDIT] ${usuario.email} obtuvo facultades`);
 		return json({
 			success: true,
 			data: facultades
 		});
 	} catch (error: any) {
-		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
-			return jsonError('No autorizado', 401);
-		}
 		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
 			return jsonError('No autorizado', 401);
 		}
@@ -53,7 +50,7 @@ export const POST: RequestHandler = async (event) => {
 		const dto = await request.json();
 		const facultad = await geoespacialService.createFacultad(dto);
 
-		console.log(`[AUDIT] ${usuario.email} post`);
+		console.log(`[AUDIT] ${usuario.email} creó facultad`);
 		return json(
 			{
 				success: true,
@@ -62,9 +59,6 @@ export const POST: RequestHandler = async (event) => {
 			{ status: 201 }
 		);
 	} catch (error: any) {
-		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
-			return jsonError('No autorizado', 401);
-		}
 		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
 			return jsonError('No autorizado', 401);
 		}

@@ -50,7 +50,7 @@ const catalogRepositories: Record<string, any> = {
  */
 export const GET: RequestHandler = async (event) => {
 	try {
-		await requireAdmin(event);
+		const usuario = await requireAdmin(event);
 		const { params } = event;
 		const { type } = params;
 
@@ -68,23 +68,12 @@ export const GET: RequestHandler = async (event) => {
 
 		const data = await repository.getAll();
 
-		console.log(`[AUDIT] ${usuario.email} post`);
-		console.log(`[AUDIT] ${usuario.email} put`);
-		console.log(`[AUDIT] ${usuario.email} delete`);
+		console.log(`[AUDIT] ${usuario.email} obtuvo catálogo ${type}`);
 		return json({
 			success: true,
 			data
 		});
 	} catch (error: any) {
-		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
-			return jsonError('No autorizado', 401);
-		}
-		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
-			return jsonError('No autorizado', 401);
-		}
-		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
-			return jsonError('No autorizado', 401);
-		}
 		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
 			return jsonError('No autorizado', 401);
 		}
@@ -144,9 +133,7 @@ export const POST: RequestHandler = async (event) => {
 			);
 		}
 
-		console.log(`[AUDIT] ${usuario.email} post`);
-		console.log(`[AUDIT] ${usuario.email} put`);
-		console.log(`[AUDIT] ${usuario.email} delete`);
+		console.log(`[AUDIT] ${usuario.email} creó elemento en catálogo ${type}`);
 		return json(
 			{
 				success: true,
@@ -156,15 +143,6 @@ export const POST: RequestHandler = async (event) => {
 			{ status: 201 }
 		);
 	} catch (error: any) {
-		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
-			return jsonError('No autorizado', 401);
-		}
-		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
-			return jsonError('No autorizado', 401);
-		}
-		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
-			return jsonError('No autorizado', 401);
-		}
 		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
 			return jsonError('No autorizado', 401);
 		}
@@ -225,24 +203,13 @@ export const PUT: RequestHandler = async (event) => {
 			);
 		}
 
-		console.log(`[AUDIT] ${usuario.email} post`);
-		console.log(`[AUDIT] ${usuario.email} put`);
-		console.log(`[AUDIT] ${usuario.email} delete`);
+		console.log(`[AUDIT] ${usuario.email} actualizó elemento ${id} en catálogo ${type}`);
 		return json({
 			success: true,
 			data: updatedItem,
 			message: 'Elemento actualizado exitosamente'
 		});
 	} catch (error: any) {
-		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
-			return jsonError('No autorizado', 401);
-		}
-		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
-			return jsonError('No autorizado', 401);
-		}
-		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
-			return jsonError('No autorizado', 401);
-		}
 		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
 			return jsonError('No autorizado', 401);
 		}
@@ -301,23 +268,12 @@ export const DELETE: RequestHandler = async (event) => {
 			);
 		}
 
-		console.log(`[AUDIT] ${usuario.email} post`);
-		console.log(`[AUDIT] ${usuario.email} put`);
-		console.log(`[AUDIT] ${usuario.email} delete`);
+		console.log(`[AUDIT] ${usuario.email} eliminó elemento ${id} en catálogo ${type}`);
 		return json({
 			success: true,
 			message: 'Elemento eliminado exitosamente'
 		});
 	} catch (error: any) {
-		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
-			return jsonError('No autorizado', 401);
-		}
-		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
-			return jsonError('No autorizado', 401);
-		}
-		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
-			return jsonError('No autorizado', 401);
-		}
 		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
 			return jsonError('No autorizado', 401);
 		}
