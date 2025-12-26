@@ -591,59 +591,6 @@
 
 			<!-- Controles de mapa integrados -->
 			<div class="map-controls">
-				<div class="map-level-toggle">
-					<!-- Botón para ver por facultades -->
-					<button
-						class="map-control-btn"
-						class:active={mapLevel === 'faculty'}
-						on:click={() => (mapLevel = 'faculty')}
-						aria-label="Ver por facultades"
-						title="Facultades"
-					>
-						<!-- Ícono: bandera (Facultades) -->
-						<svg
-							xmlns="http://www.w3.org/2000/svg"
-							width="20"
-							height="20"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="2"
-							stroke-linecap="round"
-							stroke-linejoin="round"
-						>
-							<path d="M4 22V4" />
-							<path d="M4 4h12l-2 4 2 4H4" />
-						</svg>
-					</button>
-					<button
-						class="map-control-btn"
-						class:active={mapLevel === 'institution'}
-						on:click={() => (mapLevel = 'institution')}
-						aria-label="Ver por instituciones"
-						title="Instituciones"
-					>
-						<!-- Ícono: edificio/academia -->
-						<svg
-							xmlns="http://www.w3.org/2000/svg"
-							width="20"
-							height="20"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="2"
-							stroke-linecap="round"
-							stroke-linejoin="round"
-						>
-							<path d="M3 21h18" />
-							<path d="M5 21V8l7-4 7 4v13" />
-							<path d="M9 21v-6h6v6" />
-							<path d="M9 10h.01" />
-							<path d="M12 10h.01" />
-							<path d="M15 10h.01" />
-						</svg>
-					</button>
-				</div>
 				<!-- Botón para alternar pantalla completa -->
 				<button
 					class="map-control-btn"
@@ -710,7 +657,59 @@
 						<path d="M6 20v-6" />
 					</svg>
 				</button>
-
+				<div class="map-level-toggle">
+					<!-- Botón para ver por facultades -->
+					<button
+						class="map-control-btn"
+						class:active={mapLevel === 'faculty'}
+						on:click={() => (mapLevel = 'faculty')}
+						aria-label="Ver por facultades"
+						title="Facultades"
+					>
+						<!-- Ícono: bandera (Facultades) -->
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							width="20"
+							height="20"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						>
+							<path d="M4 22V4" />
+							<path d="M4 4h12l-2 4 2 4H4" />
+						</svg>
+					</button>
+					<button
+						class="map-control-btn"
+						class:active={mapLevel === 'institution'}
+						on:click={() => (mapLevel = 'institution')}
+						aria-label="Ver por instituciones"
+						title="Instituciones"
+					>
+						<!-- Ícono: edificio/academia -->
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							width="20"
+							height="20"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						>
+							<path d="M3 21h18" />
+							<path d="M5 21V8l7-4 7 4v13" />
+							<path d="M9 21v-6h6v6" />
+							<path d="M9 10h.01" />
+							<path d="M12 10h.01" />
+							<path d="M15 10h.01" />
+						</svg>
+					</button>
+				</div>
 				<!-- Botón para filtros -->
 				<Sparkles>
 					<button
