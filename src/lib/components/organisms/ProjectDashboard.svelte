@@ -31,6 +31,24 @@
 
 	let chartInstances: { [key: string]: Chart } = {};
 
+	// Detectar tema actual
+	let isDarkTheme = true;
+
+	function detectTheme() {
+		if (typeof window !== 'undefined') {
+			isDarkTheme = document.documentElement.getAttribute('data-theme') === 'dark';
+		}
+	}
+
+	// Configurar colores de Chart.js según el tema
+	function getChartColors() {
+		return {
+			textColor: isDarkTheme ? '#e5e7eb' : '#1f2937',
+			gridColor: isDarkTheme ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
+			borderColor: isDarkTheme ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.2)'
+		};
+	}
+
 	// Cargar datos desde el API público
 	async function cargarDatos() {
 		try {
@@ -83,6 +101,49 @@
 			return;
 		}
 
+		// Aplicar colores según el tema
+		const colors = getChartColors();
+
+		// Configurar colores de escalas, leyendas y plugins
+		if (config.options) {
+			// Configurar plugins
+			if (config.options.plugins) {
+				if (config.options.plugins.legend) {
+					config.options.plugins.legend.labels = {
+						...config.options.plugins.legend.labels,
+						color: colors.textColor
+					};
+				}
+				if (config.options.plugins.tooltip) {
+					config.options.plugins.tooltip = {
+						...config.options.plugins.tooltip,
+						backgroundColor: isDarkTheme ? 'rgba(31, 41, 55, 0.95)' : 'rgba(255, 255, 255, 0.95)',
+						titleColor: colors.textColor,
+						bodyColor: colors.textColor,
+						borderColor: colors.borderColor,
+						borderWidth: 1
+					};
+				}
+			}
+
+			// Configurar escalas
+			if (config.options.scales) {
+				Object.keys(config.options.scales).forEach((scaleKey) => {
+					const scale = config.options.scales[scaleKey];
+					if (scale) {
+						scale.ticks = {
+							...scale.ticks,
+							color: colors.textColor
+						};
+						scale.grid = {
+							...scale.grid,
+							color: colors.gridColor
+						};
+					}
+				});
+			}
+		}
+
 		const ctx = canvas.getContext('2d');
 		if (ctx) {
 			chartInstances[canvasId] = new Chart(ctx, config);
@@ -94,6 +155,28 @@
 	}
 
 	onMount(() => {
+		detectTheme();
+
+		// Observar cambios de tema
+		const observer = new MutationObserver(() => {
+			const newTheme = document.documentElement.getAttribute('data-theme') === 'dark';
+			if (newTheme !== isDarkTheme) {
+				isDarkTheme = newTheme;
+				// Re-renderizar gráficos con el nuevo tema
+				if (publicCharts && publicCharts.length > 0) {
+					publicCharts.forEach((chartName: string) => {
+						const canvasId = `chart-${chartName}`;
+						renderChart(chartName, canvasId);
+					});
+				}
+			}
+		});
+
+		observer.observe(document.documentElement, {
+			attributes: true,
+			attributeFilter: ['data-theme']
+		});
+
 		cargarDatos().then(() => {
 			// Renderizar gráficos solo después de cargar los datos
 			if (publicCharts && publicCharts.length > 0) {
@@ -108,6 +191,7 @@
 
 		// Cleanup on destroy
 		return () => {
+			observer.disconnect();
 			Object.values(chartInstances).forEach((chart) => chart.destroy());
 		};
 	});
@@ -170,20 +254,15 @@
 	.loading-container,
 	.error-message,
 	.empty-message {
-		background: rgba(255, 255, 255, 0.05);
+		background: var(--color--card-background);
 		border-radius: 12px;
 		padding: 3rem;
 		text-align: center;
-		border: 1px solid rgba(255, 255, 255, 0.1);
+		border: 1px solid rgba(var(--color--text-rgb), 0.1);
 
-		h3 {
-			font-size: 1.5rem;
-			margin-bottom: 1rem;
-			color: var(--text-primary, #ffffff);
-		}
 
 		p {
-			color: var(--text-secondary, rgba(255, 255, 255, 0.7));
+			color: var(--color--text-shade);
 			font-size: 1.125rem;
 			margin-bottom: 1rem;
 		}
@@ -197,9 +276,9 @@
 	}
 
 	.loader {
-		border: 4px solid rgba(255, 255, 255, 0.1);
+		border: 4px solid rgba(var(--color--text-rgb), 0.1);
 		border-radius: 50%;
-		border-top: 4px solid var(--color--primary, #3b82f6);
+		border-top: 4px solid var(--color--primary);
 		width: 50px;
 		height: 50px;
 		animation: spin 1s linear infinite;
@@ -224,8 +303,8 @@
 
 		button {
 			padding: 0.75rem 1.5rem;
-			background: var(--color--primary, #3b82f6);
-			color: white;
+			background: var(--color--primary);
+			color: var(--color--text-inverse);
 			border: none;
 			border-radius: 8px;
 			font-weight: 600;
@@ -247,11 +326,11 @@
 	}
 
 	.chart-card {
-		background: rgba(255, 255, 255, 0.05);
+		background: var(--color--card-background);
 		border-radius: 12px;
 		padding: 1.5rem;
-		border: 1px solid rgba(255, 255, 255, 0.1);
-		backdrop-filter: blur(10px);
+		border: 1px solid rgba(var(--color--text-rgb), 0.1);
+		box-shadow: var(--card-shadow);
 	}
 
 	.chart-header {
@@ -260,13 +339,13 @@
 		h2 {
 			font-size: 1.5rem;
 			font-weight: 600;
-			color: var(--text-primary, #ffffff);
+			color: var(--color--text);
 			margin-bottom: 0.5rem;
 		}
 
 		.chart-description {
 			font-size: 0.875rem;
-			color: var(--text-secondary, rgba(255, 255, 255, 0.6));
+			color: var(--color--text-shade);
 		}
 	}
 
@@ -287,7 +366,7 @@
 	.no-data {
 		text-align: center;
 		padding: 3rem;
-		color: var(--text-secondary, rgba(255, 255, 255, 0.5));
+		color: var(--color--text-shade);
 		font-style: italic;
 	}
 

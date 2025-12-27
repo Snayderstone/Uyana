@@ -164,8 +164,8 @@
 									<circle cx="50" cy="50" r="45" fill="url(#silverGradient)" />
 									<defs>
 										<linearGradient id="silverGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-											<stop offset="0%" style="stop-color:#c0c0c0;stop-opacity:1" />
-											<stop offset="100%" style="stop-color:#e8e8e8;stop-opacity:1" />
+											<stop offset="0%" style="stop-color:#a8a8a8;stop-opacity:1" />
+											<stop offset="100%" style="stop-color:#d0d0d0;stop-opacity:1" />
 										</linearGradient>
 									</defs>
 								{:else}
@@ -474,7 +474,6 @@
 		gap: 1.5rem;
 		padding: 1.5rem;
 		margin-bottom: 1.5rem;
-		background: linear-gradient(180deg, rgba(59, 130, 246, 0.08), transparent);
 		border-radius: 12px;
 		max-width: 100%;
 		overflow-x: auto;
@@ -499,37 +498,37 @@
 		align-items: center;
 		gap: 1rem;
 		padding: 2rem 1.5rem;
-		background: var(--color--card-background, #1a1a2e);
+		background: var(--color--card-background);
 		border-radius: 16px;
-		box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+		box-shadow: var(--card-shadow);
 		transition: all 0.3s ease;
 		position: relative;
 		min-width: 280px;
 
 		&:hover {
 			transform: translateY(-8px);
-			box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+			box-shadow: 0 8px 30px rgba(var(--color--text-rgb), 0.15);
 		}
 
 		&.gold {
 			order: 2;
 			min-height: 480px;
-			background: linear-gradient(135deg, rgba(255, 215, 0, 0.1), rgba(255, 237, 78, 0.05));
-			border: 2px solid rgba(255, 215, 0, 0.3);
+			background: linear-gradient(135deg, rgba(255, 215, 0, 0.15), rgba(255, 237, 78, 0.08));
+			border: 2px solid rgba(255, 215, 0, 0.4);
 		}
 
 		&.silver {
 			order: 1;
 			min-height: 440px;
-			background: linear-gradient(135deg, rgba(192, 192, 192, 0.1), rgba(232, 232, 232, 0.05));
-			border: 2px solid rgba(192, 192, 192, 0.3);
+			background: linear-gradient(135deg, rgba(168, 168, 168, 0.2), rgba(192, 192, 192, 0.12));
+			border: 2px solid rgba(168, 168, 168, 0.5);
 		}
 
 		&.bronze {
 			order: 3;
 			min-height: 420px;
-			background: linear-gradient(135deg, rgba(205, 127, 50, 0.1), rgba(218, 165, 32, 0.05));
-			border: 2px solid rgba(205, 127, 50, 0.3);
+			background: linear-gradient(135deg, rgba(205, 127, 50, 0.15), rgba(218, 165, 32, 0.08));
+			border: 2px solid rgba(205, 127, 50, 0.4);
 		}
 
 		@media (max-width: 768px) {
@@ -552,7 +551,7 @@
 	.medal-svg {
 		width: 70px;
 		height: 70px;
-		filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+		filter: drop-shadow(0 4px 8px rgba(var(--color--text-rgb), 0.15));
 		animation: float 3s ease-in-out infinite;
 
 		@media (max-width: 968px) {
@@ -576,8 +575,8 @@
 		height: 90px;
 		border-radius: 50%;
 		overflow: hidden;
-		border: 3px solid #fff;
-		box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+		border: 3px solid var(--color--text-inverse);
+		box-shadow: 0 4px 16px rgba(var(--color--text-rgb), 0.1);
 
 		img {
 			width: 100%;
@@ -589,7 +588,20 @@
 			width: 100px;
 			height: 100px;
 			border-color: #ffd700;
+			border-width: 4px;
 			box-shadow: 0 4px 20px rgba(255, 215, 0, 0.4);
+		}
+
+		.silver & {
+			border-color: #a8a8a8;
+			border-width: 4px;
+			box-shadow: 0 4px 20px rgba(168, 168, 168, 0.4);
+		}
+
+		.bronze & {
+			border-color: #cd7f32;
+			border-width: 4px;
+			box-shadow: 0 4px 20px rgba(205, 127, 50, 0.4);
 		}
 
 		@media (max-width: 968px) {
@@ -606,7 +618,7 @@
 	.podium-name {
 		font-size: 1.1rem;
 		font-weight: 700;
-		color: var(--color--text, #ffffff);
+		color: var(--color--text);
 		margin: 0;
 		text-align: center;
 		text-transform: capitalize;
@@ -630,7 +642,7 @@
 	.podium-faculty,
 	.podium-career {
 		font-size: 0.8rem;
-		color: var(--color--text-muted, rgba(255, 255, 255, 0.7));
+		color: var(--color--text-shade);
 		text-align: center;
 		margin: 0;
 		text-transform: capitalize;
@@ -671,7 +683,7 @@
 
 		&:hover {
 			transform: translateY(-2px);
-			box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+			box-shadow: 0 4px 8px rgba(var(--color--text-rgb), 0.15);
 		}
 
 		svg {
@@ -692,7 +704,8 @@
 	}
 
 	.podium-stats {
-		display: flex;
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
 		gap: 0.5rem;
 		margin-top: 0.75rem;
 		width: 100%;
@@ -709,38 +722,41 @@
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		padding: 0.5rem 0.25rem;
-		background: rgba(255, 255, 255, 0.05);
+		padding: 0.625rem 0.375rem;
+		background: var(--color--primary-tint);
 		border-radius: 8px;
-		border: 1px solid rgba(255, 255, 255, 0.1);
+		border: 1px solid rgba(var(--color--text-rgb), 0.1);
 		min-width: 0;
 
 		.stat-value {
-			font-size: 1.25rem;
+			font-size: 1.375rem;
 			font-weight: 700;
-			color: var(--color--text, #ffffff);
+			color: var(--color--text);
 			line-height: 1;
+			margin-bottom: 0.25rem;
 		}
 
 		.stat-label {
-			font-size: 0.65rem;
-			color: var(--color--text-muted, rgba(255, 255, 255, 0.7));
+			font-size: 0.625rem;
+			color: var(--color--text-shade);
 			text-transform: uppercase;
-			letter-spacing: 0.3px;
-			margin-top: 0.25rem;
+			letter-spacing: 0.2px;
+			margin-top: 0.125rem;
 			text-align: center;
-			line-height: 1.2;
+			line-height: 1.1;
+			word-break: break-word;
+			max-width: 100%;
 		}
 
 		@media (max-width: 968px) {
-			padding: 0.4rem 0.2rem;
+			padding: 0.5rem 0.25rem;
 
 			.stat-value {
-				font-size: 1.1rem;
+				font-size: 1.2rem;
 			}
 
 			.stat-label {
-				font-size: 0.6rem;
+				font-size: 0.575rem;
 			}
 		}
 	}
@@ -757,14 +773,14 @@
 		align-items: center;
 		gap: 1rem;
 		padding: 1rem 1.5rem;
-		background: var(--color--card-background, #1a1a2e);
+		background: var(--color--card-background);
 		border-radius: 12px;
-		border: 1px solid rgba(255, 255, 255, 0.1);
+		border: 1px solid rgba(var(--color--text-rgb), 0.1);
 		transition: all 0.2s ease;
 
 		&:hover {
-			background: rgba(255, 255, 255, 0.05);
-			border-color: rgba(59, 130, 246, 0.3);
+			background: var(--color--primary-tint);
+			border-color: var(--color--primary);
 			transform: translateX(4px);
 		}
 
@@ -799,8 +815,8 @@
 		height: 50px;
 		border-radius: 50%;
 		overflow: hidden;
-		border: 2px solid #fff;
-		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+		border: 2px solid var(--color--text-inverse);
+		box-shadow: 0 2px 8px rgba(var(--color--text-rgb), 0.1);
 		flex-shrink: 0;
 
 		img {
@@ -818,21 +834,21 @@
 	.participant-name {
 		font-size: 1rem;
 		font-weight: 600;
-		color: var(--color--text, #ffffff);
+		color: var(--color--text);
 		margin: 0 0 0.25rem 0;
 		text-transform: capitalize;
 	}
 
 	.participant-subtitle {
 		font-size: 0.875rem;
-		color: var(--color--text-muted, rgba(255, 255, 255, 0.7));
+		color: var(--color--text-shade);
 		margin: 0 0 0.5rem 0;
 		text-transform: capitalize;
 	}
 
 	.participant-career {
 		font-size: 0.8rem;
-		color: var(--color--text-muted, rgba(255, 255, 255, 0.6));
+		color: var(--color--text-shade);
 		margin: 0 0 0.5rem 0;
 		text-transform: capitalize;
 		font-style: italic;
@@ -860,7 +876,7 @@
 
 		&:hover {
 			transform: translateY(-2px) scale(1.1);
-			box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+			box-shadow: 0 6px 12px rgba(var(--color--text-rgb), 0.2);
 			filter: brightness(1.1);
 		}
 
@@ -886,27 +902,27 @@
 		flex-direction: column;
 		align-items: center;
 		padding: 0.625rem 1rem;
-		background: rgba(255, 255, 255, 0.05);
+		background: var(--color--primary-tint);
 		border-radius: 8px;
-		border: 1px solid rgba(255, 255, 255, 0.1);
+		border: 1px solid rgba(var(--color--text-rgb), 0.1);
 		min-width: 85px;
 		transition: all 0.2s ease;
 
 		&:hover {
-			background: rgba(255, 255, 255, 0.08);
-			border-color: rgba(59, 130, 246, 0.3);
+			background: var(--color--primary-tint);
+			border-color: var(--color--primary);
 		}
 
 		.metric-value {
 			font-size: 1.375rem;
 			font-weight: 700;
-			color: var(--color--text, #ffffff);
+			color: var(--color--text);
 			line-height: 1;
 		}
 
 		.metric-label {
 			font-size: 0.7rem;
-			color: var(--color--text-muted, rgba(255, 255, 255, 0.7));
+			color: var(--color--text-shade);
 			text-transform: uppercase;
 			letter-spacing: 0.5px;
 			margin-top: 0.25rem;

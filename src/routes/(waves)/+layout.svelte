@@ -28,7 +28,7 @@
 
 <Header />
 
-<main>
+<main style="position: relative; z-index: 1;">
 	<slot />
 </main>
 

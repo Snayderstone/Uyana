@@ -32,65 +32,65 @@
 <div class="resumen-grid">
 	{#if resumen}
 		<!-- Fila 1: Métricas principales de proyectos -->
-		<div class="stat-card">
+		<div class="stat-card blue">
 			<span class="stat-label">Total Proyectos</span>
 			<span class="stat-value">{formatNumber(resumen.total_proyectos || 0)}</span>
 		</div>
 
-		<div class="stat-card">
+		<div class="stat-card blue">
 			<span class="stat-label">Proyectos Finalizados</span>
 			<span class="stat-value">{formatNumber(resumen.proyectos_finalizados || 0)}</span>
 		</div>
 
-		<div class="stat-card">
+		<div class="stat-card blue">
 			<span class="stat-label">En Ejecución</span>
 			<span class="stat-value">{formatNumber(resumen.proyectos_en_ejecucion || 0)}</span>
 		</div>
 
-		<div class="stat-card">
+		<div class="stat-card blue">
 			<span class="stat-label">En Cierre</span>
 			<span class="stat-value">{formatNumber(resumen.proyectos_en_cierre || 0)}</span>
 		</div>
 
 		<!-- Fila 2: Métricas de presupuesto -->
-		<div class="stat-card highlight">
+		<div class="stat-card green">
 			<span class="stat-label">Presupuesto Total</span>
 			<span class="stat-value">{formatCurrency(resumen.presupuesto_total || 0)}</span>
 		</div>
 
-		<div class="stat-card">
+		<div class="stat-card green">
 			<span class="stat-label">Presupuesto Promedio</span>
 			<span class="stat-value">{formatCurrency(resumen.presupuesto_promedio || 0)}</span>
 		</div>
 
-		<div class="stat-card">
+		<div class="stat-card green">
 			<span class="stat-label">Presupuesto Máximo</span>
 			<span class="stat-value">{formatCurrency(resumen.presupuesto_maximo || 0)}</span>
 		</div>
 
 		<!-- Fila 3: Métricas de avance y duración -->
-		<div class="stat-card">
+		<div class="stat-card purple">
 			<span class="stat-label">Avance Promedio Global</span>
 			<span class="stat-value">{(resumen.avance_promedio_global || 0).toFixed(1)}%</span>
 		</div>
 
-		<div class="stat-card">
+		<div class="stat-card purple">
 			<span class="stat-label">Duración Promedio</span>
 			<span class="stat-value">{(resumen.duracion_promedio_meses || 0).toFixed(0)} meses</span>
 		</div>
 
 		<!-- Fila 4: Fechas y año actual -->
-		<div class="stat-card">
+		<div class="stat-card orange">
 			<span class="stat-label">Primer Proyecto</span>
 			<span class="stat-value small">{formatDate(resumen.fecha_primer_proyecto)}</span>
 		</div>
 
-		<div class="stat-card">
+		<div class="stat-card orange">
 			<span class="stat-label">Último Proyecto</span>
 			<span class="stat-value small">{formatDate(resumen.fecha_ultimo_proyecto)}</span>
 		</div>
 
-		<div class="stat-card">
+		<div class="stat-card orange">
 			<span class="stat-label">Proyectos en {resumen.anio_actual || new Date().getFullYear()}</span>
 			<span class="stat-value">{formatNumber(resumen.proyectos_anio_actual || 0)}</span>
 		</div>
@@ -102,13 +102,13 @@
 <style lang="scss">
 	.resumen-grid {
 		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+		grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
 		gap: 1.25rem;
 	}
 
 	.stat-card {
-		background: rgba(255, 255, 255, 0.05);
-		border: 1px solid rgba(255, 255, 255, 0.1);
+		background: var(--color--card-background);
+		border: 1px solid rgba(var(--color--text-rgb), 0.15);
 		border-radius: 8px;
 		padding: 1.25rem;
 		display: flex;
@@ -117,12 +117,23 @@
 		transition: all 0.2s ease;
 
 		&:hover {
-			background: rgba(255, 255, 255, 0.08);
-			border-color: rgba(59, 130, 246, 0.5);
+			background: var(--color--primary-tint);
+			border-color: var(--color--primary);
 			transform: translateY(-2px);
+			box-shadow: var(--card-shadow-hover);
 		}
 
-		&.highlight {
+
+		&.blue {
+			border-color: rgba(59, 130, 246, 0.5);
+			background: rgba(59, 130, 246, 0.1);
+
+			.stat-value {
+				color: #3b82f6;
+			}
+		}
+
+		&.green {
 			border-color: rgba(16, 185, 129, 0.5);
 			background: rgba(16, 185, 129, 0.1);
 
@@ -131,16 +142,36 @@
 			}
 		}
 
+		&.purple {
+			border-color: rgba(139, 92, 246, 0.5);
+			background: rgba(139, 92, 246, 0.1);
+
+			.stat-value {
+				color: #8b5cf6;
+			}
+		}
+
+		&.orange {
+			border-color: rgba(249, 115, 22, 0.5);
+			background: rgba(249, 115, 22, 0.1);
+
+			.stat-value {
+				color: #f97316;
+			}
+		}
+
 		.stat-label {
 			font-size: 0.875rem;
-			color: rgba(255, 255, 255, 0.7);
+			color: var(--color--text-shade);
 			font-weight: 500;
 		}
 
 		.stat-value {
 			font-size: 1.5rem;
 			font-weight: 700;
-			color: #ffffff;
+			color: var(--color--text);
+			word-break: break-word;
+			line-height: 1.2;
 
 			&.small {
 				font-size: 1.125rem;

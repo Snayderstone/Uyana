@@ -1599,53 +1599,9 @@
 		gap: 4px;
 		margin-top: 8px;
 
-		.map-level-btn {
-			background: var(--color--card-background);
-			border: 1px solid color-mix(in srgb, var(--color--text) 15%, transparent);
-			border-radius: 999px;
-			padding: 4px 10px;
-			font-size: 0.75rem;
-			cursor: pointer;
-			transition: all 0.2s ease;
-		}
+		
 
-		.map-level-btn.active {
-			background: var(--color--primary);
-			color: white;
-			border-color: var(--color--primary);
-		}
 
-		.map-level-btn:not(.active):hover {
-			background: color-mix(in srgb, var(--color--primary) 10%, var(--color--card-background));
-		}
-	}
-	.network-panel h3 {
-		margin: 8px 0;
-		font-size: 1rem;
-		font-weight: 600;
 	}
 
-	.network-panel label {
-		display: flex;
-		gap: 8px;
-		margin: 6px 0;
-		font-size: 0.9rem;
-	}
-
-	.apply-btn {
-		margin-top: 15px;
-		width: 100%;
-		padding: 10px;
-		border-radius: 10px;
-		background: var(--color--primary);
-		color: white;
-		font-weight: 600;
-		cursor: pointer;
-		border: none;
-		transition: 0.2s;
-	}
-
-	.apply-btn:hover {
-		filter: brightness(1.15);
-	}
 </style>

@@ -1,10 +1,8 @@
-import { obtenerInvestigadores } from '$lib/services/investigator.service';
+// Ruta deshabilitada - tabla investigadores_uce_def del sistema anterior ya no existe
 
 export async function load() {
-	// Obtener los investigadores desde Supabase
-	const investigadores = await obtenerInvestigadores();
-
+	// Retornar array vacío - esta funcionalidad usa tabla antigua
 	return {
-		investigadores
+		investigadores: []
 	};
 }

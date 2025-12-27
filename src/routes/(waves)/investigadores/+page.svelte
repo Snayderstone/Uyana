@@ -49,7 +49,7 @@
 <div class="investigadores-page">
 	<div class="page-header">
 		<div class="header-content">
-			<h1>Investigadores UCE</h1>
+			<h1>Investigadores</h1>
 			<p class="description">
 				Explora la comunidad académica e investigativa de la Universidad Central del Ecuador.
 				Descubre los investigadores más activos y consulta estadísticas detalladas de participación.
@@ -122,13 +122,13 @@
 				</div>
 			{:else if topParticipantes.length === 0}
 				<div class="empty-message">
-					<h3>📊 Sin datos disponibles</h3>
+					<h3>Sin datos disponibles</h3>
 					<p>No hay datos del ranking de investigadores en este momento</p>
 				</div>
 			{:else}
 				<div class="leaderboard-card">
 					<div class="card-header">
-						<h2>🏆 Ranking de Investigadores Más Activos</h2>
+						<h2>Ranking de Investigadores Más Activos</h2>
 						<p class="card-description">
 							Investigadores destacados por su participación en proyectos de investigación
 						</p>
@@ -293,11 +293,7 @@
 		text-align: center;
 		border: 1px solid var(--color--border, rgba(255, 255, 255, 0.1));
 
-		h3 {
-			font-size: 1.5rem;
-			margin-bottom: 1rem;
-			color: var(--color--text);
-		}
+
 
 		p {
 			color: var(--color--text-shade);

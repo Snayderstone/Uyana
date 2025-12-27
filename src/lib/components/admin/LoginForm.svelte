@@ -112,11 +112,11 @@
 
 	.login-card {
 		background: white;
-		border-radius: 1rem;
+		border-radius: 10px;
 		padding: 2.5rem;
 		max-width: 420px;
 		width: 100%;
-		box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+		box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
 	}
 
 	.login-header {
@@ -124,15 +124,15 @@
 		margin-bottom: 2rem;
 
 		h1 {
-			font-size: 1.875rem;
+			font-size: 35px;
 			font-weight: 700;
-			color: #1f2937;
+			color: #1c1e26;
 			margin-bottom: 0.5rem;
 		}
 
 		p {
-			color: #6b7280;
-			font-size: 0.875rem;
+			color: #9095a1;
+			font-size: 16px;
 		}
 	}
 
@@ -141,19 +141,21 @@
 
 		label {
 			display: block;
-			font-size: 0.875rem;
+			font-size: 16px;
 			font-weight: 600;
-			color: #374151;
+			color: #1c1e26;
 			margin-bottom: 0.5rem;
 		}
 
 		input {
 			width: 100%;
 			padding: 0.75rem 1rem;
-			border: 2px solid #e5e7eb;
-			border-radius: 0.5rem;
+			border: 2px solid #1c1e26;
+			border-radius: 10px;
 			font-size: 1rem;
 			transition: all 0.2s;
+			background: #f9fafb;
+			color: #1c1e26;
 
 			&:focus {
 				outline: none;
@@ -167,7 +169,7 @@
 			}
 
 			&::placeholder {
-				color: #9ca3af;
+				color: #9095a1;
 			}
 		}
 	}
@@ -177,7 +179,7 @@
 		border: 1px solid #fecaca;
 		color: #dc2626;
 		padding: 0.75rem;
-		border-radius: 0.5rem;
+		border-radius: 10px;
 		font-size: 0.875rem;
 		margin-bottom: 1rem;
 		display: flex;
@@ -196,7 +198,7 @@
 		color: white;
 		border: none;
 		padding: 0.875rem;
-		border-radius: 0.5rem;
+		border-radius: 10px;
 		font-size: 1rem;
 		font-weight: 600;
 		cursor: pointer;

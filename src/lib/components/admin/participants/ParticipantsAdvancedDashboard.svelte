@@ -1830,6 +1830,8 @@
 		display: flex;
 		flex-direction: column;
 		gap: 2rem;
+		position: relative;
+		z-index: 1;
 	}
 
 	// Stats Grid
