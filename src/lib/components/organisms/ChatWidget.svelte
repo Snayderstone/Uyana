@@ -58,27 +58,29 @@
 	function handlePageNavigation(currentPath: string) {
 		// console.log('🚀 Navegación detectada a:', currentPath);
 
+		// Verificar primero si debe mostrarse en esta página
+		const shouldShow = actions.shouldShowOnCurrentPage(currentPath);
+
+		// Si NO debe mostrarse (login, admin, chat), ocultar inmediatamente
+		if (!shouldShow) {
+			actions.setVisible(false);
+			actions.setShowWithTransition(false);
+			actions.setPageLoaded(false);
+			previousPath = currentPath;
+			return;
+		}
+
+		// Solo si DEBE mostrarse, continuar con la lógica de transición
 		// Resetear estados de transición
 		actions.setShowWithTransition(false);
 		actions.setPageLoaded(false);
 
-		// Verificar si debe mostrarse en esta página
-		const shouldShow = actions.shouldShowOnCurrentPage(currentPath);
+		// console.log('✨ Iniciando secuencia de aparición con transición');
+		// Ocultar temporalmente mientras se carga la página
+		actions.setVisible(false);
 
-		if (shouldShow && !currentPath.includes('/chat')) {
-			// console.log('✨ Iniciando secuencia de aparición con transición');
-			// Ocultar temporalmente mientras se carga la página
-			actions.setVisible(false);
-
-			// Iniciar secuencia de aparición con transición
-			actions.showAfterPageLoad();
-		} else if (currentPath.includes('/chat')) {
-			// Ocultar inmediatamente si está en /chat
-			actions.setVisible(false);
-		} else {
-			// No debe mostrarse en esta página
-			actions.setVisible(false);
-		}
+		// Iniciar secuencia de aparición con transición
+		actions.showAfterPageLoad();
 
 		previousPath = currentPath;
 	}
@@ -152,16 +154,21 @@
 		const currentPath = window.location.pathname;
 		const shouldBeVisible = actions.shouldShowOnCurrentPage(currentPath);
 
+		// Si NO debe ser visible (login, admin, chat) y está visible, ocultarlo inmediatamente
+		if (!shouldBeVisible && $state.isVisible) {
+			console.log('🔧 Ocultando widget en ruta restringida:', currentPath);
+			actions.setVisible(false);
+			actions.setShowWithTransition(false);
+			if ($state.isOpen) {
+				actions.closeWidget();
+			}
+			return;
+		}
+
 		// Si el widget debería ser visible pero no lo está, usar forceShow
 		if (shouldBeVisible && !$state.isVisible) {
 			console.log('🔧 Corrigiendo visibilidad del widget en:', currentPath);
 			actions.forceShow();
-		}
-
-		// Si está en /chat y el widget es visible, ocultarlo
-		if (currentPath.includes('/chat') && $state.isVisible) {
-			console.log('🔧 Ocultando widget en página de chat');
-			actions.setVisible(false);
 		}
 	}
 
@@ -177,8 +184,16 @@
 			previousPath = $page.url.pathname;
 			// console.log('📍 Ruta inicial:', previousPath);
 
-			// Manejar la navegación inicial
-			handlePageNavigation(previousPath);
+			// ✅ Verificar inmediatamente si debe ocultarse
+			const shouldShow = actions.shouldShowOnCurrentPage(previousPath);
+			if (!shouldShow) {
+				// Ocultar inmediatamente sin transiciones
+				actions.setVisible(false);
+				actions.setShowWithTransition(false);
+			} else {
+				// Manejar la navegación inicial solo si debe mostrarse
+				handlePageNavigation(previousPath);
+			}
 		}
 
 		handleAutoShow();
@@ -203,9 +218,13 @@
 			document.removeEventListener('keydown', handleKeydown);
 		}
 	});
+
+	// Variable reactiva para verificar si debe mostrarse en la ruta actual
+	$: shouldShowInCurrentPath =
+		browser && $page ? actions.shouldShowOnCurrentPage($page.url.pathname) : true;
 </script>
 
-{#if browser && isMounted && $config.enabled && ($state.isVisible || ($config.enableSmoothTransitions && $state.showWithTransition))}
+{#if browser && isMounted && $config.enabled && shouldShowInCurrentPath && ($state.isVisible || ($config.enableSmoothTransitions && $state.showWithTransition))}
 	<div
 		class="chat-widget"
 		class:chat-widget--open={$state.isOpen}

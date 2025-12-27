@@ -103,14 +103,15 @@
 
 <style lang="scss">
 	.chart-card {
-		background: rgba(255, 255, 255, 0.03);
+		background: var(--color--card-background);
+		border: 1px solid rgba(var(--color--text-rgb), 0.1);
 		border-radius: 12px;
 		overflow: hidden;
 		transition: all 0.3s ease;
 	}
 
 	.chart-card:hover {
-		box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+		box-shadow: var(--card-shadow);
 	}
 
 	.chart-card.wide {
@@ -118,7 +119,7 @@
 	}
 
 	.chart-card.collapsed {
-		background: rgba(255, 255, 255, 0.02);
+		opacity: 0.7;
 	}
 
 	.chart-header {
@@ -126,7 +127,8 @@
 		justify-content: space-between;
 		align-items: center;
 		padding: 1.25rem 1.5rem;
-		background: rgba(255, 255, 255, 0.05);
+		background: rgba(var(--color--text-rgb), 0.03);
+		border-bottom: 1px solid rgba(var(--color--text-rgb), 0.08);
 	}
 
 	.chart-card.collapsed .chart-header {
@@ -137,7 +139,7 @@
 		margin: 0;
 		font-size: 1.125rem;
 		font-weight: 600;
-		color: #ffffff;
+		color: var(--color--text);
 	}
 
 	.chart-actions {
@@ -151,26 +153,27 @@
 		justify-content: center;
 		width: 32px;
 		height: 32px;
-		background: rgba(255, 255, 255, 0.1);
-		border: 1px solid rgba(255, 255, 255, 0.2);
+		background: rgba(var(--color--text-rgb), 0.08);
+		border: 1px solid rgba(var(--color--text-rgb), 0.15);
 		border-radius: 6px;
-		color: #ffffff;
+		color: var(--color--text);
 		cursor: pointer;
 		transition: all 0.2s ease;
 	}
 
 	.action-icon-btn:hover {
-		background: rgba(255, 255, 255, 0.15);
+		background: rgba(var(--color--text-rgb), 0.12);
 		transform: scale(1.05);
 	}
 
 	.action-icon-btn.public {
-		background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
-		border: none;
+		background: #10b981;
+		color: white;
+		border: 1px solid #10b981;
 	}
 
 	.action-icon-btn.public:hover {
-		box-shadow: 0 4px 12px rgba(67, 233, 123, 0.4);
+		box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
 	}
 
 	.chart-body {

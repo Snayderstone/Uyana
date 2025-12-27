@@ -255,8 +255,8 @@
 		align-items: center;
 		gap: 0.75rem;
 		padding: 1rem 1.5rem;
-		background: #fef2f2;
-		border: 1px solid #fecaca;
+		background: rgba(220, 38, 38, 0.1);
+		border: 1px solid rgba(220, 38, 38, 0.3);
 		border-radius: 8px;
 		color: #dc2626;
 		margin-bottom: 1.5rem;

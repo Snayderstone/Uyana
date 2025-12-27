@@ -119,7 +119,7 @@
 			activities.push({
 				label: `Post: ${p.titulo}`,
 				time: 'Reciente',
-				href: `/admin/blog/${p.id}`
+				href: `/admin/blog`
 			});
 		});
 

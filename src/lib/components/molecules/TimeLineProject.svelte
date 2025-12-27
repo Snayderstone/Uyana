@@ -352,8 +352,8 @@
 	<div class="period-toggle">
 		{#if periodType === 'month'}
 			<div class="year-selector">
-				<label>Año:</label>
-				<select bind:value={selectedYear} on:change={() => restart()}>
+				<label for="year-select">Año:</label>
+				<select id="year-select" bind:value={selectedYear} on:change={() => restart()}>
 					{#each availableYears as y}
 						<option value={y}>{y}</option>
 					{/each}

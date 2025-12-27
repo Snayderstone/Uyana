@@ -17,7 +17,7 @@ const defaultConfig: ChatWidgetConfig = {
 	enabled: true,
 	position: 'bottom-right',
 	showOnPages: [], // Si está vacío, se muestra en todas las páginas
-	hideOnPages: ['/chat'], // No mostrar en la página dedicada de chat
+	hideOnPages: ['/chat', '/login', '/admin'], // No mostrar en chat, login ni administración
 	zIndex: 9999,
 	autoShow: false, // Si se abre automáticamente al cargar la página
 	showWelcomeMessage: true,

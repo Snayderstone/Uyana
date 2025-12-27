@@ -17,6 +17,7 @@
 
 	// Intersection Observer para lazy loading
 	let observer: IntersectionObserver;
+	let themeObserver: MutationObserver;
 
 	function initChart() {
 		if (chart) {
@@ -43,6 +44,30 @@
 		}
 	}
 
+	// Detectar cambios de tema y re-renderizar
+	function setupThemeObserver() {
+		if (typeof document === 'undefined') return;
+
+		themeObserver = new MutationObserver((mutations) => {
+			mutations.forEach((mutation) => {
+				if (mutation.type === 'attributes' && mutation.attributeName === 'data-theme') {
+					// El tema cambió, re-renderizar el gráfico
+					if (isVisible) {
+						setTimeout(() => {
+							destroyChart();
+							initChart();
+						}, 50);
+					}
+				}
+			});
+		});
+
+		themeObserver.observe(document.documentElement, {
+			attributes: true,
+			attributeFilter: ['data-theme']
+		});
+	}
+
 	onMount(() => {
 		// Intersection Observer para lazy loading
 		observer = new IntersectionObserver(
@@ -66,12 +91,18 @@
 		if (container) {
 			observer.observe(container);
 		}
+
+		// Configurar observador de tema
+		setupThemeObserver();
 	});
 
 	onDestroy(() => {
 		if (observer && container) {
 			observer.unobserve(container);
 			observer.disconnect();
+		}
+		if (themeObserver) {
+			themeObserver.disconnect();
 		}
 		destroyChart();
 	});
@@ -118,14 +149,14 @@
 		align-items: center;
 		justify-content: center;
 		gap: 1rem;
-		color: #6b7280;
+		color: var(--color--text-shade);
 	}
 
 	.loading-spinner {
 		width: 40px;
 		height: 40px;
-		border: 4px solid #e5e7eb;
-		border-top-color: #3b82f6;
+		border: 4px solid rgba(var(--color--text-rgb), 0.1);
+		border-top-color: var(--color--primary);
 		border-radius: 50%;
 		animation: spin 0.8s linear infinite;
 	}

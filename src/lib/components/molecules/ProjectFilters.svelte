@@ -859,9 +859,9 @@
 					</select>
 				</div>
 				<div class="filter-group">
-					<label>Avance (%)</label>
+					<label for="avance">Avance (%)</label>
 
-					<select bind:value={filtroAvanceNivel} disabled={sinAvance}>
+					<select id="avance" bind:value={filtroAvanceNivel} disabled={sinAvance}>
 						<option value="">Todos</option>
 						<option value="bajo">Bajo</option>
 						<option value="medio">Medio</option>
@@ -883,9 +883,9 @@
 				</div>
 
 				<div class="filter-group">
-					<label>Presupuesto</label>
+					<label for="presupuesto">Presupuesto</label>
 
-					<select bind:value={filtroPresupuestoNivel} disabled={sinPresupuesto}>
+					<select id="presupuesto" bind:value={filtroPresupuestoNivel} disabled={sinPresupuesto}>
 						<option value="">Todos</option>
 						<option value="bajo">Bajo</option>
 						<option value="medio">Medio</option>

@@ -100,15 +100,16 @@
 		align-items: center;
 		gap: 1rem;
 		padding: 1.5rem;
-		background: rgba(255, 255, 255, 0.05);
+		background: var(--color--card-background);
+		border: 1px solid rgba(var(--color--text-rgb), 0.1);
 		border-radius: 12px;
 		transition: all 0.3s ease;
 	}
 
 	.stat-card:hover {
-		background: rgba(255, 255, 255, 0.08);
+		background: rgba(var(--color--primary-rgb), 0.05);
 		transform: translateY(-2px);
-		box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+		box-shadow: var(--card-shadow);
 	}
 
 	.stat-icon {
@@ -165,7 +166,7 @@
 
 	.stat-label {
 		font-size: 0.875rem;
-		color: rgba(255, 255, 255, 0.7);
+		color: var(--color--text-shade);
 		margin: 0 0 0.5rem 0;
 		font-weight: 500;
 	}
@@ -173,7 +174,7 @@
 	.stat-value {
 		font-size: 1.75rem;
 		font-weight: 700;
-		color: #ffffff;
+		color: var(--color--text);
 		margin: 0;
 		transition: color 0.2s ease;
 	}

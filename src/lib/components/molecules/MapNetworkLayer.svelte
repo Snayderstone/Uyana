@@ -5,7 +5,7 @@
 	export let map: Map;
 	export let nodes = [];
 	export let edges = [];
-	export let centroides: Record<string, [number, number]> = {};
+	export const centroides: Record<string, [number, number]> = {};
 
 	let L: any = null;
 	let layerGroup: any = null;

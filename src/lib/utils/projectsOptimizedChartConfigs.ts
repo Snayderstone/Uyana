@@ -36,98 +36,93 @@ function isDarkMode(): boolean {
 
 // Función helper para colores de texto/ejes
 function getTextColor(): string {
-	return '#ffffff'; // Siempre blanco para mejor contraste en modo oscuro
+	return isDarkMode() ? '#ffffff' : '#1a1a1a';
 }
 
 function getGridColor(): string {
-	return 'rgba(255, 255, 255, 0.1)'; // Líneas de cuadrícula sutiles
+	return isDarkMode() ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
 }
 
-// Configuración de scales con colores blancos
-const whiteScalesConfig = {
-	x: {
-		ticks: {
-			color: getTextColor(),
-			font: {
-				size: 11
-			}
-		},
-		grid: {
-			color: getGridColor()
-		}
-	},
-	y: {
-		ticks: {
-			color: getTextColor(),
-			font: {
-				size: 11
-			}
-		},
-		grid: {
-			color: getGridColor()
-		}
-	}
-};
+function getTooltipBg(): string {
+	return isDarkMode() ? 'rgba(0, 0, 0, 0.8)' : 'rgba(255, 255, 255, 0.95)';
+}
 
-// Opciones comunes
-const commonOptions = {
-	responsive: true,
-	maintainAspectRatio: false,
-	plugins: {
-		legend: {
-			display: true,
-			position: 'top' as const,
-			labels: {
-				usePointStyle: true,
-				padding: 15,
-				color: '#ffffff', // Texto blanco para leyendas
-				font: {
-					size: 12,
-					family: "'Inter', sans-serif"
-				}
-			}
-		},
-		tooltip: {
-			enabled: true,
-			backgroundColor: 'rgba(0, 0, 0, 0.8)',
-			padding: 12,
-			cornerRadius: 8,
-			titleFont: {
-				size: 14,
-				weight: 'bold' as const
-			},
-			bodyFont: {
-				size: 13
-			},
-			titleColor: '#ffffff',
-			bodyColor: '#ffffff'
-		}
-	},
-	scales: {
+function getTooltipTextColor(): string {
+	return isDarkMode() ? '#ffffff' : '#1a1a1a';
+}
+
+function getTooltipBorder(): string {
+	return isDarkMode() ? 'transparent' : 'rgba(0, 0, 0, 0.1)';
+}
+
+// Configuración de scales con colores dinámicos
+function getScalesConfig() {
+	return {
 		x: {
 			ticks: {
-				color: '#ffffff', // Etiquetas del eje X en blanco
+				color: getTextColor(),
 				font: {
 					size: 11
 				}
 			},
 			grid: {
-				color: 'rgba(255, 255, 255, 0.1)' // Líneas de cuadrícula sutiles
+				color: getGridColor()
 			}
 		},
 		y: {
 			ticks: {
-				color: '#ffffff', // Etiquetas del eje Y en blanco
+				color: getTextColor(),
 				font: {
 					size: 11
 				}
 			},
 			grid: {
-				color: 'rgba(255, 255, 255, 0.1)'
+				color: getGridColor()
 			}
 		}
-	}
-};
+	};
+}
+
+// Opciones comunes como función
+function getCommonOptions() {
+	return {
+		responsive: true,
+		maintainAspectRatio: false,
+		plugins: {
+			legend: {
+				display: true,
+				position: 'top' as const,
+				labels: {
+					usePointStyle: true,
+					padding: 15,
+					color: getTextColor(),
+					font: {
+						size: 12,
+						family: "'Inter', sans-serif"
+					}
+				}
+			},
+			tooltip: {
+				enabled: true,
+				backgroundColor: getTooltipBg(),
+				borderColor: getTooltipBorder(),
+				borderWidth: 1,
+				padding: 12,
+				cornerRadius: 8,
+				titleFont: {
+					size: 14,
+					weight: 'bold' as const
+				},
+				bodyFont: {
+					size: 13
+				},
+				titleColor: getTooltipTextColor(),
+				bodyColor: getTooltipTextColor()
+			}
+		},
+		scales: getScalesConfig()
+	};
+}
 
 /**
  * 1. Distribución por Año de Inicio
@@ -151,6 +146,9 @@ export function getProyectosPorAnioConfig(data: any): ChartConfiguration {
 
 	const anios = Object.keys(porAnio).sort();
 
+	const commonOpts = getCommonOptions();
+	const scales = getScalesConfig();
+
 	return {
 		type: 'bar',
 		data: {
@@ -171,14 +169,14 @@ export function getProyectosPorAnioConfig(data: any): ChartConfiguration {
 			]
 		},
 		options: {
-			...commonOptions,
+			...commonOpts,
 			scales: {
-				...whiteScalesConfig,
+				...scales,
 				y: {
-					...whiteScalesConfig.y,
+					...scales.y,
 					beginAtZero: true,
 					ticks: {
-						...whiteScalesConfig.y.ticks,
+						...scales.y.ticks,
 						precision: 0
 					}
 				}
@@ -193,6 +191,8 @@ export function getProyectosPorAnioConfig(data: any): ChartConfiguration {
 export function getDistribucionEstadoConfig(data: any): ChartConfiguration {
 	const estados = data.analytics?.estados || [];
 
+	const commonOpts = getCommonOptions();
+
 	return {
 		type: 'doughnut',
 		data: {
@@ -202,16 +202,16 @@ export function getDistribucionEstadoConfig(data: any): ChartConfiguration {
 					data: estados.map((e: any) => e.cantidad),
 					backgroundColor: COLORS_ARRAY,
 					borderWidth: 2,
-					borderColor: '#ffffff'
+					borderColor: isDarkMode() ? '#1a1f26' : '#ffffff'
 				}
 			]
 		},
 		options: {
-			...commonOptions,
+			...commonOpts,
 			plugins: {
-				...commonOptions.plugins,
+				...commonOpts.plugins,
 				tooltip: {
-					...commonOptions.plugins.tooltip,
+					...commonOpts.plugins.tooltip,
 					callbacks: {
 						label: function (context: any) {
 							const label = context.label || '';
@@ -243,16 +243,16 @@ export function getTiposPresupuestoConfig(data: any): ChartConfiguration {
 					data: tipos.map((t: any) => t.cantidad),
 					backgroundColor: COLORS_ARRAY,
 					borderWidth: 2,
-					borderColor: '#ffffff'
+					borderColor: isDarkMode() ? '#1a1f26' : '#ffffff'
 				}
 			]
 		},
 		options: {
-			...commonOptions,
+			...getCommonOptions(),
 			plugins: {
-				...commonOptions.plugins,
+				...getCommonOptions().plugins,
 				tooltip: {
-					...commonOptions.plugins.tooltip,
+					...getCommonOptions().plugins.tooltip,
 					callbacks: {
 						label: function (context: any) {
 							const label = context.label || '';
@@ -289,15 +289,15 @@ export function getTopInstitucionesConfig(data: any): ChartConfiguration {
 			]
 		},
 		options: {
-			...commonOptions,
+			...getCommonOptions(),
 			indexAxis: 'y' as const,
 			scales: {
-				...whiteScalesConfig,
+				...getScalesConfig(),
 				x: {
-					...whiteScalesConfig.x,
+					...getScalesConfig().x,
 					beginAtZero: true,
 					ticks: {
-						...whiteScalesConfig.x.ticks,
+						...getScalesConfig().x.ticks,
 						precision: 0
 					}
 				}
@@ -321,16 +321,16 @@ export function getAreasConocimientoConfig(data: any): ChartConfiguration {
 					data: areas.map((a: any) => a.cantidad),
 					backgroundColor: COLORS_ARRAY,
 					borderWidth: 2,
-					borderColor: '#ffffff'
+					borderColor: isDarkMode() ? '#1a1f26' : '#ffffff'
 				}
 			]
 		},
 		options: {
-			...commonOptions,
+			...getCommonOptions(),
 			plugins: {
-				...commonOptions.plugins,
+				...getCommonOptions().plugins,
 				tooltip: {
-					...commonOptions.plugins.tooltip,
+					...getCommonOptions().plugins.tooltip,
 					callbacks: {
 						label: function (context: any) {
 							const label = context.label || '';
@@ -365,15 +365,15 @@ export function getTiposProyectoConfig(data: any): ChartConfiguration {
 			]
 		},
 		options: {
-			...commonOptions,
+			...getCommonOptions(),
 			indexAxis: 'y' as const,
 			scales: {
-				...whiteScalesConfig,
+				...getScalesConfig(),
 				x: {
-					...whiteScalesConfig.x,
+					...getScalesConfig().x,
 					beginAtZero: true,
 					ticks: {
-						...whiteScalesConfig.x.ticks,
+						...getScalesConfig().x.ticks,
 						precision: 0
 					}
 				}
@@ -419,14 +419,14 @@ export function getDistribucionAvanceConfig(data: any): ChartConfiguration {
 			]
 		},
 		options: {
-			...commonOptions,
+			...getCommonOptions(),
 			scales: {
-				...whiteScalesConfig,
+				...getScalesConfig(),
 				y: {
-					...whiteScalesConfig.y,
+					...getScalesConfig().y,
 					beginAtZero: true,
 					ticks: {
-						...whiteScalesConfig.y.ticks,
+						...getScalesConfig().y.ticks,
 						precision: 0
 					}
 				}
@@ -468,14 +468,14 @@ export function getDistribucionDuracionConfig(data: any): ChartConfiguration {
 			]
 		},
 		options: {
-			...commonOptions,
+			...getCommonOptions(),
 			scales: {
-				...whiteScalesConfig,
+				...getScalesConfig(),
 				y: {
-					...whiteScalesConfig.y,
+					...getScalesConfig().y,
 					beginAtZero: true,
 					ticks: {
-						...whiteScalesConfig.y.ticks,
+						...getScalesConfig().y.ticks,
 						precision: 0
 					}
 				}
@@ -518,16 +518,16 @@ export function getDistribucionPresupuestoConfig(data: any): ChartConfiguration 
 					],
 					backgroundColor: COLORS_ARRAY,
 					borderWidth: 2,
-					borderColor: '#ffffff'
+					borderColor: isDarkMode() ? '#1a1f26' : '#ffffff'
 				}
 			]
 		},
 		options: {
-			...commonOptions,
+			...getCommonOptions(),
 			plugins: {
-				...commonOptions.plugins,
+				...getCommonOptions().plugins,
 				tooltip: {
-					...commonOptions.plugins.tooltip,
+					...getCommonOptions().plugins.tooltip,
 					callbacks: {
 						label: function (context: any) {
 							const label = context.label || '';
@@ -577,14 +577,14 @@ export function getDistribucionTemporalConfig(data: any): ChartConfiguration {
 			]
 		},
 		options: {
-			...commonOptions,
+			...getCommonOptions(),
 			scales: {
-				...whiteScalesConfig,
+				...getScalesConfig(),
 				y: {
-					...whiteScalesConfig.y,
+					...getScalesConfig().y,
 					beginAtZero: true,
 					ticks: {
-						...whiteScalesConfig.y.ticks,
+						...getScalesConfig().y.ticks,
 						precision: 0
 					}
 				}
@@ -615,15 +615,15 @@ export function getTopLineasConfig(data: any): ChartConfiguration {
 			]
 		},
 		options: {
-			...commonOptions,
+			...getCommonOptions(),
 			indexAxis: 'y' as const,
 			scales: {
-				...whiteScalesConfig,
+				...getScalesConfig(),
 				x: {
-					...whiteScalesConfig.x,
+					...getScalesConfig().x,
 					beginAtZero: true,
 					ticks: {
-						...whiteScalesConfig.x.ticks,
+						...getScalesConfig().x.ticks,
 						precision: 0
 					}
 				}
@@ -665,7 +665,7 @@ export function getTopProyectosPresupuestoConfig(data: any): ChartConfiguration 
 				]
 			},
 			options: {
-				...commonOptions,
+				...getCommonOptions(),
 				indexAxis: 'y' as const
 			}
 		};
@@ -701,32 +701,32 @@ export function getTopProyectosPresupuestoConfig(data: any): ChartConfiguration 
 			]
 		},
 		options: {
-			...commonOptions,
+			...getCommonOptions(),
 			indexAxis: 'y' as const,
 			scales: {
-				...whiteScalesConfig,
+				...getScalesConfig(),
 				x: {
-					...whiteScalesConfig.x,
+					...getScalesConfig().x,
 					beginAtZero: true,
 					ticks: {
-						...whiteScalesConfig.x.ticks,
+						...getScalesConfig().x.ticks,
 						callback: function (value: any) {
 							return formatCurrency(value);
 						}
 					}
 				},
 				y: {
-					...whiteScalesConfig.y,
+					...getScalesConfig().y,
 					ticks: {
-						...whiteScalesConfig.y.ticks,
+						...getScalesConfig().y.ticks,
 						autoSkip: false
 					}
 				}
 			},
 			plugins: {
-				...commonOptions.plugins,
+				...getCommonOptions().plugins,
 				tooltip: {
-					...commonOptions.plugins.tooltip,
+					...getCommonOptions().plugins.tooltip,
 					callbacks: {
 						title: function (context: any) {
 							const proyecto = topProyectos[context[0].dataIndex];

@@ -348,50 +348,8 @@
 	}
 
 	/* botones */
-	.apply-btn {
-		width: 100%;
-		min-height: 42px;
-		border: none;
-		border-radius: 10px;
-		padding: 10px 14px;
-		font-weight: 800;
-		cursor: pointer;
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		transition: transform 0.18s ease, filter 0.18s ease, box-shadow 0.18s ease;
-	}
 
-	.apply-btn.primary {
-		background: var(--color--primary);
-		color: #fff;
-		box-shadow: 0 3px 10px color-mix(in srgb, var(--color--primary) 35%, transparent);
-
-		&:hover {
-			filter: brightness(1.07);
-			transform: translateY(-2px);
-			box-shadow: 0 6px 14px color-mix(in srgb, var(--color--primary) 45%, transparent);
-		}
-
-		&:active {
-			transform: translateY(0);
-		}
-	}
-
-	.apply-btn.danger {
-		background: color-mix(in srgb, var(--color--callout-accent--error) 40%, var(--color--card-background));
-		color: var(--color--text);
-		border: 1px solid color-mix(in srgb, var(--color--callout-accent--error) 25%, transparent);
-
-		&:hover {
-			transform: translateY(-1px);
-			filter: brightness(1.02);
-		}
-
-		&:active {
-			transform: translateY(0);
-		}
-	}
+	
 
 	/* pequeño espacio para que el scroll no tape el final */
 	.bottom-spacer {
