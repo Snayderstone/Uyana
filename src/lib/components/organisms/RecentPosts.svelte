@@ -21,8 +21,8 @@
 				slug={post.slug}
 				title={post.titulo}
 				excerpt={post.resumen}
-				tags={undefined}
-				readingTime={undefined}
+				tags={post.etiquetas}
+				readingTime={post.tiempo_lectura}
 				showImage={false}
 			/>
 		{/each}

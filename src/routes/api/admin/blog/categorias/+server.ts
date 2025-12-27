@@ -13,19 +13,17 @@ import { requireAdmin, jsonError } from '$lib/utils/auth.utils';
 /**
  * GET - Listar todas las categorías
  */
-export const GET: RequestHandler = async () => {
+export const GET: RequestHandler = async (event) => {
 	try {
+		const usuario = await requireAdmin(event);
 		const categorias = await AdminBlogService.listCategorias();
 
-		console.log(`[AUDIT] ${usuario.email} post`);
+		console.log(`[AUDIT] ${usuario.email} obtuvo categorías del blog`);
 		return json({
 			success: true,
 			data: categorias
 		});
 	} catch (error: any) {
-		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
-			return jsonError('No autorizado', 401);
-		}
 		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
 			return jsonError('No autorizado', 401);
 		}
@@ -89,7 +87,7 @@ export const POST: RequestHandler = async (event) => {
 			);
 		}
 
-		console.log(`[AUDIT] ${usuario.email} post`);
+		console.log(`[AUDIT] ${usuario.email} creó categoría ${categoria.id}`);
 		return json(
 			{
 				success: true,
@@ -99,9 +97,6 @@ export const POST: RequestHandler = async (event) => {
 			{ status: 201 }
 		);
 	} catch (error: any) {
-		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
-			return jsonError('No autorizado', 401);
-		}
 		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
 			return jsonError('No autorizado', 401);
 		}

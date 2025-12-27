@@ -74,4 +74,22 @@ export class BlogRepository {
 			.map((item: any) => item.categoria)
 			.filter((cat: any) => cat !== null) as BlogCategory[];
 	}
+
+	/**
+	 * Obtiene las etiquetas de un post específico
+	 */
+	async getPostTags(postId: number): Promise<{ id: number; nombre: string; slug: string }[]> {
+		const { data, error } = await this.supabase
+			.from('blog_post_etiqueta')
+			.select('etiqueta:blog_etiquetas(id, nombre, slug)')
+			.eq('post_id', postId);
+
+		if (error) {
+			console.error('Error cargando etiquetas:', error);
+			return [];
+		}
+
+		// Extraer las etiquetas del objeto anidado
+		return (data || []).map((item: any) => item.etiqueta).filter((tag: any) => tag !== null);
+	}
 }

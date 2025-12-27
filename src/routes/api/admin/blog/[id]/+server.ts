@@ -10,6 +10,7 @@ import { json, type RequestHandler } from '@sveltejs/kit';
 import { AdminBlogService } from '$lib/services/admin/blog/blog.service';
 import type { UpdateBlogPostDTO, ApiResponseDTO } from '$lib/models/admin';
 import { requireAdmin, jsonError } from '$lib/utils/auth.utils';
+import { supabase } from '$lib/db/supabase.client';
 
 /**
  * GET - Obtener un post por ID
@@ -176,7 +177,17 @@ export const DELETE: RequestHandler = async (event) => {
 			);
 		}
 
-		// Eliminar
+		// Extraer nombre de archivo de la imagen si existe
+		let imageFileName: string | null = null;
+		if (
+			post.imagen_destacada &&
+			post.imagen_destacada.includes('supabase.co/storage/v1/object/public/blog-images/')
+		) {
+			const urlParts = post.imagen_destacada.split('/');
+			imageFileName = urlParts[urlParts.length - 1];
+		}
+
+		// Eliminar post de la base de datos
 		const deleted = await AdminBlogService.deletePost(id);
 
 		if (!deleted) {
@@ -189,8 +200,29 @@ export const DELETE: RequestHandler = async (event) => {
 			);
 		}
 
-		console.log(`[AUDIT] ${usuario.email} put`);
-		console.log(`[AUDIT] ${usuario.email} delete`);
+		// Intentar eliminar imagen de Supabase Storage (si existe)
+		if (imageFileName) {
+			try {
+				const { error: deleteError } = await supabase.storage
+					.from('blog-images')
+					.remove([imageFileName]);
+
+				if (deleteError) {
+					console.warn(`⚠️ No se pudo eliminar la imagen ${imageFileName}:`, deleteError.message);
+				} else {
+					console.log(`🗑️ Imagen eliminada: ${imageFileName}`);
+				}
+			} catch (error) {
+				console.warn('⚠️ Error al intentar eliminar imagen:', error);
+				// No fallar el delete del post si no se pudo borrar la imagen
+			}
+		}
+
+		console.log(
+			`[AUDIT] ${usuario.email} eliminó post #${id}${
+				imageFileName ? ` e imagen ${imageFileName}` : ''
+			}`
+		);
 		return json({
 			success: true,
 			message: 'Post eliminado exitosamente'

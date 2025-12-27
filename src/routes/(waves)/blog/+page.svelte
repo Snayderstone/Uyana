@@ -17,9 +17,9 @@
 					title={post.titulo}
 					coverImage={post.imagen_portada}
 					excerpt={post.resumen}
-					readingTime={undefined}
+					readingTime={post.tiempo_lectura}
 					slug={post.slug}
-					tags={undefined}
+					tags={post.etiquetas}
 				/>
 			{/each}
 		</div>

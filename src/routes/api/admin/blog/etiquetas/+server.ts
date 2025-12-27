@@ -12,19 +12,17 @@ import { requireAdmin, jsonError } from '$lib/utils/auth.utils';
 /**
  * GET - Listar todas las etiquetas
  */
-export const GET: RequestHandler = async () => {
+export const GET: RequestHandler = async (event) => {
 	try {
+		const usuario = await requireAdmin(event);
 		const etiquetas = await AdminBlogService.listEtiquetas();
 
-		console.log(`[AUDIT] ${usuario.email} post`);
+		console.log(`[AUDIT] ${usuario.email} obtuvo etiquetas del blog`);
 		return json({
 			success: true,
 			data: etiquetas
 		});
 	} catch (error: any) {
-		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
-			return jsonError('No autorizado', 401);
-		}
 		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
 			return jsonError('No autorizado', 401);
 		}
@@ -75,7 +73,7 @@ export const POST: RequestHandler = async (event) => {
 			);
 		}
 
-		console.log(`[AUDIT] ${usuario.email} post`);
+		console.log(`[AUDIT] ${usuario.email} creó etiqueta ${etiqueta.id}`);
 		return json(
 			{
 				success: true,
@@ -85,9 +83,6 @@ export const POST: RequestHandler = async (event) => {
 			{ status: 201 }
 		);
 	} catch (error: any) {
-		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
-			return jsonError('No autorizado', 401);
-		}
 		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
 			return jsonError('No autorizado', 401);
 		}

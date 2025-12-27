@@ -15,7 +15,7 @@ import { requireAdmin, jsonError } from '$lib/utils/auth.utils';
  */
 export const GET: RequestHandler = async (event) => {
 	try {
-		await requireAdmin(event);
+		const usuario = await requireAdmin(event);
 		const { params } = event;
 		const id = parseInt(params.id);
 
@@ -41,19 +41,12 @@ export const GET: RequestHandler = async (event) => {
 			);
 		}
 
-		console.log(`[AUDIT] ${usuario.email} put`);
-		console.log(`[AUDIT] ${usuario.email} delete`);
+		console.log(`[AUDIT] ${usuario.email} obtuvo etiqueta ${id}`);
 		return json({
 			success: true,
 			data: etiqueta
 		});
 	} catch (error: any) {
-		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
-			return jsonError('No autorizado', 401);
-		}
-		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
-			return jsonError('No autorizado', 401);
-		}
 		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
 			return jsonError('No autorizado', 401);
 		}
@@ -116,20 +109,13 @@ export const PUT: RequestHandler = async (event) => {
 			);
 		}
 
-		console.log(`[AUDIT] ${usuario.email} put`);
-		console.log(`[AUDIT] ${usuario.email} delete`);
+		console.log(`[AUDIT] ${usuario.email} actualizó etiqueta ${id}`);
 		return json({
 			success: true,
 			data: etiqueta,
 			message: 'Etiqueta actualizada exitosamente'
 		});
 	} catch (error: any) {
-		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
-			return jsonError('No autorizado', 401);
-		}
-		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
-			return jsonError('No autorizado', 401);
-		}
 		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
 			return jsonError('No autorizado', 401);
 		}
@@ -188,19 +174,12 @@ export const DELETE: RequestHandler = async (event) => {
 			);
 		}
 
-		console.log(`[AUDIT] ${usuario.email} put`);
-		console.log(`[AUDIT] ${usuario.email} delete`);
+		console.log(`[AUDIT] ${usuario.email} eliminó etiqueta ${id}`);
 		return json({
 			success: true,
 			message: 'Etiqueta eliminada exitosamente'
 		});
 	} catch (error: any) {
-		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
-			return jsonError('No autorizado', 401);
-		}
-		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
-			return jsonError('No autorizado', 401);
-		}
 		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
 			return jsonError('No autorizado', 401);
 		}

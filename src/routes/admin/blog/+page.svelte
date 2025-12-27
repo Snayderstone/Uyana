@@ -78,6 +78,23 @@
 	let showTogglePublishModal = false;
 	let pendingTogglePost: BlogPost | null = null;
 
+	// Estados para mensajes de feedback
+	let showToast = false;
+	let toastMessage = '';
+	let toastType: 'success' | 'error' | 'info' = 'success';
+	let deleting = false;
+	let toggling = false;
+
+	// Función para mostrar toast
+	function showToastMessage(message: string, type: 'success' | 'error' | 'info' = 'success') {
+		toastMessage = message;
+		toastType = type;
+		showToast = true;
+		setTimeout(() => {
+			showToast = false;
+		}, 4000);
+	}
+
 	// Cargar datos iniciales
 	onMount(async () => {
 		await Promise.all([loadPosts(), loadCategorias(), loadEtiquetas()]);
@@ -191,13 +208,15 @@
 
 			imageFile = file;
 
+			// Mostrar preview local usando data URL
 			const reader = new FileReader();
 			reader.onload = (e) => {
 				imagePreview = e.target?.result as string;
 			};
 			reader.readAsDataURL(file);
 
-			formData.imagen_portada = `/images/posts/${file.name}`;
+			// No establecer ruta temporal - se obtendrá al subir
+			// formData.imagen_portada se actualizará en uploadImage()
 		}
 	}
 
@@ -205,6 +224,41 @@
 		imageFile = null;
 		imagePreview = '';
 		formData.imagen_portada = '/images/posts/placeholder.avif';
+	}
+
+	// Subir imagen al servidor
+	async function uploadImage(): Promise<string | null> {
+		if (!imageFile) return null;
+
+		try {
+			console.log('Subiendo imagen:', imageFile.name, imageFile.type, imageFile.size);
+			const formDataUpload = new FormData();
+			formDataUpload.append('image', imageFile);
+
+			const response = await fetch('/api/admin/blog/upload-image', {
+				method: 'POST',
+				body: formDataUpload
+			});
+
+			if (!response.ok) {
+				let errorMessage = 'Error al subir la imagen';
+				try {
+					const data = await response.json();
+					errorMessage = data.message || data.error || errorMessage;
+					console.error('Error del servidor:', data);
+				} catch (e) {
+					console.error('Error al parsear respuesta:', await response.text());
+				}
+				throw new Error(errorMessage);
+			}
+
+			const data = await response.json();
+			console.log('Imagen subida exitosamente:', data);
+			return data.data.url;
+		} catch (err) {
+			console.error('Error al subir imagen:', err);
+			throw err;
+		}
 	}
 
 	// Scroll automático a campo con error
@@ -309,6 +363,14 @@
 		formError = '';
 
 		try {
+			// Subir imagen si hay una nueva
+			if (imageFile) {
+				const uploadedImageUrl = await uploadImage();
+				if (uploadedImageUrl) {
+					formData.imagen_portada = uploadedImageUrl;
+				}
+			}
+
 			// Generar resumen si está vacío
 			if (!formData.resumen.trim()) {
 				formData.resumen = generateSummary(formData.contenido);
@@ -338,10 +400,18 @@
 				throw new Error(data.error || 'Error al guardar el post');
 			}
 
+			const result = await response.json();
 			await loadPosts();
 			closeEditorModal();
+			showToastMessage(
+				editingPost
+					? '✅ Post actualizado exitosamente'
+					: `✅ Post ${formData.publicado ? 'publicado' : 'creado'} exitosamente`,
+				'success'
+			);
 		} catch (err) {
 			formError = err instanceof Error ? err.message : 'Error desconocido';
+			showToastMessage(`❌ ${formError}`, 'error');
 		} finally {
 			saving = false;
 		}
@@ -361,18 +431,25 @@
 	async function deletePost() {
 		if (!postToDelete) return;
 
+		deleting = true;
 		try {
 			const response = await fetch(`/api/admin/blog/${postToDelete.id}`, {
 				method: 'DELETE'
 			});
 
-			if (!response.ok) throw new Error('Error al eliminar el post');
+			if (!response.ok) {
+				const data = await response.json();
+				throw new Error(data.message || 'Error al eliminar el post');
+			}
 
 			await loadPosts();
 			showDeleteModal = false;
 			postToDelete = null;
+			showToastMessage('🗑️ Post eliminado exitosamente', 'success');
 		} catch (err) {
-			alert(err instanceof Error ? err.message : 'Error al eliminar');
+			showToastMessage(`❌ ${err instanceof Error ? err.message : 'Error al eliminar'}`, 'error');
+		} finally {
+			deleting = false;
 		}
 	}
 
@@ -390,6 +467,7 @@
 	}
 
 	async function executeToggle(post: BlogPost) {
+		toggling = true;
 		try {
 			const response = await fetch(`/api/admin/blog/${post.id}`, {
 				method: 'PUT',
@@ -402,6 +480,10 @@
 
 			if (!response.ok) throw new Error('Error al actualizar el post');
 			await loadPosts();
+			showToastMessage(
+				post.publicado ? '📝 Post despublicado exitosamente' : '🚀 Post publicado exitosamente',
+				'success'
+			);
 		} catch (err) {
 			alert(err instanceof Error ? err.message : 'Error al actualizar');
 		}
@@ -435,6 +517,13 @@
 		});
 	}
 </script>
+
+<!-- Toast de notificación -->
+{#if showToast}
+	<div class="toast {toastType}">
+		<span>{toastMessage}</span>
+	</div>
+{/if}
 
 <div class="blog-admin">
 	<header class="page-header">
@@ -892,8 +981,16 @@
 		</div>
 
 		<div slot="footer">
-			<button class="btn btn-secondary" on:click={cancelDelete}>Cancelar</button>
-			<button class="btn btn-danger" on:click={deletePost}>Eliminar</button>
+			<button class="btn btn-secondary" on:click={cancelDelete} disabled={deleting}>Cancelar</button
+			>
+			<button class="btn btn-danger" on:click={deletePost} disabled={deleting}>
+				{#if deleting}
+					<span class="spinner-small" />
+					Eliminando...
+				{:else}
+					Eliminar
+				{/if}
+			</button>
 		</div>
 	</Modal>
 {/if}
@@ -1672,7 +1769,8 @@
 				width: 20px;
 				height: 20px;
 				border-radius: 50%;
-				background: white;
+				background: var(--color--surface);
+		color: var(--color--text);
 				top: 2px;
 				left: 2px;
 				transition: all 0.3s;
@@ -1782,6 +1880,51 @@
 		animation: spin 0.8s linear infinite;
 	}
 
+	/* Toast de notificaci\u00f3n */
+	.toast {
+		position: fixed;
+		bottom: 2rem;
+		right: 2rem;
+		background: var(--color--surface);
+		color: var(--color--text);
+		padding: 1rem 1.5rem;
+		border-radius: 12px;
+		box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+		border: 1px solid rgba(var(--color--text-rgb), 0.1);
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		min-width: 300px;
+		z-index: 10000;
+		animation: slideIn 0.3s ease-out;
+
+		&.success {
+			border-left: 4px solid #22c55e;
+			background: rgba(34, 197, 94, 0.1);
+		}
+
+		&.error {
+			border-left: 4px solid #ef4444;
+			background: rgba(239, 68, 68, 0.1);
+		}
+
+		&.info {
+			border-left: 4px solid #3b82f6;
+			background: rgba(59, 130, 246, 0.1);
+		}
+	}
+
+	@keyframes slideIn {
+		from {
+			transform: translateX(400px);
+			opacity: 0;
+		}
+		to {
+			transform: translateX(0);
+			opacity: 1;
+		}
+	}
+
 	@media (max-width: 768px) {
 		.blog-admin {
 			padding: 1rem;
@@ -1796,6 +1939,13 @@
 		}
 
 		.search-box {
+			min-width: auto;
+		}
+
+		.toast {
+			bottom: 1rem;
+			right: 1rem;
+			left: 1rem;
 			min-width: auto;
 		}
 	}

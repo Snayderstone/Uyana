@@ -9,9 +9,12 @@
 	export let widths: string[] | undefined = undefined;
 
 	$: fileName = src.split('.')[0];
+	$: isSupabaseUrl = src.includes('supabase.co');
+	let imgError = false;
 
 	function buildSrcset() {
-		if (dev) return;
+		// No construir srcset para URLs de Supabase (ya están optimizadas)
+		if (dev || isSupabaseUrl) return;
 
 		let srcset = '';
 
@@ -35,9 +38,25 @@
 
 		return srcset;
 	}
+
+	function handleImageError() {
+		if (!imgError) {
+			imgError = true;
+			// Usar placeholder si la imagen no existe
+			src = '/images/posts/placeholder.avif';
+		}
+	}
 </script>
 
-<img srcset={buildSrcset()} {src} {alt} loading="lazy" decoding="async" class:full-bleed={fullBleed} />
+<img
+	srcset={buildSrcset()}
+	{src}
+	{alt}
+	loading="lazy"
+	decoding="async"
+	class:full-bleed={fullBleed}
+	on:error={handleImageError}
+/>
 
 <style lang="scss">
 	img {

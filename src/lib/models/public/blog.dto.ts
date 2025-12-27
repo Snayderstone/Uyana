@@ -5,6 +5,8 @@ export type BlogPostListItemDTO = {
 	resumen: string;
 	imagen_portada: string;
 	fecha_publicacion: string;
+	tiempo_lectura?: string;
+	etiquetas?: string[];
 };
 
 export type BlogPostDetailDTO = {
@@ -15,6 +17,7 @@ export type BlogPostDetailDTO = {
 	imagen_portada: string;
 	fecha_publicacion: string;
 	tags: string[];
+	tiempo_lectura?: string;
 	autor: {
 		nombre: string;
 		avatar?: string | null;

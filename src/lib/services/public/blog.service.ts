@@ -17,20 +17,43 @@ class BlogService {
 	}
 
 	/**
+	 * Calcula el tiempo de lectura basado en el contenido HTML
+	 * Promedio de 200 palabras por minuto
+	 */
+	private calculateReadingTime(htmlContent: string): string {
+		// Remover tags HTML
+		const textContent = htmlContent.replace(/<[^>]*>/g, ' ');
+		// Contar palabras (separadas por espacios)
+		const words = textContent.trim().split(/\s+/).length;
+		// Calcular minutos (promedio 200 palabras/minuto)
+		const minutes = Math.ceil(words / 200);
+		return `${minutes} min`;
+	}
+
+	/**
 	 * Obtiene la lista de posts publicados para la página principal del blog
 	 */
 	async getPublishedPosts(): Promise<BlogPostListItemDTO[]> {
 		const posts = await this.repository.getAllPublishedPosts();
 
-		// Transformar a DTO con solo los campos necesarios
-		return posts.map((post) => ({
-			id: post.id,
-			titulo: post.titulo,
-			slug: post.slug,
-			resumen: post.resumen,
-			imagen_portada: post.imagen_portada,
-			fecha_publicacion: post.fecha_publicacion
-		}));
+		// Transformar a DTO con campos adicionales
+		return await Promise.all(
+			posts.map(async (post) => {
+				// Obtener etiquetas del post
+				const etiquetas = await this.repository.getPostTags(post.id);
+
+				return {
+					id: post.id,
+					titulo: post.titulo,
+					slug: post.slug,
+					resumen: post.resumen,
+					imagen_portada: post.imagen_portada,
+					fecha_publicacion: post.fecha_publicacion,
+					tiempo_lectura: this.calculateReadingTime(post.contenido),
+					etiquetas: etiquetas.map((e) => e.nombre)
+				};
+			})
+		);
 	}
 
 	/**
