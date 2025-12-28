@@ -13,8 +13,9 @@ import { requireAdmin, jsonError } from '$lib/utils/auth.utils';
 /**
  * GET - Obtener todas las estadísticas de analytics
  */
-export const GET: RequestHandler = async () => {
+export const GET: RequestHandler = async (event) => {
 	try {
+		const usuario = await requireAdmin(event);
 		const analytics = await AnalyticsRepository.getDashboardAnalytics();
 
 		return json({

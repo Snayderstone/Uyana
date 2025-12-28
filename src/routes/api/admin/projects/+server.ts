@@ -19,7 +19,7 @@ import { requireAdmin, jsonError } from '$lib/utils/auth.utils';
  */
 export const GET: RequestHandler = async (event) => {
 	try {
-		await requireAdmin(event);
+		const usuario = await requireAdmin(event);
 		const { url } = event;
 		const all = url.searchParams.get('all') === 'true';
 

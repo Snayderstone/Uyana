@@ -12,9 +12,10 @@ import { requireAdmin, jsonError } from '$lib/utils/auth.utils';
  * GET - Obtener todos los datos del dashboard usando vistas materializadas
  * Retorna: stats, topFacultades, topCarreras, topCargos, topParticipantes, etc.
  */
-export const GET: RequestHandler = async () => {
+export const GET: RequestHandler = async (event) => {
 	try {
-		console.log('📊 Obteniendo datos completos del dashboard...');
+		const usuario = await requireAdmin(event);
+		console.log(`[AUDIT] ${usuario.email} obtuvo dashboard de participantes`);
 
 		const dashboardData = await AdminParticipantsService.getDashboardDataComplete();
 

@@ -13,6 +13,27 @@
 		return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
 	}
 
+	// Map gender from DB format to form format
+	function mapGenderFromDB(gender: string): string {
+		const genderMap: Record<string, string> = {
+			m: 'Masculino',
+			f: 'Femenino',
+			Masculino: 'Masculino',
+			Femenino: 'Femenino',
+
+		};
+		return genderMap[gender] || gender;
+	}
+
+	// Map gender from form format to DB format
+	function mapGenderToDB(gender: string): string {
+		const genderMap: Record<string, string> = {
+			Masculino: 'm',
+			Femenino: 'f',
+		};
+		return genderMap[gender] || gender;
+	}
+
 	// Get ID from URL
 	$: participanteId = $page.params.id;
 
@@ -40,14 +61,46 @@
 	let photoInput: HTMLInputElement;
 	let uploadingPhoto = false;
 
+	// Social networks state
+	let redesSocialesList: string[] = [''];
+
 	// Validation
 	let errors: Record<string, string> = {};
 
 	// Catalogs
-	let generos = ['Masculino', 'Femenino', 'Otro', 'Prefiero no decir'];
+	let generos = ['Masculino', 'Femenino'];
 	let facultades: Array<{ id: number; nombre: string }> = [];
 	let carreras: Array<{ id: number; nombre: string; facultad_id: number }> = [];
 	let filteredCarreras: Array<{ id: number; nombre: string }> = [];
+
+	/**
+	 * Social networks management
+	 */
+	function addRedSocial() {
+		redesSocialesList = [...redesSocialesList, ''];
+	}
+
+	function removeRedSocial(index: number) {
+		if (redesSocialesList.length > 1) {
+			redesSocialesList = redesSocialesList.filter((_, i) => i !== index);
+		} else {
+			redesSocialesList = [''];
+		}
+		updateRedesSocialesString();
+	}
+
+	function updateRedesSocialesString() {
+		formData.redes_sociales = redesSocialesList.filter((url) => url.trim()).join(' | ');
+	}
+
+	function parseRedesSocialesFromString(str: string | null): string[] {
+		if (!str) return [''];
+		const urls = str
+			.split('|')
+			.map((url) => url.trim())
+			.filter((url) => url);
+		return urls.length > 0 ? urls : [''];
+	}
 
 	/**
 	 * Fetch participant details
@@ -67,20 +120,31 @@
 
 				console.log('📥 Datos recibidos del API:', {
 					participante_foto: participante.foto,
-					participante_url_foto: participante.url_foto
+					participante_url_foto: participante.url_foto,
+					genero_original: participante.genero
 				});
 
 				// Populate form data
 				formData = {
 					nombre: participante.nombre,
 					email: participante.email || '',
-					genero: participante.genero,
+					genero: mapGenderFromDB(participante.genero),
 					acreditado: participante.acreditado,
 					carrera_id: participante.carrera?.id || null,
 					facultad_id: participante.carrera?.facultad?.id || null,
 					redes_sociales: participante.redes_sociales || '',
 					foto: participante.foto || participante.url_foto || ''
 				};
+
+				console.log('🔄 Género mapeado:', {
+					original: participante.genero,
+					mapeado: formData.genero
+				});
+
+				// Parse social networks into array
+				redesSocialesList = parseRedesSocialesFromString(participante.redes_sociales);
+
+				console.log('📱 Redes sociales cargadas:', redesSocialesList);
 
 				console.log('📝 Form data poblado:', {
 					foto: formData.foto
@@ -261,7 +325,7 @@
 			const updateData = {
 				nombre: formData.nombre.trim(),
 				email: formData.email.trim() || null,
-				genero: formData.genero,
+				genero: mapGenderToDB(formData.genero),
 				acreditado: formData.acreditado,
 				carrera_id: formData.carrera_id,
 				redes_sociales: formData.redes_sociales.trim() || null,
@@ -462,58 +526,6 @@
 			<button class="btn-primary" on:click={fetchParticipante}>Reintentar</button>
 		</div>
 	{:else if participante}
-		<!-- Profile Preview -->
-		<div class="profile-preview">
-			<div
-				class="preview-avatar"
-				class:uploading={uploadingPhoto}
-				on:click={triggerPhotoUpload}
-				on:keydown={(e) => e.key === 'Enter' && triggerPhotoUpload()}
-				tabindex="0"
-				role="button"
-			>
-				{#if uploadingPhoto}
-					<div class="upload-spinner">
-						<div class="spinner-sm" />
-					</div>
-				{:else if formData.foto}
-					<img
-						src={getImageSource(formData.foto)}
-						alt={formData.nombre}
-						on:error={() => (formData.foto = '')}
-					/>
-					<div class="photo-overlay">
-						{@html icons.camera}
-						<span>Cambiar foto</span>
-					</div>
-				{:else}
-					<div class="avatar-placeholder">{getInitials(formData.nombre)}</div>
-					<div class="photo-overlay">
-						{@html icons.camera}
-						<span>Subir foto</span>
-					</div>
-				{/if}
-			</div>
-			<!-- Hidden file input -->
-			<input
-				bind:this={photoInput}
-				type="file"
-				accept="image/*"
-				on:change={handlePhotoSelect}
-				style="display: none;"
-			/>
-			<div class="preview-info">
-				<h4>{formData.nombre || 'Sin nombre'}</h4>
-				<p class="preview-email">{formData.email || 'Sin email'}</p>
-				<div class="preview-badges">
-					<span class="badge badge-genero">{formData.genero || 'Sin género'}</span>
-					<span class="badge {formData.acreditado ? 'badge-success' : 'badge-warning'}">
-						{formData.acreditado ? 'Acreditado' : 'No Acreditado'}
-					</span>
-				</div>
-			</div>
-		</div>
-
 		<form class="edit-form" on:submit|preventDefault={handleSubmit}>
 			<!-- Success/Error Messages -->
 			{#if successMessage}
@@ -537,6 +549,59 @@
 					<div class="section-header">
 						<div class="section-icon">{@html icons.user}</div>
 						<h3>Información Básica</h3>
+					</div>
+					<!-- Photo Upload -->
+					<div class="form-group photo-upload-centered">
+						<div class="photo-container">
+							<div
+								class="avatar-upload-area"
+								class:uploading={uploadingPhoto}
+								on:click={triggerPhotoUpload}
+								on:keydown={(e) => e.key === 'Enter' && triggerPhotoUpload()}
+								tabindex="0"
+								role="button"
+							>
+								{#if uploadingPhoto}
+									<div class="upload-spinner">
+										<div class="spinner-sm" />
+									</div>
+								{:else if formData.foto}
+									<img
+										src={getImageSource(formData.foto)}
+										alt={formData.nombre}
+										on:error={() => (formData.foto = '')}
+										class="avatar-image"
+									/>
+									<div class="photo-overlay">
+										{@html icons.camera}
+										<span>Cambiar foto</span>
+									</div>
+								{:else}
+									<div class="avatar-placeholder-upload">{getInitials(formData.nombre)}</div>
+									<div class="photo-overlay">
+										{@html icons.camera}
+										<span>Subir foto</span>
+									</div>
+								{/if}
+							</div>
+							<!-- Hidden file input -->
+							<input
+								bind:this={photoInput}
+								type="file"
+								accept="image/*"
+								on:change={handlePhotoSelect}
+								style="display: none;"
+							/>
+							{#if formData.foto}
+								<button type="button" class="btn-remove-photo" on:click={removePhoto}>
+									{@html icons.delete}
+									Eliminar foto
+								</button>
+							{/if}
+						</div>
+						<p class="help-text">
+							Haz clic en el avatar para subir una foto • Formatos: JPG, PNG, GIF • Máx: 5MB
+						</p>
 					</div>
 					<div class="section-content">
 						<!-- Nombre -->
@@ -605,56 +670,10 @@
 							</label>
 							<p class="help-text">Marque si el participante está acreditado en el sistema</p>
 						</div>
-						<!-- Photo Management -->
-						<div class="form-group photo-management">
-							<div class="photo-management-header">
-								<span class="photo-label">Foto de Perfil</span>
-							</div>
-							<div class="photo-actions">
-								<button
-									type="button"
-									class="btn-photo"
-									on:click={triggerPhotoUpload}
-									disabled={uploadingPhoto}
-								>
-									{#if uploadingPhoto}
-										<span class="spinner-sm" />
-									{:else}
-										{@html icons.upload}
-									{/if}
-									{uploadingPhoto ? 'Procesando...' : 'Subir Imagen'}
-								</button>
-								{#if formData.foto}
-									<button
-										type="button"
-										class="btn-photo-remove"
-										on:click={removePhoto}
-										title="Eliminar foto"
-									>
-										{@html icons.delete}
-									</button>
-								{/if}
-							</div>
-							<div class="photo-info">
-								<p class="help-text">📁 Formatos: JPG, PNG, GIF. Tamaño máximo: 5MB</p>
-								<p class="help-text">
-									💾 Las imágenes se almacenan como base64 en la base de datos (campo TEXT)
-								</p>
-								{#if formData.foto && isBase64Image(formData.foto)}
-									<p class="help-text success-text">
-										✅ Imagen cargada como base64 (recomendado para BD)
-									</p>
-								{:else if formData.foto}
-									<p class="help-text warning-text">
-										⚠️ URL externa detectada. Considere convertir a base64 para mejor compatibilidad
-									</p>
-								{/if}
-							</div>
-						</div>
 					</div>
 				</div>
 				<!-- Academic Information -->
-				<div class="form-section">
+				<div class="form-section form-section-full">
 					<div class="section-header">
 						<div class="section-icon">{@html icons.book}</div>
 						<h3>Información Académica</h3>
@@ -704,16 +723,34 @@
 					<div class="section-content">
 						<!-- Redes Sociales -->
 						<div class="form-group" class:has-error={errors.redes_sociales}>
-							<label for="redes_sociales" class:error-label={errors.redes_sociales}
-								>Redes Sociales</label
-							>
-							<input
-								type="url"
-								id="redes_sociales"
-								bind:value={formData.redes_sociales}
-								class:error={errors.redes_sociales}
-								placeholder="https://linkedin.com/in/usuario"
-							/>
+							<span class="form-label" class:error-label={errors.redes_sociales}>Redes Sociales</span>
+							<div class="redes-sociales-list">
+								{#each redesSocialesList as redSocial, index}
+									<div class="red-social-item">
+										<input
+											type="url"
+											bind:value={redesSocialesList[index]}
+											on:input={updateRedesSocialesString}
+											placeholder="https://linkedin.com/in/usuario"
+											class="red-social-input"
+										/>
+										{#if redesSocialesList.length > 1}
+											<button
+												type="button"
+												class="btn-remove-red"
+												on:click={() => removeRedSocial(index)}
+												title="Eliminar esta red social"
+											>
+												{@html icons.close}
+											</button>
+										{/if}
+									</div>
+								{/each}
+							</div>
+							<button type="button" class="btn-add-red" on:click={addRedSocial}>
+								{@html icons.plus}
+								Agregar otra red social
+							</button>
 							{#if errors.redes_sociales}
 								<span class="error-message">
 									{@html icons.alert}
@@ -721,50 +758,9 @@
 								</span>
 							{/if}
 							<p class="help-text">
-								URL completa del perfil en redes sociales (LinkedIn, Twitter, etc.)
+								Agregue URLs de perfiles en redes sociales (LinkedIn, Twitter, etc.). Puede agregar
+								múltiples URLs.
 							</p>
-						</div>
-						<!-- Foto URL / Base64 -->
-						<div class="form-group" class:has-error={errors.foto}>
-							<label for="foto" class:error-label={errors.foto}>URL de Foto / Datos Base64</label>
-							<div class="photo-url-container">
-								<input
-									type="text"
-									id="foto"
-									bind:value={formData.foto}
-									placeholder="https://... o data:image/..."
-									on:input={handlePhotoUrlChange}
-									class="photo-url-input"
-									class:error={errors.foto}
-								/>
-								{#if formData.foto && isBase64Image(formData.foto)}
-									<div class="base64-indicator">
-										{@html icons.check}
-										<span>Base64</span>
-									</div>
-								{:else if formData.foto}
-									<div class="url-indicator">
-										{@html icons.link}
-										<span>URL</span>
-									</div>
-								{/if}
-							</div>
-							{#if errors.foto}
-								<span class="error-message">
-									{@html icons.alert}
-									{errors.foto}
-								</span>
-							{/if}
-							<div class="photo-url-help">
-								<p class="help-text">
-									Puede ingresar una URL externa (https://...) o datos de imagen en base64
-									(data:image/...)
-								</p>
-								<p class="help-text">
-									<strong>Recomendado:</strong> Use el botón "Subir Imagen" para convertir automáticamente
-									a base64
-								</p>
-							</div>
 						</div>
 					</div>
 				</div>
@@ -790,8 +786,9 @@
 
 <style lang="scss">
 	.participante-editar-page {
-		max-width: 1200px;
+		max-width: 1000px;
 		margin: 0 auto;
+		padding: 0 1rem;
 	}
 
 	// ==================== Header ====================
@@ -807,7 +804,7 @@
 		h1 {
 			font-size: 2rem;
 			font-weight: 700;
-			color: #ededed;
+			color: var(--color--text);
 			margin: 0;
 			letter-spacing: -0.025em;
 		}
@@ -815,7 +812,7 @@
 
 	.page-subtitle {
 		font-size: 0.9375rem;
-		color: #a0aec0;
+		color: var(--color--text-shade);
 		margin: 0;
 		font-weight: 400;
 	}
@@ -827,9 +824,9 @@
 		gap: 0.5rem;
 		padding: 0.5rem 1rem;
 		background: transparent;
-		border: 1px solid #2d3748;
+		border: 1px solid rgba(var(--color--text-rgb), 0.08);
 		border-radius: 6px;
-		color: #a0aec0;
+		color: var(--color--text-shade);
 		font-size: 0.875rem;
 		cursor: pointer;
 		transition: all 0.2s;
@@ -840,182 +837,9 @@
 		}
 
 		&:hover {
-			background: #1a1f26;
-			border-color: #4a5568;
-			color: #ededed;
-		}
-	}
-
-	// ==================== Profile Preview ====================
-	.profile-preview {
-		background: #1a1f26;
-		border: 1px solid #2d3748;
-		border-radius: 12px;
-		padding: 1.5rem;
-		margin-bottom: 2rem;
-		display: flex;
-		align-items: center;
-		gap: 1.5rem;
-		transition: all 0.3s ease;
-
-		&:hover {
-			border-color: #4a5568;
-			box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-		}
-	}
-
-	.preview-avatar {
-		width: 80px;
-		height: 80px;
-		border-radius: 50%;
-		overflow: hidden;
-		flex-shrink: 0;
-		border: 3px solid #2d3748;
-		transition: all 0.3s ease;
-		position: relative;
-		cursor: pointer;
-
-		img {
-			width: 100%;
-			height: 100%;
-			object-fit: cover;
-		}
-
-		.avatar-placeholder {
-			width: 100%;
-			height: 100%;
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			background: linear-gradient(135deg, #6e29e7 0%, #8b5cf6 100%);
-			font-size: 1.75rem;
-			font-weight: 600;
-			color: white;
-			text-transform: uppercase;
-		}
-
-		.photo-overlay {
-			position: absolute;
-			top: 0;
-			left: 0;
-			right: 0;
-			bottom: 0;
-			background: rgba(0, 0, 0, 0.7);
-			display: flex;
-			flex-direction: column;
-			align-items: center;
-			justify-content: center;
-			gap: 0.25rem;
-			opacity: 0;
-			transition: opacity 0.2s;
-
-			span {
-				font-size: 0.75rem;
-				color: white;
-				font-weight: 500;
-			}
-
-			:global(svg) {
-				width: 20px;
-				height: 20px;
-				color: white;
-			}
-		}
-
-		.upload-spinner {
-			position: absolute;
-			top: 0;
-			left: 0;
-			right: 0;
-			bottom: 0;
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			background: rgba(0, 0, 0, 0.7);
-		}
-
-		&:hover {
-			border-color: #6e29e7;
-			transform: scale(1.05);
-
-			.photo-overlay {
-				opacity: 1;
-			}
-		}
-
-		&.uploading {
-			border-color: #6e29e7;
-		}
-
-		&:focus-visible {
-			outline: 2px solid #6e29e7;
-			outline-offset: 2px;
-		}
-	}
-
-	.preview-info {
-		flex: 1;
-		min-width: 0;
-
-		h4 {
-			font-size: 1.25rem;
-			font-weight: 600;
-			color: #ededed;
-			margin: 0 0 0.5rem 0;
-			overflow: hidden;
-			text-overflow: ellipsis;
-			white-space: nowrap;
-		}
-	}
-
-	.preview-email {
-		font-size: 0.875rem;
-		color: #a0aec0;
-		margin-bottom: 0.75rem;
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-
-		:global(svg) {
-			width: 14px;
-			height: 14px;
-			flex-shrink: 0;
-		}
-	}
-
-	.preview-badges {
-		display: flex;
-		gap: 0.5rem;
-		flex-wrap: wrap;
-
-		.badge {
-			display: inline-flex;
-			align-items: center;
-			gap: 0.375rem;
-			padding: 0.25rem 0.75rem;
-			border-radius: 20px;
-			font-size: 0.75rem;
-			font-weight: 500;
-			background: #2d3748;
-			color: #e2e8f0;
-			border: 1px solid #4a5568;
-
-			:global(svg) {
-				width: 12px;
-				height: 12px;
-			}
-
-			&.badge-success {
-				background: rgba(72, 187, 120, 0.1);
-				border-color: rgba(72, 187, 120, 0.3);
-				color: #48bb78;
-			}
-
-			&.badge-warning {
-				background: rgba(237, 137, 54, 0.1);
-				border-color: rgba(237, 137, 54, 0.3);
-				color: #ed8936;
-			}
+			background: rgba(var(--color--text-rgb), 0.03);
+			border-color: rgba(var(--color--text-rgb), 0.15);
+			color: var(--color--text);
 		}
 	}
 
@@ -1058,8 +882,8 @@
 
 	// ==================== Form ====================
 	.edit-form {
-		background: #1a1f26;
-		border: 1px solid #2d3748;
+		background: var(--color--card-background);
+		border: 1px solid rgba(var(--color--text-rgb), 0.08);
 		border-radius: 12px;
 		padding: 2rem;
 		overflow: hidden;
@@ -1086,13 +910,13 @@
 		align-items: center;
 		gap: 0.75rem;
 		padding-bottom: 1rem;
-		border-bottom: 2px solid #2d3748;
+		border-bottom: 2px solid rgba(var(--color--text-rgb), 0.08);
 		margin-bottom: 1.5rem;
 
 		h3 {
 			font-size: 1.125rem;
 			font-weight: 600;
-			color: #ededed;
+			color: var(--color--text);
 			margin: 0;
 		}
 	}
@@ -1127,6 +951,7 @@
 		flex-direction: column;
 		gap: 1.25rem;
 		min-width: 0;
+		padding: 1.5rem 2rem;
 	}
 
 	.form-group {
@@ -1135,10 +960,11 @@
 		gap: 0.5rem;
 		min-width: 0;
 
-		label {
+		label,
+		.form-label {
 			font-size: 0.875rem;
 			font-weight: 500;
-			color: #e2e8f0;
+			color: var(--color--text);
 
 			.required {
 				color: #fc8181;
@@ -1148,10 +974,10 @@
 		input,
 		select {
 			padding: 0.75rem 1rem;
-			background: #0f1419;
-			border: 1px solid #4a5568;
+			background: var(--color--input-background, rgba(255, 255, 255, 0.05));
+			border: 1px solid rgba(var(--color--text-rgb), 0.15);
 			border-radius: 6px;
-			color: #ededed;
+			color: var(--color--text);
 			font-size: 0.875rem;
 			transition: all 0.2s;
 			width: 100%;
@@ -1159,7 +985,7 @@
 			box-sizing: border-box;
 
 			&::placeholder {
-				color: #718096;
+				color: var(--color--text-shade);
 			}
 
 			&:focus {
@@ -1181,11 +1007,20 @@
 		select {
 			cursor: pointer;
 			text-overflow: ellipsis;
+			appearance: none;
+			-webkit-appearance: none;
+			-moz-appearance: none;
+			background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23a0aec0' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+			background-repeat: no-repeat;
+			background-position: right 0.75rem center;
+			padding-right: 2.5rem;
 
 			option {
 				padding: 0.5rem;
 				white-space: normal;
 				word-wrap: break-word;
+				background: var(--color--card-background, #1a1f26);
+				color: var(--color--text, #ededed);
 			}
 		}
 	}
@@ -1205,7 +1040,7 @@
 
 			span {
 				font-size: 0.875rem;
-				color: #ededed;
+				color: var(--color--text);
 			}
 		}
 	}
@@ -1258,107 +1093,215 @@
 
 	.help-text {
 		font-size: 0.75rem;
-		color: #a0aec0;
+		color: var(--color--text-shade);
 		margin: 0;
 	}
 
 	// ==================== Photo Management ====================
-	.photo-management {
-		padding: 1rem 0;
-		border-top: 1px solid #2d3748;
-		margin-top: 0.5rem !important;
+	.photo-upload-centered {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 1.25rem;
+		padding: 1.5rem 2rem;
+
+		.photo-container {
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			gap: 1rem;
+		}
+
+		.avatar-upload-area {
+			position: relative;
+			width: 120px;
+			height: 120px;
+			border-radius: 50%;
+			overflow: hidden;
+			border: 4px solid rgba(var(--color--text-rgb), 0.15);
+			background: rgba(var(--color--text-rgb), 0.05);
+			cursor: pointer;
+			transition: all 0.2s;
+
+			.avatar-image {
+				width: 100%;
+				height: 100%;
+				object-fit: cover;
+			}
+
+			.avatar-placeholder-upload {
+				width: 100%;
+				height: 100%;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				background: linear-gradient(135deg, #6e29e7 0%, #8b5cf6 100%);
+				color: white;
+				font-size: 2.5rem;
+				font-weight: 700;
+				text-transform: uppercase;
+			}
+
+			.photo-overlay {
+				position: absolute;
+				top: 0;
+				left: 0;
+				right: 0;
+				bottom: 0;
+				background: rgba(0, 0, 0, 0.7);
+				display: flex;
+				flex-direction: column;
+				align-items: center;
+				justify-content: center;
+				gap: 0.25rem;
+				opacity: 0;
+				transition: opacity 0.2s;
+
+				span {
+					font-size: 0.75rem;
+					color: white;
+					font-weight: 500;
+				}
+
+				:global(svg) {
+					width: 20px;
+					height: 20px;
+					color: white;
+				}
+			}
+
+			.upload-spinner {
+				position: absolute;
+				top: 0;
+				left: 0;
+				right: 0;
+				bottom: 0;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				background: rgba(0, 0, 0, 0.7);
+			}
+
+			&:hover {
+				border-color: #6e29e7;
+				transform: scale(1.05);
+
+				.photo-overlay {
+					opacity: 1;
+				}
+			}
+
+			&.uploading {
+				border-color: #6e29e7;
+			}
+
+			&:focus-visible {
+				outline: 2px solid #6e29e7;
+				outline-offset: 2px;
+			}
+		}
+
+		.btn-remove-photo {
+			display: inline-flex;
+			align-items: center;
+			gap: 0.5rem;
+			padding: 0.5rem 1rem;
+			background: rgba(229, 62, 62, 0.1);
+			border: 1px solid rgba(229, 62, 62, 0.3);
+			border-radius: 6px;
+			color: #fc8181;
+			font-size: 0.875rem;
+			font-weight: 500;
+			cursor: pointer;
+			transition: all 0.2s;
+
+			:global(svg) {
+				width: 16px;
+				height: 16px;
+			}
+
+			&:hover {
+				background: rgba(229, 62, 62, 0.2);
+				border-color: rgba(229, 62, 62, 0.5);
+				color: #e53e3e;
+				transform: translateY(-2px);
+				box-shadow: 0 4px 12px rgba(229, 62, 62, 0.2);
+			}
+		}
+
+		.help-text {
+			text-align: center;
+			max-width: 450px;
+			font-size: 0.8rem;
+			color: var(--color--text-shade);
+			line-height: 1.5;
+		}
 	}
 
-	.photo-management-header {
+	// ==================== Social Networks ====================
+	.redes-sociales-list {
+		display: flex;
+		flex-direction: column;
+		gap: 0.75rem;
 		margin-bottom: 0.75rem;
 	}
 
-	.photo-label {
-		font-size: 0.875rem;
-		font-weight: 500;
-		color: #e2e8f0;
-	}
-
-	.photo-url-container {
-		position: relative;
+	.red-social-item {
 		display: flex;
-		align-items: center;
 		gap: 0.5rem;
+		align-items: center;
 
-		.photo-url-input {
+		.red-social-input {
 			flex: 1;
-			font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-			font-size: 0.8rem;
-		}
-	}
+			padding: 0.75rem;
+			background: var(--color--input-background, rgba(255, 255, 255, 0.05));
+			border: 1px solid rgba(var(--color--text-rgb), 0.15);
+			border-radius: 6px;
+			color: var(--color--text);
+			font-size: 0.875rem;
+			transition: all 0.2s;
 
-	.base64-indicator,
-	.url-indicator {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.375rem;
-		padding: 0.375rem 0.625rem;
-		border-radius: 20px;
-		font-size: 0.75rem;
-		font-weight: 500;
-		flex-shrink: 0;
-
-		:global(svg) {
-			width: 14px;
-			height: 14px;
-		}
-
-		span {
-			font-weight: 600;
-		}
-	}
-
-	.base64-indicator {
-		background: rgba(72, 187, 120, 0.1);
-		border: 1px solid rgba(72, 187, 120, 0.3);
-		color: #48bb78;
-	}
-
-	.url-indicator {
-		background: rgba(66, 153, 225, 0.1);
-		border: 1px solid rgba(66, 153, 225, 0.3);
-		color: #4299e1;
-	}
-
-	.photo-info {
-		margin-top: 0.75rem;
-		padding: 0.75rem;
-		background: rgba(110, 41, 231, 0.05);
-		border: 1px solid rgba(110, 41, 231, 0.1);
-		border-radius: 6px;
-
-		.help-text {
-			margin-bottom: 0.375rem !important;
-
-			&:last-child {
-				margin-bottom: 0 !important;
+			&::placeholder {
+				color: var(--color--text-shade);
 			}
 
-			&.success-text {
-				color: #48bb78;
-				font-weight: 500;
+			&:focus {
+				outline: none;
+				border-color: #6e29e7;
+				background: rgba(110, 41, 231, 0.05);
+			}
+		}
+
+		.btn-remove-red {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			width: 36px;
+			height: 36px;
+			min-width: 36px;
+			padding: 0;
+			background: rgba(229, 62, 62, 0.1);
+			border: 1px solid rgba(229, 62, 62, 0.3);
+			border-radius: 6px;
+			color: #fc8181;
+			cursor: pointer;
+			transition: all 0.2s;
+
+			:global(svg) {
+				width: 16px;
+				height: 16px;
 			}
 
-			&.warning-text {
-				color: #ed8936;
-				font-weight: 500;
+			&:hover {
+				background: rgba(229, 62, 62, 0.2);
+				border-color: rgba(229, 62, 62, 0.5);
+				color: #e53e3e;
+				transform: scale(1.05);
 			}
 		}
 	}
 
-	.photo-actions {
-		display: flex;
-		align-items: center;
-		gap: 0.75rem;
-		margin-bottom: 0.5rem;
-	}
-
-	.btn-photo {
+	.btn-add-red {
 		display: inline-flex;
 		align-items: center;
 		gap: 0.5rem;
@@ -1371,36 +1314,7 @@
 		font-weight: 500;
 		cursor: pointer;
 		transition: all 0.2s;
-
-		:global(svg) {
-			width: 16px;
-			height: 16px;
-		}
-
-		&:hover:not(:disabled) {
-			background: rgba(110, 41, 231, 0.2);
-			border-color: rgba(110, 41, 231, 0.5);
-			transform: translateY(-1px);
-		}
-
-		&:disabled {
-			opacity: 0.5;
-			cursor: not-allowed;
-		}
-	}
-
-	.btn-photo-remove {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		width: 36px;
-		height: 36px;
-		background: rgba(229, 62, 62, 0.1);
-		border: 1px solid rgba(229, 62, 62, 0.3);
-		border-radius: 6px;
-		color: #fc8181;
-		cursor: pointer;
-		transition: all 0.2s;
+		align-self: flex-start;
 
 		:global(svg) {
 			width: 16px;
@@ -1408,9 +1322,10 @@
 		}
 
 		&:hover {
-			background: rgba(229, 62, 62, 0.2);
-			border-color: rgba(229, 62, 62, 0.5);
+			background: rgba(110, 41, 231, 0.2);
+			border-color: rgba(110, 41, 231, 0.5);
 			transform: translateY(-1px);
+			box-shadow: 0 2px 8px rgba(110, 41, 231, 0.2);
 		}
 	}
 
@@ -1420,7 +1335,7 @@
 		justify-content: flex-end;
 		gap: 0.75rem;
 		padding-top: 1.5rem;
-		border-top: 1px solid #2d3748;
+		border-top: 1px solid rgba(var(--color--text-rgb), 0.08);
 	}
 
 	button {
@@ -1456,12 +1371,12 @@
 	}
 
 	.btn-secondary {
-		background: #2d3748;
-		color: #e2e8f0;
-		border: 1px solid #4a5568;
+		background: rgba(var(--color--text-rgb), 0.05);
+		color: var(--color--text);
+		border: 1px solid rgba(var(--color--text-rgb), 0.15);
 
 		&:hover:not(:disabled) {
-			background: #374151;
+			background: rgba(var(--color--text-rgb), 0.1);
 		}
 	}
 
@@ -1479,7 +1394,7 @@
 	.spinner {
 		width: 48px;
 		height: 48px;
-		border: 4px solid #2d3748;
+		border: 4px solid rgba(var(--color--text-rgb), 0.1);
 		border-top-color: #6e29e7;
 		border-radius: 50%;
 		animation: spin 0.8s linear infinite;
@@ -1534,24 +1449,7 @@
 			}
 		}
 
-		.profile-preview {
-			flex-direction: column;
-			text-align: center;
-			padding: 1.25rem;
 
-			.preview-avatar {
-				width: 72px;
-				height: 72px;
-			}
-
-			.preview-info h4 {
-				font-size: 1.125rem;
-			}
-
-			.preview-badges {
-				justify-content: center;
-			}
-		}
 
 		.edit-form {
 			padding: 1.5rem;
@@ -1581,23 +1479,7 @@
 			}
 		}
 
-		.photo-actions {
-			flex-direction: column;
-			align-items: stretch;
 
-			.btn-photo {
-				justify-content: center;
-			}
-		}
-
-		.preview-avatar {
-			width: 64px;
-			height: 64px;
-
-			.avatar-placeholder {
-				font-size: 1.5rem;
-			}
-		}
 	}
 
 	// ==================== Animations ====================
@@ -1610,10 +1492,6 @@
 			opacity: 1;
 			transform: translateY(0);
 		}
-	}
-
-	.profile-preview {
-		animation: fadeIn 0.3s ease-out;
 	}
 
 	.alert {
@@ -1651,11 +1529,6 @@
 		&:hover:not(:focus) {
 			border-color: #6a7280;
 		}
-	}
-
-	.btn-photo,
-	.btn-photo-remove {
-		transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 	}
 
 	// Loading states

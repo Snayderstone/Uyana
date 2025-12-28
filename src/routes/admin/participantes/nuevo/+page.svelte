@@ -11,23 +11,28 @@
 		return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
 	}
 
-	// State variables
-	let facultades: Array<{ id: number; nombre: string }> = [];
-	let carreras: Array<{ id: number; nombre: string; facultad_id: number }> = [];
-	let filteredCarreras: Array<{ id: number; nombre: string }> = [];
-	let loadingCatalogs = false;
+	// Map gender from form format to DB format
+	function mapGenderToDB(gender: string): string {
+		const genderMap: Record<string, string> = {
+			Masculino: 'm',
+			Femenino: 'f',
+		};
+		return genderMap[gender] || gender;
+	}
+
+	// State
 	let saving = false;
 	let error: string | null = null;
 	let successMessage: string | null = null;
 
-	// Form data with better structure
+	// Form data
 	let formData = {
 		nombre: '',
 		email: '',
 		genero: '',
-		facultad_id: null as number | null,
-		carrera_id: null as number | null,
 		acreditado: false,
+		carrera_id: null as number | null,
+		facultad_id: null as number | null,
 		redes_sociales: '',
 		foto: ''
 	};
@@ -37,32 +42,62 @@
 	let photoInput: HTMLInputElement;
 	let uploadingPhoto = false;
 
-	// Validation with real-time feedback
+	// Social networks state
+	let redesSocialesList: string[] = [''];
+
+	// Validation
 	let errors: Record<string, string> = {};
-	let isFormValid = false;
 
-	// Available options
-	let generos = ['Masculino', 'Femenino', 'Otro', 'Prefiero no decir'];
-
-	// Progress tracking for better UX
-	let currentStep = 'basic'; // basic, academic, additional
-	let completedSteps: string[] = [];
+	// Catalogs
+	let generos = ['Masculino', 'Femenino'];
+	let facultades: Array<{ id: number; nombre: string }> = [];
+	let carreras: Array<{ id: number; nombre: string; facultad_id: number }> = [];
+	let filteredCarreras: Array<{ id: number; nombre: string }> = [];
 
 	/**
-	 * Fetch catalogs (facultades and carreras)
+	 * Social networks management
+	 */
+	function addRedSocial() {
+		redesSocialesList = [...redesSocialesList, ''];
+	}
+
+	function removeRedSocial(index: number) {
+		if (redesSocialesList.length > 1) {
+			redesSocialesList = redesSocialesList.filter((_, i) => i !== index);
+		} else {
+			redesSocialesList = [''];
+		}
+		updateRedesSocialesString();
+	}
+
+	function updateRedesSocialesString() {
+		formData.redes_sociales = redesSocialesList.filter((url) => url.trim()).join(' | ');
+	}
+
+	function parseRedesSocialesFromString(str: string | null): string[] {
+		if (!str) return [''];
+		const urls = str
+			.split('|')
+			.map((url) => url.trim())
+			.filter((url) => url);
+		return urls.length > 0 ? urls : [''];
+	}
+
+	/**
+	 * Fetch catalogs
 	 */
 	async function fetchCatalogs() {
 		if (!browser) return;
 
-		loadingCatalogs = true;
-		error = null;
-
 		try {
+			console.log('📚 Cargando catálogos...');
+
 			// Fetch facultades
 			const facultadesRes = await fetch('/api/admin/catalogs/facultades');
 			const facultadesData = await facultadesRes.json();
 			if (facultadesData.success) {
 				facultades = facultadesData.data;
+				console.log('✅ Facultades cargadas:', facultades.length);
 			}
 
 			// Fetch carreras
@@ -70,17 +105,11 @@
 			const carrerasData = await carrerasRes.json();
 			if (carrerasData.success) {
 				carreras = carrerasData.data;
-				filteredCarreras = carreras; // Initially show all
+				filteredCarreras = carreras;
+				console.log('✅ Carreras cargadas:', carreras.length);
 			}
 		} catch (err) {
 			console.error('Error fetching catalogs:', err);
-			error = 'Error al cargar la información académica. Podrá continuar sin seleccionar carrera.';
-			// Don't block the form, just show warning
-			setTimeout(() => {
-				error = null;
-			}, 5000);
-		} finally {
-			loadingCatalogs = false;
 		}
 	}
 
@@ -105,56 +134,60 @@
 	}
 
 	/**
-	 * Validate form with detailed feedback
+	 * Validate form
 	 */
 	function validateForm(): boolean {
 		errors = {};
 
-		// Validar nombre (obligatorio)
+		// Validar nombre
 		if (!formData.nombre.trim()) {
-			errors.nombre = 'Por favor, ingrese el nombre completo del participante';
+			errors.nombre = 'El nombre completo es obligatorio';
 		} else if (formData.nombre.trim().length < 2) {
 			errors.nombre = 'El nombre debe tener al menos 2 caracteres';
 		} else if (formData.nombre.trim().length > 100) {
 			errors.nombre = 'El nombre no puede exceder 100 caracteres';
 		}
 
-		// Validar email (opcional pero si se proporciona debe ser válido)
+		// Validar email
 		if (formData.email && formData.email.trim()) {
 			if (!isValidEmail(formData.email.trim())) {
-				errors.email = 'Ingrese un email válido (ejemplo: usuario@dominio.com)';
+				errors.email = 'Ingrese un email válido (ej: usuario@dominio.com)';
 			}
 		}
 
-		// Validar género (obligatorio)
+		// Validar género
 		if (!formData.genero) {
-			errors.genero = 'Por favor, seleccione el género del participante';
+			errors.genero = 'Seleccione un género de la lista';
 		}
 
-		// Validar redes sociales (opcional pero si se proporciona debe ser válida)
+		// Validar redes sociales (si se proporciona)
 		if (formData.redes_sociales && formData.redes_sociales.trim()) {
-			const urls = formData.redes_sociales
-				.trim()
-				.split('|')
-				.map((url) => url.trim());
-			for (const url of urls) {
-				if (url && !isValidUrl(url)) {
-					errors.redes_sociales = `URL no válida: ${url}. Debe comenzar con https://`;
-					break;
+			try {
+				new URL(formData.redes_sociales.trim());
+			} catch {
+				errors.redes_sociales = 'Ingrese una URL válida que comience con http:// o https://';
+			}
+		}
+
+		// Validar foto (si se proporciona)
+		if (formData.foto && formData.foto.trim()) {
+			const fotoValue = formData.foto.trim();
+			if (isBase64Image(fotoValue)) {
+				// Validar que el base64 sea válido
+				if (fotoValue.length < 100) {
+					errors.foto = 'Los datos base64 parecen estar incompletos';
+				}
+			} else {
+				// Validar que sea una URL válida
+				try {
+					new URL(fotoValue);
+				} catch {
+					errors.foto = 'Ingrese una URL válida o datos base64 válidos (data:image/...)';
 				}
 			}
 		}
 
-		// Validar foto si se proporciona
-		if (formData.foto && formData.foto.trim()) {
-			const fotoValue = formData.foto.trim();
-			if (!isBase64Image(fotoValue) && !isValidUrl(fotoValue)) {
-				errors.foto = 'La foto debe ser una URL válida o datos base64';
-			}
-		}
-
-		isFormValid = Object.keys(errors).length === 0;
-		return isFormValid;
+		return Object.keys(errors).length === 0;
 	}
 
 	/**
@@ -166,22 +199,18 @@
 	}
 
 	/**
-	 * Validate URL format
+	 * Check if string is base64 image
 	 */
-	function isValidUrl(url: string): boolean {
-		try {
-			new URL(url);
-			return url.startsWith('http://') || url.startsWith('https://');
-		} catch {
-			return false;
-		}
+	function isBase64Image(url: string): boolean {
+		return url.startsWith('data:image/');
 	}
 
 	/**
-	 * Check if value is base64 image
+	 * Get image source - handles both URL and base64
 	 */
-	function isBase64Image(value: string): boolean {
-		return value.startsWith('data:image/');
+	function getImageSource(photoUrl: string): string {
+		if (!photoUrl) return '';
+		return photoUrl; // Works for both base64 and URLs
 	}
 
 	/**
@@ -192,7 +221,6 @@
 		successMessage = null;
 
 		if (!validateForm()) {
-			error = 'Por favor, complete todos los campos requeridos correctamente.';
 			return;
 		}
 
@@ -203,9 +231,9 @@
 			const createData = {
 				nombre: formData.nombre.trim(),
 				email: formData.email.trim() || null,
-				genero: formData.genero,
-				carrera_id: formData.carrera_id,
+				genero: mapGenderToDB(formData.genero),
 				acreditado: formData.acreditado,
+				carrera_id: formData.carrera_id,
 				redes_sociales: formData.redes_sociales.trim() || null,
 				url_foto: formData.foto.trim() || null
 			};
@@ -223,9 +251,9 @@
 			const result = await response.json();
 
 			if (result.success) {
-				successMessage = `¡Excelente! El participante "${formData.nombre}" ha sido creado exitosamente. Redirigiendo...`;
+				successMessage = `¡Perfecto! El participante "${formData.nombre}" ha sido creado correctamente. Redirigiendo...`;
 
-				// Redirect after showing success message
+				// Redirect after 2 seconds
 				setTimeout(() => {
 					if (result.data?.id) {
 						goto(`/admin/participantes/${result.data.id}`);
@@ -234,12 +262,12 @@
 					}
 				}, 2000);
 			} else {
-				throw new Error(result.message || 'Error al crear el participante');
+				throw new Error(result.message || 'Error al crear');
 			}
 		} catch (err) {
 			console.error('Error creating participante:', err);
 			if (err instanceof Error) {
-				error = `Error al crear el participante: ${err.message}`;
+				error = `Error al guardar: ${err.message}`;
 			} else {
 				error =
 					'Ocurrió un error inesperado al crear el participante. Por favor, inténtelo nuevamente.';
@@ -250,44 +278,10 @@
 	}
 
 	/**
-	 * Reset form
-	 */
-	function handleReset() {
-		if (confirm('¿Está seguro? Se perderán todos los datos ingresados.')) {
-			formData = {
-				nombre: '',
-				email: '',
-				genero: '',
-				facultad_id: null,
-				carrera_id: null,
-				acreditado: false,
-				redes_sociales: '',
-				foto: ''
-			};
-			errors = {};
-			photoFile = null;
-			if (photoInput) photoInput.value = '';
-			successMessage = null;
-			error = null;
-		}
-	}
-
-	/**
-	 * Cancel creation
+	 * Handle cancel
 	 */
 	function handleCancel() {
-		const hasData =
-			formData.nombre ||
-			formData.email ||
-			formData.genero ||
-			formData.redes_sociales ||
-			formData.foto;
-
-		if (hasData) {
-			if (confirm('¿Está seguro? Se perderán todos los datos ingresados.')) {
-				goto('/admin/participantes/tabla');
-			}
-		} else {
+		if (confirm('¿Estás seguro? Los cambios no guardados se perderán.')) {
 			goto('/admin/participantes/tabla');
 		}
 	}
@@ -363,14 +357,6 @@
 	}
 
 	/**
-	 * Get image source - handles both URL and base64
-	 */
-	function getImageSource(photoUrl: string): string {
-		if (!photoUrl) return '';
-		return photoUrl; // Works for both base64 and URLs
-	}
-
-	/**
 	 * Real-time validation on input change
 	 */
 	$: if (formData.nombre || formData.email || formData.genero) {
@@ -400,7 +386,7 @@
 			<div class="header-info">
 				<h1>Agregar Nuevo Participante</h1>
 				<p class="page-subtitle">
-					Complete la información básica para registrar un participante en el sistema
+					Complete la información para registrar un nuevo participante en el sistema
 				</p>
 			</div>
 		</div>
@@ -421,116 +407,65 @@
 		</div>
 	{/if}
 
-	<!-- Progress Indicator -->
-	<div class="progress-indicator">
-		<div class="progress-step">
-			<div
-				class="step-number {formData.nombre && formData.genero
-					? 'completed'
-					: formData.nombre || formData.genero
-					? 'current'
-					: 'pending'}"
-			>
-				1
-			</div>
-			<span class="step-label">Información Básica</span>
-		</div>
-		<div class="step-divider" />
-		<div class="progress-step">
-			<div
-				class="step-number {formData.facultad_id || formData.carrera_id ? 'current' : 'pending'}"
-			>
-				2
-			</div>
-			<span class="step-label">Información Académica</span>
-		</div>
-		<div class="step-divider" />
-		<div class="progress-step">
-			<div class="step-number {formData.redes_sociales || formData.foto ? 'current' : 'pending'}">
-				3
-			</div>
-			<span class="step-label">Información Adicional</span>
-		</div>
-	</div>
-
-	<!-- Preview Card -->
-	{#if formData.nombre}
-		<div class="preview-card">
-			<div class="preview-header">
-				<div class="preview-icon">{@html icons.eye}</div>
-				<h3>Vista Previa del Participante</h3>
-				<p class="preview-help">Así se verá la información del participante</p>
-			</div>
-			<div class="preview-content">
-				<div class="profile-preview">
-					<div
-						class="profile-avatar-placeholder"
-						class:has-photo={formData.foto}
-						on:click={triggerPhotoUpload}
-						on:keydown={(e) => e.key === 'Enter' && triggerPhotoUpload()}
-						tabindex="0"
-						role="button"
-					>
-						{#if uploadingPhoto}
-							<div class="upload-spinner">
-								<div class="spinner-sm" />
-							</div>
-						{:else if formData.foto}
-							<img
-								src={getImageSource(formData.foto)}
-								alt={formData.nombre}
-								on:error={() => (formData.foto = '')}
-							/>
-						{:else}
-							{getInitials(formData.nombre)}
-						{/if}
-					</div>
-					<!-- Hidden file input -->
-					<input
-						bind:this={photoInput}
-						type="file"
-						accept="image/*"
-						on:change={handlePhotoSelect}
-						style="display: none;"
-					/>
-					<div class="profile-info">
-						<h4>{formData.nombre}</h4>
-						<p class="profile-email">{formData.email || 'Sin email especificado'}</p>
-						<div class="profile-badges">
-							<span class="badge badge-genero">{formData.genero || 'Género no seleccionado'}</span>
-							<span class="badge {formData.acreditado ? 'badge-success' : 'badge-warning'}">
-								{formData.acreditado ? 'Acreditado' : 'No Acreditado'}
-							</span>
-							{#if formData.carrera_id}
-								{@const carrera = carreras.find((c) => c.id === formData.carrera_id)}
-								{#if carrera}
-									<span class="badge badge-carrera">{carrera.nombre}</span>
-								{/if}
-							{/if}
-						</div>
-					</div>
-				</div>
-			</div>
-		</div>
-	{/if}
-
 	<!-- Main Form -->
-	<form class="main-form" on:submit|preventDefault={handleSubmit}>
-		<!-- Step 1: Información Básica -->
+	<form class="edit-form" on:submit|preventDefault={handleSubmit}>
+		<!-- Información Básica -->
 		<div class="form-section">
 			<div class="section-header">
 				<div class="section-icon step-1">{@html icons.user}</div>
 				<div class="section-title">
-					<h2>Paso 1: Información Básica</h2>
-					<p>
-						Datos principales del participante <span class="required-note">*</span>
-					</p>
+					<h2>Información Básica</h2>
+					<p>Datos personales del participante</p>
 				</div>
 			</div>
 			<div class="section-content">
+				<!-- Photo Upload -->
+				<div class="photo-section">
+					<span class="photo-label">Foto de Perfil</span>
+					<div class="photo-upload-container">
+						<div class="photo-preview">
+							{#if uploadingPhoto}
+								<div class="upload-spinner">
+									<div class="spinner-sm" />
+								</div>
+							{:else if formData.foto}
+								<img
+									src={getImageSource(formData.foto)}
+									alt="Foto del participante"
+									on:error={() => (formData.foto = '')}
+								/>
+							{:else}
+								<div class="avatar-placeholder">
+									{@html icons.user}
+								</div>
+							{/if}
+						</div>
+						<div class="photo-actions">
+							<button type="button" class="btn-upload" on:click={triggerPhotoUpload}>
+								{@html icons.upload}
+								{formData.foto ? 'Cambiar foto' : 'Subir foto'}
+							</button>
+							{#if formData.foto}
+								<button type="button" class="btn-remove" on:click={removePhoto}>
+									{@html icons.delete}
+									Eliminar
+								</button>
+							{/if}
+							<input
+								bind:this={photoInput}
+								type="file"
+								accept="image/*"
+								on:change={handlePhotoSelect}
+								style="display: none;"
+							/>
+						</div>
+					</div>
+					<p class="photo-help">Formatos: JPG, PNG, GIF. Tamaño máximo: 5 MB</p>
+				</div>
+
 				<div class="form-grid">
 					<!-- Nombre -->
-					<div class="form-group" class:has-error={errors.nombre}>
+					<div class="form-group full-width" class:has-error={errors.nombre}>
 						<label for="nombre" class:error-label={errors.nombre}>
 							Nombre Completo <span class="required">*</span>
 						</label>
@@ -539,7 +474,7 @@
 							id="nombre"
 							bind:value={formData.nombre}
 							class:error={errors.nombre}
-							placeholder="Ejemplo: Juan Carlos Pérez López"
+							placeholder="Ejemplo: Juan Carlos Pérez"
 							required
 							autocomplete="name"
 						/>
@@ -549,9 +484,6 @@
 								{errors.nombre}
 							</span>
 						{/if}
-						<span class="form-help"
-							>Ingrese el nombre completo tal como aparece en documentos oficiales</span
-						>
 					</div>
 
 					<!-- Email -->
@@ -562,7 +494,7 @@
 							id="email"
 							bind:value={formData.email}
 							class:error={errors.email}
-							placeholder="ejemplo@universidad.edu.ec"
+							placeholder="ejemplo@universidad.edu"
 							autocomplete="email"
 						/>
 						{#if errors.email}
@@ -571,20 +503,15 @@
 								{errors.email}
 							</span>
 						{/if}
-						<span class="form-help"
-							>Opcional. Se utilizará para comunicaciones y notificaciones</span
-						>
 					</div>
-				</div>
 
-				<div class="form-grid">
 					<!-- Género -->
 					<div class="form-group" class:has-error={errors.genero}>
 						<label for="genero" class:error-label={errors.genero}>
 							Género <span class="required">*</span>
 						</label>
 						<select id="genero" bind:value={formData.genero} class:error={errors.genero} required>
-							<option value="">-- Seleccione una opción --</option>
+							<option value="">-- Seleccione --</option>
 							{#each generos as genero}
 								<option value={genero}>{genero}</option>
 							{/each}
@@ -597,8 +524,8 @@
 						{/if}
 					</div>
 
-					<!-- Estado de Acreditación -->
-					<div class="form-group">
+					<!-- Acreditado -->
+					<div class="form-group full-width">
 						<div class="checkbox-container">
 							<label class="checkbox-label" for="acreditado">
 								<input type="checkbox" id="acreditado" bind:checked={formData.acreditado} />
@@ -606,7 +533,7 @@
 								<div class="checkbox-content">
 									<span class="checkbox-text">Participante Acreditado</span>
 									<span class="checkbox-help"
-										>Marque si el participante cuenta con acreditación oficial</span
+										>Marque si el participante ha sido acreditado oficialmente</span
 									>
 								</div>
 							</label>
@@ -616,152 +543,94 @@
 			</div>
 		</div>
 
-		<!-- Step 2: Información Académica -->
+		<!-- Información Académica -->
 		<div class="form-section">
 			<div class="section-header">
 				<div class="section-icon step-2">{@html icons.book}</div>
 				<div class="section-title">
-					<h2>Paso 2: Información Académica</h2>
-					<p>Datos de la institución y programa académico (opcional)</p>
+					<h2>Información Académica</h2>
+					<p>Facultad y carrera del participante</p>
 				</div>
 			</div>
 			<div class="section-content">
-				{#if loadingCatalogs}
-					<div class="loading-catalogs">
-						<div class="spinner-sm" />
-						<p>Cargando información académica...</p>
+				<div class="form-grid full-width-grid">
+					<!-- Facultad -->
+					<div class="form-group">
+						<label for="facultad">Facultad</label>
+						<select
+							id="facultad"
+							bind:value={formData.facultad_id}
+							on:change={() => filterCarrerasByFacultad(formData.facultad_id)}
+						>
+							<option value={null}>-- Seleccione --</option>
+							{#each facultades as facultad}
+								<option value={facultad.id}>{facultad.nombre}</option>
+							{/each}
+						</select>
 					</div>
-				{:else}
-					<div class="form-grid">
-						<!-- Facultad -->
-						<div class="form-group">
-							<label for="facultad">Facultad</label>
-							<select
-								id="facultad"
-								bind:value={formData.facultad_id}
-								on:change={() => filterCarrerasByFacultad(formData.facultad_id)}
-							>
-								<option value={null}>-- Sin facultad --</option>
-								{#each facultades as facultad}
-									<option value={facultad.id}>{facultad.nombre}</option>
-								{/each}
-							</select>
-							<span class="form-help"
-								>Primero seleccione la facultad para filtrar las carreras disponibles</span
-							>
-						</div>
 
-						<!-- Carrera -->
-						<div class="form-group">
-							<label for="carrera">Carrera o Programa Académico</label>
-							<select
-								id="carrera"
-								bind:value={formData.carrera_id}
-								disabled={!formData.facultad_id}
-							>
-								<option value={null}>-- Sin carrera --</option>
-								{#each filteredCarreras as carrera}
-									<option value={carrera.id}>{carrera.nombre}</option>
-								{/each}
-							</select>
-							{#if !formData.facultad_id}
-								<span class="form-help"
-									>Seleccione primero una facultad para ver las carreras disponibles</span
-								>
-							{:else}
-								<span class="form-help"
-									>Seleccione la carrera o programa académico del participante</span
-								>
-							{/if}
-						</div>
+					<!-- Carrera -->
+					<div class="form-group">
+						<label for="carrera">Carrera</label>
+						<select id="carrera" bind:value={formData.carrera_id} disabled={!formData.facultad_id}>
+							<option value={null}>-- Seleccione --</option>
+							{#each filteredCarreras as carrera}
+								<option value={carrera.id}>{carrera.nombre}</option>
+							{/each}
+						</select>
 					</div>
-				{/if}
+				</div>
 			</div>
 		</div>
 
-		<!-- Step 3: Información Adicional -->
+		<!-- Información Adicional -->
 		<div class="form-section">
 			<div class="section-header">
 				<div class="section-icon step-3">{@html icons.link}</div>
 				<div class="section-title">
-					<h2>Paso 3: Información Adicional</h2>
-					<p>Redes sociales, perfiles académicos y foto (opcional)</p>
+					<h2>Información Adicional</h2>
+					<p>Redes sociales y perfiles académicos</p>
 				</div>
 			</div>
 			<div class="section-content">
-				<!-- Photo Upload -->
-				<div class="form-group photo-management">
-					<span class="photo-label">Foto de Perfil</span>
-					<div class="photo-actions">
-						<button
-							type="button"
-							class="btn-photo"
-							on:click={triggerPhotoUpload}
-							disabled={uploadingPhoto}
-						>
-							{#if uploadingPhoto}
-								<span class="spinner-sm" />
-							{:else}
-								{@html icons.upload}
-							{/if}
-							{uploadingPhoto ? 'Procesando...' : 'Subir Imagen'}
-						</button>
-						{#if formData.foto}
-							<button
-								type="button"
-								class="btn-photo-remove"
-								on:click={removePhoto}
-								title="Eliminar foto"
-							>
-								{@html icons.delete}
-							</button>
-						{/if}
-					</div>
-					<div class="photo-info">
-						<p class="help-text">📁 Formatos permitidos: JPG, PNG, GIF • Tamaño máximo: 5MB</p>
-						<p class="help-text">💾 Las imágenes se guardan automáticamente en formato base64</p>
-					</div>
-				</div>
-
 				<!-- Redes Sociales -->
-				<div class="form-group" class:has-error={errors.redes_sociales}>
-					<label for="redes_sociales" class:error-label={errors.redes_sociales}>
+				<div class="form-group full-width" class:has-error={errors.redes_sociales}>
+					<span class="form-label" class:error-label={errors.redes_sociales}>
 						Perfiles Académicos y Redes Sociales
-					</label>
-					<textarea
-						id="redes_sociales"
-						bind:value={formData.redes_sociales}
-						placeholder="https://orcid.org/0000-0000-0000-0000 (ORCID)&#10;https://scholar.google.com/citations?user=... (Google Scholar)&#10;https://www.researchgate.net/profile/... (ResearchGate)"
-						rows="4"
-						class:error={errors.redes_sociales}
-					/>
+					</span>
+					<div class="redes-sociales-list">
+						{#each redesSocialesList as redSocial, index}
+							<div class="red-social-item">
+								<input
+									type="url"
+									bind:value={redesSocialesList[index]}
+									on:input={updateRedesSocialesString}
+									placeholder="https://linkedin.com/in/usuario"
+									class="red-social-input"
+								/>
+								{#if redesSocialesList.length > 1}
+									<button
+										type="button"
+										class="btn-remove-red"
+										on:click={() => removeRedSocial(index)}
+										title="Eliminar esta red social"
+									>
+										{@html icons.close}
+									</button>
+								{/if}
+							</div>
+						{/each}
+					</div>
+					<button type="button" class="btn-add-red" on:click={addRedSocial}>
+						{@html icons.plus}
+						Agregar otra red social
+					</button>
 					{#if errors.redes_sociales}
 						<span class="error-message">
 							{@html icons.alert}
 							{errors.redes_sociales}
 						</span>
 					{/if}
-					<div class="social-help">
-						<p class="help-text"><strong>Plataformas académicas recomendadas:</strong></p>
-						<div class="platform-examples">
-							<div class="platform-item">
-								<strong>ORCID:</strong> <code>https://orcid.org/0000-0000-0000-0000</code>
-							</div>
-							<div class="platform-item">
-								<strong>Google Scholar:</strong>
-								<code>https://scholar.google.com/citations?user=...</code>
-							</div>
-							<div class="platform-item">
-								<strong>ResearchGate:</strong> <code>https://www.researchgate.net/profile/...</code>
-							</div>
-							<div class="platform-item">
-								<strong>LinkedIn:</strong> <code>https://www.linkedin.com/in/...</code>
-							</div>
-						</div>
-						<p class="help-text">
-							<strong>💡 Consejo:</strong> Agregue una URL por línea para mejor organización
-						</p>
-					</div>
 				</div>
 			</div>
 		</div>
@@ -771,17 +640,13 @@
 			<button type="button" class="btn-secondary" on:click={handleCancel} disabled={saving}>
 				Cancelar
 			</button>
-			<button type="button" class="btn-secondary" on:click={handleReset} disabled={saving}>
-				{@html icons.refresh}
-				Limpiar Formulario
-			</button>
-			<button type="submit" class="btn-primary" disabled={saving || !isFormValid}>
+			<button type="submit" class="btn-primary" disabled={saving}>
 				{#if saving}
 					<span class="spinner-sm" />
 				{:else}
 					{@html icons.check}
 				{/if}
-				{saving ? 'Creando Participante...' : 'Crear Participante'}
+				{saving ? 'Creando...' : 'Crear Participante'}
 			</button>
 		</div>
 	</form>
@@ -809,7 +674,7 @@
 		h1 {
 			font-size: 2.25rem;
 			font-weight: 700;
-			color: #ededed;
+			color: var(--color--text, #ededed);
 			margin: 0;
 			letter-spacing: -0.025em;
 			background: linear-gradient(135deg, #6e29e7 0%, #8b5cf6 100%);
@@ -821,7 +686,7 @@
 
 	.page-subtitle {
 		font-size: 1rem;
-		color: #a0aec0;
+		color: var(--color--text-shade, #a0aec0);
 		margin: 0.5rem 0 0 0;
 		line-height: 1.5;
 		font-weight: 400;
@@ -834,9 +699,9 @@
 		gap: 0.5rem;
 		padding: 0.75rem 1.25rem;
 		background: transparent;
-		border: 1px solid #2d3748;
+		border: 1px solid rgba(var(--color--text-rgb), 0.08);
 		border-radius: 8px;
-		color: #a0aec0;
+		color: var(--color--text-shade, #a0aec0);
 		font-size: 0.875rem;
 		cursor: pointer;
 		transition: all 0.2s;
@@ -848,76 +713,11 @@
 		}
 
 		&:hover {
-			background: #1a1f26;
+			background: rgba(var(--color--text-rgb), 0.03);
 			border-color: #6e29e7;
-			color: #ededed;
+			color: var(--color--text, #ededed);
 			transform: translateX(-2px);
 		}
-	}
-
-	// ==================== Progress Indicator ====================
-	.progress-indicator {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		margin-bottom: 2.5rem;
-		padding: 1.5rem;
-		background: #1a1f26;
-		border: 1px solid #2d3748;
-		border-radius: 12px;
-	}
-
-	.progress-step {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		gap: 0.5rem;
-		min-width: 120px;
-	}
-
-	.step-number {
-		width: 40px;
-		height: 40px;
-		border-radius: 50%;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		font-weight: 600;
-		font-size: 1rem;
-		transition: all 0.3s;
-
-		&.completed {
-			background: #48bb78;
-			color: white;
-		}
-
-		&.current {
-			background: #6e29e7;
-			color: white;
-			box-shadow: 0 0 0 3px rgba(110, 41, 231, 0.2);
-		}
-
-		&.pending {
-			background: #2d3748;
-			color: #718096;
-			border: 2px solid #4a5568;
-		}
-	}
-
-	.step-label {
-		font-size: 0.75rem;
-		font-weight: 500;
-		color: #a0aec0;
-		text-align: center;
-		text-transform: uppercase;
-		letter-spacing: 0.05em;
-	}
-
-	.step-divider {
-		width: 60px;
-		height: 2px;
-		background: #2d3748;
-		margin: 0 1rem;
 	}
 
 	// ==================== Alerts ====================
@@ -959,187 +759,22 @@
 		}
 	}
 
-	// ==================== Preview Card ====================
-	.preview-card {
-		background: linear-gradient(135deg, #1a1f26 0%, #212830 100%);
-		border: 1px solid #2d3748;
-		border-radius: 16px;
-		margin-bottom: 2rem;
-		overflow: hidden;
-		box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-	}
-
-	.preview-header {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: 1rem;
-		padding: 1.25rem 1.5rem;
-		background: rgba(110, 41, 231, 0.05);
-		border-bottom: 1px solid #2d3748;
-
-		h3 {
-			font-size: 1.125rem;
-			font-weight: 600;
-			color: #ededed;
-			margin: 0;
-		}
-
-		.preview-help {
-			font-size: 0.8rem;
-			color: #a0aec0;
-			margin: 0;
-			font-style: italic;
-		}
-	}
-
-	.preview-icon {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		width: 32px;
-		height: 32px;
-		background: rgba(110, 41, 231, 0.2);
-		border-radius: 8px;
-		color: #8b5cf6;
-
-		:global(svg) {
-			width: 18px;
-			height: 18px;
-		}
-	}
-
-	.preview-content {
-		padding: 2rem 1.5rem;
-	}
-
-	.profile-preview {
-		display: flex;
-		align-items: center;
-		gap: 2rem;
-	}
-
-	.profile-avatar-placeholder {
-		width: 100px;
-		height: 100px;
-		border-radius: 50%;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		font-weight: 700;
-		font-size: 2.5rem;
-		color: white;
-		flex-shrink: 0;
-		position: relative;
-		cursor: pointer;
-		transition: all 0.3s;
-
-		&:not(.has-photo) {
-			background: linear-gradient(135deg, #6e29e7 0%, #8b5cf6 100%);
-		}
-
-		&.has-photo {
-			overflow: hidden;
-			border: 3px solid #6e29e7;
-
-			img {
-				width: 100%;
-				height: 100%;
-				object-fit: cover;
-			}
-		}
-
-		&:hover {
-			transform: scale(1.05);
-		}
-	}
-
-	.upload-spinner {
-		position: absolute;
-		top: 0;
-		left: 0;
-		right: 0;
-		bottom: 0;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		background: rgba(0, 0, 0, 0.7);
-		border-radius: 50%;
-	}
-
-	.profile-info {
-		flex: 1;
-
-		h4 {
-			font-size: 1.5rem;
-			font-weight: 600;
-			color: #ededed;
-			margin: 0 0 0.5rem 0;
-		}
-	}
-
-	.profile-email {
-		font-size: 1rem;
-		color: #a0aec0;
-		margin: 0 0 1rem 0;
-	}
-
-	.profile-badges {
-		display: flex;
-		gap: 0.75rem;
-		flex-wrap: wrap;
-	}
-
-	.badge {
-		display: inline-flex;
-		align-items: center;
-		padding: 0.5rem 1rem;
-		border-radius: 20px;
-		font-size: 0.8rem;
-		font-weight: 600;
-		text-transform: capitalize;
-
-		&.badge-success {
-			background: rgba(72, 187, 120, 0.15);
-			color: #48bb78;
-			border: 1px solid rgba(72, 187, 120, 0.3);
-		}
-
-		&.badge-warning {
-			background: rgba(237, 137, 54, 0.15);
-			color: #ed8936;
-			border: 1px solid rgba(237, 137, 54, 0.3);
-		}
-
-		&.badge-genero {
-			background: rgba(66, 153, 225, 0.15);
-			color: #4299e1;
-			border: 1px solid rgba(66, 153, 225, 0.3);
-		}
-
-		&.badge-carrera {
-			background: rgba(139, 92, 246, 0.15);
-			color: #8b5cf6;
-			border: 1px solid rgba(139, 92, 246, 0.3);
-		}
-	}
-
-	// ==================== Main Form ====================
-	.main-form {
+	// ==================== Edit Form ====================
+	.edit-form {
 		display: flex;
 		flex-direction: column;
 		gap: 2rem;
 	}
 
 	.form-section {
-		background: #1a1f26;
-		border: 1px solid #2d3748;
+		background: var(--color--card-background, #1a1f26);
+		border: 1px solid rgba(var(--color--text-rgb), 0.08);
 		border-radius: 16px;
 		overflow: hidden;
 		transition: all 0.3s;
 
 		&:hover {
-			border-color: #4a5568;
+			border-color: rgba(var(--color--text-rgb), 0.15);
 			box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
 		}
 	}
@@ -1149,8 +784,8 @@
 		align-items: center;
 		gap: 1rem;
 		padding: 1.5rem 2rem;
-		background: #212830;
-		border-bottom: 1px solid #2d3748;
+		background: rgba(var(--color--text-rgb), 0.02);
+		border-bottom: 1px solid rgba(var(--color--text-rgb), 0.08);
 	}
 
 	.section-icon {
@@ -1190,13 +825,13 @@
 		h2 {
 			font-size: 1.25rem;
 			font-weight: 600;
-			color: #ededed;
+			color: var(--color--text, #ededed);
 			margin: 0 0 0.25rem 0;
 		}
 
 		p {
 			font-size: 0.875rem;
-			color: #a0aec0;
+			color: var(--color--text-shade, #a0aec0);
 			margin: 0;
 			line-height: 1.4;
 		}
@@ -1221,12 +856,20 @@
 		&:last-child {
 			margin-bottom: 0;
 		}
+
+		&.full-width-grid {
+			grid-template-columns: 1fr 1fr;
+		}
 	}
 
 	.form-group {
 		display: flex;
 		flex-direction: column;
 		gap: 0.75rem;
+
+		&.full-width {
+			grid-column: 1 / -1;
+		}
 
 		&.has-error {
 			.section-content & {
@@ -1242,7 +885,7 @@
 	label {
 		font-size: 0.9rem;
 		font-weight: 600;
-		color: #e2e8f0;
+		color: var(--color--text, #e2e8f0);
 
 		&:not(.checkbox-label) {
 			display: block;
@@ -1267,13 +910,16 @@
 	select,
 	textarea {
 		padding: 1rem;
-		background: #0f1419;
-		border: 2px solid #2d3748;
+		background: var(--color--input-background, rgba(255, 255, 255, 0.05));
+		border: 2px solid rgba(var(--color--text-rgb), 0.15);
 		border-radius: 8px;
-		color: #ededed;
+		color: var(--color--text, #ededed);
 		font-size: 0.9rem;
 		transition: all 0.2s;
 		font-family: inherit;
+		width: 100%;
+		max-width: 100%;
+		box-sizing: border-box;
 
 		&:focus {
 			outline: none;
@@ -1282,7 +928,7 @@
 		}
 
 		&::placeholder {
-			color: #718096;
+			color: var(--color--text-shade, #718096);
 		}
 
 		&.error {
@@ -1293,12 +939,30 @@
 		&:disabled {
 			opacity: 0.6;
 			cursor: not-allowed;
-			background: #1a202c;
+			background: rgba(var(--color--text-rgb), 0.03);
 		}
 	}
 
 	select {
 		cursor: pointer;
+		text-overflow: ellipsis;
+		appearance: none;
+		-webkit-appearance: none;
+		-moz-appearance: none;
+		background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23a0aec0' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+		background-repeat: no-repeat;
+		background-position: right 0.75rem center;
+		padding-right: 2.5rem;
+		white-space: nowrap;
+		overflow: hidden;
+
+		option {
+			padding: 0.5rem;
+			white-space: normal;
+			word-wrap: break-word;
+			background: var(--color--card-background, #1a1f26);
+			color: var(--color--text, #ededed);
+		}
 	}
 
 	textarea {
@@ -1325,9 +989,143 @@
 	.form-help,
 	.help-text {
 		font-size: 0.8rem;
-		color: #a0aec0;
+		color: var(--color--text-shade, #a0aec0);
 		line-height: 1.4;
 		margin: 0;
+	}
+
+	// ==================== Photo Section ====================
+	.photo-section {
+		background: rgba(139, 92, 246, 0.05);
+		border: 1px solid rgba(139, 92, 246, 0.1);
+		border-radius: 12px;
+		padding: 1.5rem;
+		margin-bottom: 2rem;
+	}
+
+	.photo-label {
+		font-size: 1rem;
+		font-weight: 600;
+		color: var(--color--text, #e2e8f0);
+		margin-bottom: 1rem;
+		display: block;
+	}
+
+	.photo-upload-container {
+		display: flex;
+		align-items: center;
+		gap: 1.5rem;
+	}
+
+	.photo-preview {
+		width: 100px;
+		height: 100px;
+		border-radius: 50%;
+		overflow: hidden;
+		background: rgba(var(--color--text-rgb), 0.05);
+		border: 3px solid rgba(110, 41, 231, 0.3);
+		flex-shrink: 0;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		position: relative;
+
+		img {
+			width: 100%;
+			height: 100%;
+			object-fit: cover;
+		}
+
+		.upload-spinner {
+			position: absolute;
+			inset: 0;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			background: rgba(0, 0, 0, 0.7);
+		}
+
+		.avatar-placeholder {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			color: var(--color--text-shade, #a0aec0);
+
+			:global(svg) {
+				width: 50px;
+				height: 50px;
+			}
+		}
+	}
+
+	.photo-actions {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+	}
+
+	.btn-upload {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.75rem 1.25rem;
+		background: rgba(110, 41, 231, 0.1);
+		border: 2px solid rgba(110, 41, 231, 0.3);
+		border-radius: 8px;
+		color: #8b5cf6;
+		font-size: 0.875rem;
+		font-weight: 500;
+		cursor: pointer;
+		transition: all 0.2s;
+
+		:global(svg) {
+			width: 18px;
+			height: 18px;
+		}
+
+		&:hover:not(:disabled) {
+			background: rgba(110, 41, 231, 0.2);
+			border-color: #6e29e7;
+			transform: translateY(-2px);
+		}
+
+		&:disabled {
+			opacity: 0.6;
+			cursor: not-allowed;
+		}
+	}
+
+	.btn-remove {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.75rem 1.25rem;
+		background: rgba(229, 62, 62, 0.1);
+		border: 2px solid rgba(229, 62, 62, 0.3);
+		border-radius: 8px;
+		color: #fc8181;
+		font-size: 0.875rem;
+		font-weight: 500;
+		cursor: pointer;
+		transition: all 0.2s;
+
+		:global(svg) {
+			width: 18px;
+			height: 18px;
+		}
+
+		&:hover {
+			background: rgba(229, 62, 62, 0.2);
+			border-color: #e53e3e;
+			transform: translateY(-2px);
+		}
+	}
+
+	.photo-help {
+		font-size: 0.8rem;
+		color: var(--color--text-shade, #a0aec0);
+		margin-top: 0.75rem;
+		margin-bottom: 0;
 	}
 
 	// ==================== Checkbox ====================
@@ -1352,7 +1150,7 @@
 	.checkbox-custom {
 		width: 20px;
 		height: 20px;
-		border: 2px solid #4a5568;
+		border: 2px solid rgba(var(--color--text-rgb), 0.3);
 		border-radius: 4px;
 		display: flex;
 		align-items: center;
@@ -1385,7 +1183,7 @@
 
 		.checkbox-text {
 			font-size: 0.9rem;
-			color: #e2e8f0;
+			color: var(--color--text, #e2e8f0);
 			font-weight: 600;
 			display: block;
 			margin-bottom: 0.25rem;
@@ -1393,137 +1191,110 @@
 
 		.checkbox-help {
 			font-size: 0.8rem;
-			color: #a0aec0;
+			color: var(--color--text-shade, #a0aec0);
 			line-height: 1.4;
 		}
 	}
 
-	// ==================== Photo Management ====================
-	.photo-management {
-		background: rgba(139, 92, 246, 0.05);
-		border: 1px solid rgba(139, 92, 246, 0.1);
-		border-radius: 12px;
-		padding: 1.5rem;
-		margin-bottom: 1rem;
-	}
-
-	.photo-label {
-		font-size: 1rem;
-		font-weight: 600;
-		color: #e2e8f0;
-		margin-bottom: 1rem;
-		display: block;
-	}
-
-	.photo-actions {
+	// ==================== Social Networks ====================
+	.redes-sociales-list {
 		display: flex;
-		align-items: center;
-		gap: 1rem;
-		margin-bottom: 1rem;
+		flex-direction: column;
+		gap: 0.75rem;
+		margin-bottom: 0.75rem;
 	}
 
-	.btn-photo {
+	.red-social-item {
+		display: flex;
+		gap: 0.5rem;
+		align-items: center;
+
+		.red-social-input {
+			flex: 1;
+			padding: 0.75rem;
+			background: var(--color--input-background, rgba(255, 255, 255, 0.05));
+			border: 1px solid rgba(var(--color--text-rgb), 0.15);
+			border-radius: 6px;
+			color: var(--color--text);
+			font-size: 0.875rem;
+			transition: all 0.2s;
+			width: 100%;
+			box-sizing: border-box;
+
+			&::placeholder {
+				color: var(--color--text-shade);
+			}
+
+			&:focus {
+				outline: none;
+				border-color: #6e29e7;
+				background: rgba(110, 41, 231, 0.05);
+			}
+		}
+
+		.btn-remove-red {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			width: 36px;
+			height: 36px;
+			min-width: 36px;
+			padding: 0;
+			background: rgba(229, 62, 62, 0.1);
+			border: 1px solid rgba(229, 62, 62, 0.3);
+			border-radius: 6px;
+			color: #fc8181;
+			cursor: pointer;
+			transition: all 0.2s;
+
+			:global(svg) {
+				width: 16px;
+				height: 16px;
+			}
+
+			&:hover {
+				background: rgba(229, 62, 62, 0.2);
+				border-color: rgba(229, 62, 62, 0.5);
+				color: #e53e3e;
+				transform: scale(1.05);
+			}
+		}
+	}
+
+	.btn-add-red {
 		display: inline-flex;
 		align-items: center;
 		gap: 0.5rem;
-		padding: 0.75rem 1.25rem;
+		padding: 0.625rem 1rem;
 		background: rgba(110, 41, 231, 0.1);
-		border: 2px solid rgba(110, 41, 231, 0.3);
-		border-radius: 8px;
+		border: 1px solid rgba(110, 41, 231, 0.3);
+		border-radius: 6px;
 		color: #8b5cf6;
 		font-size: 0.875rem;
 		font-weight: 500;
 		cursor: pointer;
 		transition: all 0.2s;
+		align-self: flex-start;
 
 		:global(svg) {
-			width: 18px;
-			height: 18px;
-		}
-
-		&:hover:not(:disabled) {
-			background: rgba(110, 41, 231, 0.2);
-			border-color: #6e29e7;
-			transform: translateY(-2px);
-		}
-
-		&:disabled {
-			opacity: 0.6;
-			cursor: not-allowed;
-		}
-	}
-
-	.btn-photo-remove {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		width: 40px;
-		height: 40px;
-		background: rgba(229, 62, 62, 0.1);
-		border: 2px solid rgba(229, 62, 62, 0.3);
-		border-radius: 8px;
-		color: #fc8181;
-		cursor: pointer;
-		transition: all 0.2s;
-
-		:global(svg) {
-			width: 18px;
-			height: 18px;
+			width: 16px;
+			height: 16px;
 		}
 
 		&:hover {
-			background: rgba(229, 62, 62, 0.2);
-			border-color: #e53e3e;
+			background: rgba(110, 41, 231, 0.2);
+			border-color: rgba(110, 41, 231, 0.5);
+			transform: translateY(-1px);
+			box-shadow: 0 2px 8px rgba(110, 41, 231, 0.2);
 		}
 	}
 
-	.photo-info {
-		.help-text {
-			margin: 0.25rem 0;
-		}
-	}
-
-	// ==================== Social Media Help ====================
-	.social-help {
-		margin-top: 0.75rem;
-	}
-
-	.platform-examples {
-		margin: 0.75rem 0;
-		padding: 1rem;
-		background: rgba(66, 153, 225, 0.05);
-		border: 1px solid rgba(66, 153, 225, 0.1);
-		border-radius: 8px;
-	}
-
-	.platform-item {
-		margin: 0.5rem 0;
-		font-size: 0.8rem;
-		color: #cbd5e0;
-
-		strong {
-			color: #4299e1;
-		}
-
-		code {
-			font-family: 'Monaco', 'Menlo', monospace;
-			color: #a0aec0;
-			background: rgba(0, 0, 0, 0.3);
-			padding: 0.25rem 0.5rem;
-			border-radius: 4px;
-			margin-left: 0.5rem;
-		}
-	}
-
-	// ==================== Loading States ====================
-	.loading-catalogs {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		gap: 1rem;
-		padding: 2rem;
-		text-align: center;
-		color: #a0aec0;
+	.form-label {
+		font-size: 0.9rem;
+		font-weight: 600;
+		color: var(--color--text, #e2e8f0);
+		display: block;
+		margin-bottom: 0.5rem;
 	}
 
 	// ==================== Form Actions ====================
@@ -1533,7 +1304,7 @@
 		gap: 1rem;
 		padding: 2rem 0;
 		margin-top: 2rem;
-		border-top: 1px solid #2d3748;
+		border-top: 1px solid rgba(var(--color--text-rgb), 0.08);
 	}
 
 	button {
@@ -1573,13 +1344,13 @@
 	}
 
 	.btn-secondary {
-		background: #2d3748;
-		color: #e2e8f0;
-		border: 2px solid #4a5568;
+		background: rgba(var(--color--text-rgb), 0.05);
+		color: var(--color--text, #e2e8f0);
+		border: 2px solid rgba(var(--color--text-rgb), 0.15);
 
 		&:hover:not(:disabled) {
-			background: #374151;
-			border-color: #6b7280;
+			background: rgba(var(--color--text-rgb), 0.1);
+			border-color: rgba(var(--color--text-rgb), 0.25);
 			transform: translateY(-1px);
 		}
 	}
@@ -1610,25 +1381,12 @@
 			font-size: 1.75rem;
 		}
 
-		.progress-indicator {
-			flex-direction: column;
-			gap: 1rem;
-		}
-
-		.step-divider {
-			width: 2px;
-			height: 30px;
-			margin: 0;
-		}
-
-		.profile-preview {
-			flex-direction: column;
-			text-align: center;
-			gap: 1rem;
-		}
-
 		.form-grid {
 			grid-template-columns: 1fr;
+
+			&.full-width-grid {
+				grid-template-columns: 1fr;
+			}
 		}
 
 		.section-header {
@@ -1637,6 +1395,11 @@
 
 		.section-content {
 			padding: 1.5rem;
+		}
+
+		.photo-upload-container {
+			flex-direction: column;
+			align-items: flex-start;
 		}
 
 		.form-actions {

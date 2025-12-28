@@ -504,6 +504,7 @@
 		transition: all 0.3s ease;
 		position: relative;
 		min-width: 280px;
+		border: 1px solid rgba(var(--color--text-rgb), 0.08);
 
 		&:hover {
 			transform: translateY(-8px);
@@ -575,7 +576,7 @@
 		height: 90px;
 		border-radius: 50%;
 		overflow: hidden;
-		border: 3px solid var(--color--text-inverse);
+		border: 3px solid rgba(var(--color--text-rgb), 0.15);
 		box-shadow: 0 4px 16px rgba(var(--color--text-rgb), 0.1);
 
 		img {
@@ -815,7 +816,7 @@
 		height: 50px;
 		border-radius: 50%;
 		overflow: hidden;
-		border: 2px solid var(--color--text-inverse);
+		border: 2px solid rgba(var(--color--text-rgb), 0.15);
 		box-shadow: 0 2px 8px rgba(var(--color--text-rgb), 0.1);
 		flex-shrink: 0;
 

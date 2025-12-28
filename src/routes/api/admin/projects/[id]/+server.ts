@@ -16,7 +16,7 @@ import { requireAdmin, jsonError } from '$lib/utils/auth.utils';
  */
 export const GET: RequestHandler = async (event) => {
 	try {
-		await requireAdmin(event);
+		const usuario = await requireAdmin(event);
 		const { params } = event;
 		const id = parseInt(params.id);
 
@@ -42,19 +42,12 @@ export const GET: RequestHandler = async (event) => {
 			);
 		}
 
-		console.log(`[AUDIT] ${usuario.email} put`);
-		console.log(`[AUDIT] ${usuario.email} delete`);
+		console.log(`[AUDIT] ${usuario.email} obtuvo proyecto #${id}`);
 		return json({
 			success: true,
 			data: proyecto
 		});
 	} catch (error: any) {
-		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
-			return jsonError('No autorizado', 401);
-		}
-		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
-			return jsonError('No autorizado', 401);
-		}
 		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
 			return jsonError('No autorizado', 401);
 		}
@@ -143,12 +136,6 @@ export const PUT: RequestHandler = async (event) => {
 		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
 			return jsonError('No autorizado', 401);
 		}
-		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
-			return jsonError('No autorizado', 401);
-		}
-		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
-			return jsonError('No autorizado', 401);
-		}
 		console.error('Error al actualizar proyecto:', error);
 		return json(
 			{
@@ -204,19 +191,12 @@ export const DELETE: RequestHandler = async (event) => {
 			);
 		}
 
-		console.log(`[AUDIT] ${usuario.email} put`);
-		console.log(`[AUDIT] ${usuario.email} delete`);
+		console.log(`[AUDIT] ${usuario.email} eliminó proyecto #${id}`);
 		return json({
 			success: true,
 			message: 'Proyecto eliminado exitosamente'
 		});
 	} catch (error: any) {
-		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
-			return jsonError('No autorizado', 401);
-		}
-		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
-			return jsonError('No autorizado', 401);
-		}
 		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
 			return jsonError('No autorizado', 401);
 		}

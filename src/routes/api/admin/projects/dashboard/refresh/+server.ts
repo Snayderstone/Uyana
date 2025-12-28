@@ -13,15 +13,16 @@ import { requireAdmin, jsonError } from '$lib/utils/auth.utils';
  * POST - Refrescar todas las vistas materializadas
  * NOTA: Esta operación puede tardar varios segundos
  */
-export const POST: RequestHandler = async () => {
+export const POST: RequestHandler = async (event) => {
 	try {
+		const usuario = await requireAdmin(event);
 		const startTime = Date.now();
 
 		await AnalyticsRepository.refreshAllViews();
 
 		const duration = Date.now() - startTime;
 
-		console.log(`[AUDIT] ${usuario.email} post`);
+		console.log(`[AUDIT] ${usuario.email} actualizó vistas materializadas (${duration}ms)`);
 		return json({
 			success: true,
 			message: 'Vistas materializadas actualizadas correctamente',

@@ -1219,7 +1219,7 @@
 				<div class="form-section">
 					<h2>Información Básica del Proyecto</h2>
 
-					<div class="form-grid">
+					<div class="form-row">
 						<div class="form-group" class:has-error={getFieldError('codigo')}>
 							<label for="codigo">
 								Código del Proyecto <span class="required">*</span>
@@ -1252,7 +1252,7 @@
 						</div>
 					</div>
 
-					<div class="form-group full-width" class:has-error={getFieldError('titulo')}>
+					<div class="form-group" class:has-error={getFieldError('titulo')}>
 						<label for="titulo">
 							Título del Proyecto <span class="required">*</span>
 						</label>
@@ -1268,7 +1268,7 @@
 						{/if}
 					</div>
 
-					<div class="form-group full-width" class:has-error={getFieldError('objetivo')}>
+					<div class="form-group" class:has-error={getFieldError('objetivo')}>
 						<label for="objetivo">
 							Objetivo del Proyecto <span class="required">*</span>
 						</label>
@@ -1284,7 +1284,7 @@
 						{/if}
 					</div>
 
-					<div class="form-grid">
+					<div class="form-row">
 						<div class="form-group" class:has-error={getFieldError('fecha_inicio_planeada')}>
 							<label for="fecha_inicio">
 								Fecha de Inicio <span class="required">*</span>
@@ -1347,7 +1347,7 @@
 						</div>
 					</div>
 
-					<div class="form-grid-checkbox">
+					<div class="form-checkbox-group">
 						<div class="form-checkbox">
 							<input id="requiere_aval" type="checkbox" bind:checked={formData.requiere_aval} />
 							<label for="requiere_aval">Requiere aval institucional</label>
@@ -2311,7 +2311,7 @@
 
 		p {
 			margin-top: 1rem;
-			color: #9ca3af;
+			color: var(--color--text-shade);
 			font-size: 1.125rem;
 		}
 	}
@@ -2319,8 +2319,8 @@
 	.spinner-large {
 		width: 48px;
 		height: 48px;
-		border: 4px solid #2d3748;
-		border-top: 4px solid #10b981;
+		border: 4px solid rgba(var(--color--text-rgb), 0.15);
+		border-top: 4px solid var(--color--primary);
 		border-radius: 50%;
 		animation: spin 0.8s linear infinite;
 	}
@@ -2341,12 +2341,12 @@
 			h1 {
 				font-size: 2rem;
 				font-weight: 700;
-				color: #ededed;
+				color: var(--color--text);
 				margin: 0 0 0.5rem 0;
 			}
 
 			.subtitle {
-				color: #9ca3af;
+				color: var(--color--text-shade);
 				font-size: 0.95rem;
 				margin: 0;
 			}
@@ -2365,8 +2365,8 @@
 		justify-content: center;
 		margin-bottom: 3rem;
 		padding: 2rem;
-		background: #1a1f26;
-		border: 1px solid #2d3748;
+		background: var(--color--card-background);
+		border: 1px solid rgba(var(--color--text-rgb), 0.15);
 		border-radius: 8px;
 
 		.step {
@@ -2379,8 +2379,8 @@
 				width: 40px;
 				height: 40px;
 				border-radius: 50%;
-				background: #2d3748;
-				color: #9ca3af;
+				background: rgba(var(--color--text-rgb), 0.08);
+				color: var(--color--text-shade);
 				display: flex;
 				align-items: center;
 				justify-content: center;
@@ -2390,31 +2390,31 @@
 
 			.step-label {
 				font-size: 0.875rem;
-				color: #6b7280;
+				color: rgba(var(--color--text-rgb), 0.5);
 				text-align: center;
 				transition: all 0.3s ease;
 			}
 
 			&.active {
 				.step-number {
-					background: #10b981;
-					color: #0f1419;
+					background: var(--color--primary);
+					color: #ffffff;
 				}
 
 				.step-label {
-					color: #10b981;
+					color: var(--color--primary);
 					font-weight: 500;
 				}
 			}
 
 			&.completed {
 				.step-number {
-					background: rgba(16, 185, 129, 0.2);
-					color: #10b981;
+					background: rgba(var(--color--primary-rgb), 0.2);
+					color: var(--color--primary);
 				}
 
 				.step-label {
-					color: #9ca3af;
+					color: var(--color--text-shade);
 				}
 			}
 		}
@@ -2422,13 +2422,13 @@
 		.step-line {
 			flex: 1;
 			height: 2px;
-			background: #2d3748;
+			background: rgba(var(--color--text-rgb), 0.15);
 			margin: 0 1rem;
 			max-width: 120px;
 			transition: all 0.3s ease;
 
 			&.completed {
-				background: #10b981;
+				background: var(--color--primary);
 			}
 		}
 	}
@@ -2483,8 +2483,8 @@
 
 	// ==================== Form ====================
 	.proyecto-form {
-		background: #1a1f26;
-		border: 1px solid #2d3748;
+		background: var(--color--card-background);
+		border: 1px solid rgba(var(--color--text-rgb), 0.15);
 		border-radius: 8px;
 		padding: 2rem;
 	}
@@ -2493,7 +2493,7 @@
 		h2 {
 			font-size: 1.5rem;
 			font-weight: 600;
-			color: #ededed;
+			color: var(--color--text);
 			margin: 0 0 2rem 0;
 		}
 	}
@@ -2509,6 +2509,13 @@
 		}
 	}
 
+	.form-row {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+		gap: 1.5rem;
+		margin-bottom: 1.5rem;
+	}
+
 	.form-grid {
 		display: grid;
 		grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -2516,7 +2523,7 @@
 		margin-bottom: 1.5rem;
 	}
 
-	.form-grid-checkbox {
+	.form-checkbox-group {
 		display: flex;
 		gap: 2rem;
 		margin-bottom: 1.5rem;
@@ -2526,9 +2533,16 @@
 		display: flex;
 		flex-direction: column;
 		gap: 0.5rem;
+		margin-bottom: 1.5rem;
+		width: 100%;
+		align-items: stretch;
 
 		&.full-width {
-			grid-column: 1 / -1;
+			width: 100%;
+			max-width: 100%;
+			margin-left: 0;
+			margin-right: 0;
+			align-self: stretch;
 		}
 
 		&.has-error {
@@ -2542,7 +2556,10 @@
 		label {
 			font-size: 0.875rem;
 			font-weight: 500;
-			color: #9ca3af;
+			color: var(--color--text-shade);
+			text-align: left;
+			display: block;
+			width: 100%;
 
 			.required {
 				color: #ef4444;
@@ -2553,18 +2570,21 @@
 		input,
 		textarea,
 		select {
+			width: 100%;
 			padding: 0.75rem 1rem;
-			background: #0f1419;
-			border: 1px solid #2d3748;
+			background: rgba(var(--color--text-rgb), 0.03);
+			border: 1px solid rgba(var(--color--text-rgb), 0.15);
 			border-radius: 6px;
-			color: #ededed;
+			color: var(--color--text);
 			font-size: 0.875rem;
 			font-family: inherit;
 			transition: all 0.15s ease;
+			text-align: left;
+			box-sizing: border-box;
 
 			&:focus {
 				outline: none;
-				border-color: #10b981;
+				border-color: var(--color--primary);
 			}
 
 			&:disabled,
@@ -2574,7 +2594,7 @@
 			}
 
 			&::placeholder {
-				color: #6b7280;
+				color: rgba(var(--color--text-rgb), 0.4);
 			}
 		}
 
@@ -2587,9 +2607,15 @@
 		select {
 			cursor: pointer;
 		}
-	}
 
-	.form-checkbox {
+		input[type='date'] {
+			color-scheme: light dark;
+
+			&::-webkit-calendar-picker-indicator {
+				filter: invert(0.5);
+				cursor: pointer;
+			}
+		}
 		display: flex;
 		align-items: center;
 		gap: 0.75rem;
@@ -2598,12 +2624,12 @@
 			width: 18px;
 			height: 18px;
 			cursor: pointer;
-			accent-color: #10b981;
+			accent-color: var(--color--primary);
 		}
 
 		label {
 			font-size: 0.875rem;
-			color: #ededed;
+			color: var(--color--text);
 			cursor: pointer;
 			margin: 0;
 		}
@@ -2627,19 +2653,19 @@
 			input {
 				flex: 1;
 				padding: 0.75rem;
-				background: #0f1419;
-				border: 1px solid #2d3748;
+				background: rgba(var(--color--text-rgb), 0.03);
+				border: 1px solid rgba(var(--color--text-rgb), 0.15);
 				border-radius: 6px;
-				color: #ededed;
+				color: var(--color--text);
 				font-size: 0.875rem;
 
 				&::placeholder {
-					color: #6b7280;
+					color: rgba(var(--color--text-rgb), 0.4);
 				}
 
 				&:focus {
 					outline: none;
-					border-color: #10b981;
+					border-color: var(--color--primary);
 				}
 			}
 
@@ -2648,8 +2674,8 @@
 				align-items: center;
 				gap: 0.5rem;
 				padding: 0.75rem 1rem;
-				background: #10b981;
-				color: #0f1419;
+				background: var(--color--primary);
+				color: #ffffff;
 				border: none;
 				border-radius: 6px;
 				font-weight: 600;
@@ -2665,6 +2691,7 @@
 
 				&:hover {
 					background: #059669;
+					filter: brightness(0.95);
 					transform: translateY(-1px);
 				}
 			}
@@ -2673,8 +2700,8 @@
 		.instituciones-list {
 			max-height: 300px;
 			overflow-y: auto;
-			background: #0f1419;
-			border: 1px solid #2d3748;
+			background: rgba(var(--color--text-rgb), 0.03);
+			border: 1px solid rgba(var(--color--text-rgb), 0.15);
 			border-radius: 6px;
 			padding: 0.5rem;
 
@@ -2683,23 +2710,23 @@
 			}
 
 			&::-webkit-scrollbar-track {
-				background: #1a1f26;
+				background: rgba(var(--color--text-rgb), 0.05);
 				border-radius: 4px;
 			}
 
 			&::-webkit-scrollbar-thumb {
-				background: #2d3748;
+				background: rgba(var(--color--text-rgb), 0.2);
 				border-radius: 4px;
 
 				&:hover {
-					background: #374151;
+					background: rgba(var(--color--text-rgb), 0.3);
 				}
 			}
 
 			.empty-message {
 				padding: 2rem;
 				text-align: center;
-				color: #6b7280;
+				color: rgba(var(--color--text-rgb), 0.5);
 				font-size: 0.875rem;
 			}
 
@@ -2713,14 +2740,14 @@
 				transition: all 0.2s ease;
 
 				&:hover {
-					background: #1a1f26;
+					background: rgba(var(--color--text-rgb), 0.05);
 				}
 
 				input[type='checkbox'] {
 					width: 18px;
 					height: 18px;
 					cursor: pointer;
-					accent-color: #10b981;
+					accent-color: var(--color--primary);
 				}
 
 				.institucion-info {
@@ -2730,12 +2757,12 @@
 					gap: 0.5rem;
 
 					strong {
-						color: #ededed;
+						color: var(--color--text);
 						font-size: 0.875rem;
 					}
 
 					.sigla {
-						color: #9ca3af;
+						color: var(--color--text-shade);
 						font-size: 0.8125rem;
 					}
 				}
@@ -2752,8 +2779,8 @@
 
 	.participante-item {
 		padding: 1.5rem;
-		background: #0f1419;
-		border: 1px solid #2d3748;
+		background: rgba(var(--color--text-rgb), 0.03);
+		border: 1px solid rgba(var(--color--text-rgb), 0.15);
 		border-radius: 8px;
 
 		.participante-header {
@@ -2765,7 +2792,7 @@
 			h4 {
 				font-size: 1rem;
 				font-weight: 600;
-				color: #10b981;
+				color: var(--color--primary);
 				margin: 0;
 			}
 		}
@@ -2777,22 +2804,22 @@
 		align-items: center;
 		justify-content: center;
 		padding: 3rem 2rem;
-		background: #0f1419;
-		border: 2px dashed #2d3748;
+		background: rgba(var(--color--text-rgb), 0.03);
+		border: 2px dashed rgba(var(--color--text-rgb), 0.15);
 		border-radius: 8px;
 		gap: 1rem;
 
 		p {
-			color: #9ca3af;
+			color: var(--color--text-shade);
 			margin: 0;
 			text-align: center;
 		}
 
 		.info-text {
 			font-size: 0.875rem;
-			color: #10b981;
+			color: var(--color--primary);
 			padding: 0.5rem 1rem;
-			background: rgba(16, 185, 129, 0.1);
+			background: rgba(var(--color--primary-rgb), 0.1);
 			border-radius: 4px;
 		}
 
@@ -2812,7 +2839,7 @@
 		align-items: center;
 		margin-top: 2rem;
 		padding-top: 2rem;
-		border-top: 1px solid #2d3748;
+		border-top: 1px solid rgba(var(--color--text-rgb), 0.15);
 
 		.actions-left,
 		.actions-right {
@@ -2847,42 +2874,44 @@
 	}
 
 	.btn-primary {
-		background: #10b981;
-		color: #0f1419;
+		background: var(--color--primary);
+		color: #ffffff;
 
 		&:hover:not(:disabled) {
 			background: #059669;
+			filter: brightness(0.95);
 		}
 	}
 
 	.btn-secondary {
-		background: #2d3748;
-		color: #ededed;
+		background: rgba(var(--color--text-rgb), 0.08);
+		color: var(--color--text);
 
 		&:hover:not(:disabled) {
-			background: #374151;
+			background: rgba(var(--color--text-rgb), 0.12);
 		}
 	}
 
 	.btn-success {
-		background: #10b981;
-		color: #0f1419;
+		background: var(--color--primary);
+		color: #ffffff;
 		font-weight: 600;
 
 		&:hover:not(:disabled) {
 			background: #059669;
+			filter: brightness(0.95);
 			transform: translateY(-1px);
-			box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+			box-shadow: 0 4px 12px rgba(var(--color--primary-rgb), 0.3);
 		}
 	}
 
 	.btn-add {
-		background: rgba(16, 185, 129, 0.1);
-		border: 1px solid #10b981;
-		color: #10b981;
+		background: rgba(var(--color--primary-rgb), 0.1);
+		border: 1px solid var(--color--primary);
+		color: var(--color--primary);
 
 		&:hover {
-			background: rgba(16, 185, 129, 0.2);
+			background: rgba(var(--color--primary-rgb), 0.2);
 		}
 	}
 
@@ -2961,11 +2990,6 @@
 			grid-template-columns: 1fr;
 		}
 
-		.form-grid-checkbox {
-			flex-direction: column;
-			gap: 1rem;
-		}
-
 		.form-actions {
 			flex-direction: column;
 			gap: 1rem;
@@ -3007,8 +3031,8 @@
 	}
 
 	.modal-content {
-		background: #1a1f26;
-		border: 1px solid #2d3748;
+		background: var(--color--card-background);
+		border: 1px solid rgba(var(--color--text-rgb), 0.15);
 		border-radius: 8px;
 		max-width: 700px;
 		width: 100%;
@@ -3025,15 +3049,15 @@
 		}
 
 		&::-webkit-scrollbar-track {
-			background: #0f1419;
+			background: rgba(var(--color--text-rgb), 0.05);
 		}
 
 		&::-webkit-scrollbar-thumb {
-			background: #2d3748;
+			background: rgba(var(--color--text-rgb), 0.2);
 			border-radius: 4px;
 
 			&:hover {
-				background: #374151;
+				background: rgba(var(--color--text-rgb), 0.3);
 			}
 		}
 	}
@@ -3043,19 +3067,19 @@
 		justify-content: space-between;
 		align-items: center;
 		padding: 1.5rem;
-		border-bottom: 1px solid #2d3748;
+		border-bottom: 1px solid rgba(var(--color--text-rgb), 0.15);
 
 		h3 {
 			margin: 0;
 			font-size: 1.25rem;
 			font-weight: 600;
-			color: #ededed;
+			color: var(--color--text);
 		}
 
 		.btn-close {
 			background: none;
 			border: none;
-			color: #9ca3af;
+			color: var(--color--text-shade);
 			font-size: 1.5rem;
 			cursor: pointer;
 			padding: 0.25rem 0.5rem;
@@ -3063,7 +3087,7 @@
 			transition: color 0.2s ease;
 
 			&:hover {
-				color: #ededed;
+				color: var(--color--text);
 			}
 		}
 	}
@@ -3072,8 +3096,8 @@
 		padding: 1.5rem;
 
 		.geojson-help {
-			background: #0f1419;
-			border: 1px solid #2d3748;
+			background: rgba(var(--color--text-rgb), 0.03);
+			border: 1px solid rgba(var(--color--text-rgb), 0.15);
 			border-radius: 6px;
 			padding: 1rem;
 			margin-bottom: 0.75rem;
@@ -3081,10 +3105,10 @@
 			p {
 				margin: 0 0 0.5rem 0;
 				font-size: 0.875rem;
-				color: #9ca3af;
+				color: var(--color--text-shade);
 
 				a {
-					color: #10b981;
+					color: var(--color--primary);
 					text-decoration: none;
 					font-weight: 500;
 
@@ -3098,7 +3122,7 @@
 				summary {
 					cursor: pointer;
 					font-size: 0.8125rem;
-					color: #10b981;
+					color: var(--color--primary);
 					margin-top: 0.5rem;
 					user-select: none;
 
@@ -3116,7 +3140,7 @@
 					font-size: 0.75rem;
 
 					code {
-						color: #10b981;
+						color: var(--color--primary);
 						font-family: 'Courier New', monospace;
 					}
 				}
@@ -3144,7 +3168,7 @@
 		justify-content: flex-end;
 		gap: 0.75rem;
 		padding: 1.5rem;
-		border-top: 1px solid #2d3748;
+		border-top: 1px solid rgba(var(--color--text-rgb), 0.15);
 
 		button {
 			padding: 0.75rem 1.5rem;
@@ -3163,8 +3187,8 @@
 		right: 0;
 		max-height: 200px;
 		overflow-y: auto;
-		background: #1a1f26;
-		border: 1px solid #2d3748;
+		background: var(--color--card-background);
+		border: 1px solid rgba(var(--color--text-rgb), 0.15);
 		border-top: none;
 		border-radius: 0 0 6px 6px;
 		box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
@@ -3176,15 +3200,15 @@
 		}
 
 		&::-webkit-scrollbar-track {
-			background: #0f1419;
+			background: rgba(var(--color--text-rgb), 0.05);
 		}
 
 		&::-webkit-scrollbar-thumb {
-			background: #2d3748;
+			background: rgba(var(--color--text-rgb), 0.2);
 			border-radius: 3px;
 
 			&:hover {
-				background: #374151;
+				background: rgba(var(--color--text-rgb), 0.3);
 			}
 		}
 	}
@@ -3195,23 +3219,23 @@
 		text-align: left;
 		background: none;
 		border: none;
-		color: #ededed;
+		color: var(--color--text);
 		font-size: 0.875rem;
 		cursor: pointer;
 		transition: background-color 0.15s ease;
 
 		&:hover {
-			background: #2d3748;
+			background: rgba(var(--color--text-rgb), 0.08);
 		}
 
 		&:active {
-			background: #374151;
+			background: rgba(var(--color--text-rgb), 0.12);
 		}
 	}
 
 	.combobox-no-results {
 		padding: 0.75rem 0.875rem;
-		color: #9ca3af;
+		color: var(--color--text-shade);
 		font-size: 0.8125rem;
 		text-align: center;
 	}

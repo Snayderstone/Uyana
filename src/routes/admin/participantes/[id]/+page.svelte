@@ -295,27 +295,12 @@
 			<div class="profile-card">
 				<div class="profile-header">
 					{#if participante.foto}
-						<div class="photo-container">
-							<img
-								src={getImageSource(participante.foto)}
-								alt={participante.nombre}
-								class="profile-avatar"
-								on:error={() => console.log('Error cargando imagen')}
-							/>
-							<div class="photo-type-indicator">
-								{#if isBase64Image(participante.foto)}
-									<div class="base64-badge">
-										{@html icons.check}
-										<span>Base64</span>
-									</div>
-								{:else}
-									<div class="url-badge">
-										{@html icons.link}
-										<span>URL</span>
-									</div>
-								{/if}
-							</div>
-						</div>
+						<img
+							src={getImageSource(participante.foto)}
+							alt={participante.nombre}
+							class="profile-avatar"
+							on:error={() => console.log('Error cargando imagen')}
+						/>
 					{:else}
 						<div class="profile-avatar-placeholder">
 							{getInitials(participante.nombre)}
@@ -329,12 +314,6 @@
 							<span class="badge {participante.acreditado ? 'badge-success' : 'badge-warning'}">
 								{participante.acreditado ? 'Acreditado' : 'No Acreditado'}
 							</span>
-							{#if participante.foto}
-								<span class="badge badge-photo">
-									{@html icons.camera}
-									{isBase64Image(participante.foto) ? 'Foto Base64' : 'Foto URL'}
-								</span>
-							{/if}
 						</div>
 					</div>
 				</div>
@@ -357,26 +336,6 @@
 							<span class="detail-label">Facultad:</span>
 							<span class="detail-value">
 								{participante.carrera?.facultad?.nombre || 'No especificado'}
-							</span>
-						</div>
-					</div>
-				</div>
-
-				<!-- Personal Information -->
-				<div class="detail-card">
-					<div class="card-header">
-						<div class="card-icon">{@html icons.user}</div>
-						<h3>Información Personal</h3>
-					</div>
-					<div class="card-content">
-						<div class="detail-row">
-							<span class="detail-label">Género:</span>
-							<span class="detail-value">{participante.genero}</span>
-						</div>
-						<div class="detail-row">
-							<span class="detail-label">Estado de Acreditación:</span>
-							<span class="detail-value">
-								{participante.acreditado ? 'Acreditado ✓' : 'No Acreditado'}
 							</span>
 						</div>
 					</div>
@@ -549,7 +508,7 @@
 		h1 {
 			font-size: 2rem;
 			font-weight: 700;
-			color: #ededed;
+			color: var(--color--text);
 			margin: 0;
 			letter-spacing: -0.025em;
 		}
@@ -567,9 +526,9 @@
 		gap: 0.5rem;
 		padding: 0.5rem 1rem;
 		background: transparent;
-		border: 1px solid #2d3748;
+		border: 1px solid rgba(var(--color--text-rgb), 0.08);
 		border-radius: 6px;
-		color: #a0aec0;
+		color: var(--color--text-shade);
 		font-size: 0.875rem;
 		cursor: pointer;
 		transition: all 0.2s;
@@ -580,9 +539,9 @@
 		}
 
 		&:hover {
-			background: #1a1f26;
-			border-color: #4a5568;
-			color: #ededed;
+			background: rgba(var(--color--text-rgb), 0.03);
+			border-color: rgba(var(--color--text-rgb), 0.15);
+			color: var(--color--text);
 		}
 	}
 
@@ -620,12 +579,12 @@
 	}
 
 	.btn-secondary {
-		background: #2d3748;
-		color: #e2e8f0;
-		border: 1px solid #4a5568;
+		background: rgba(var(--color--text-rgb), 0.05);
+		color: var(--color--text);
+		border: 1px solid rgba(var(--color--text-rgb), 0.15);
 
 		&:hover:not(:disabled) {
-			background: #374151;
+			background: rgba(var(--color--text-rgb), 0.1);
 			border-color: #6e29e7;
 		}
 	}
@@ -641,8 +600,8 @@
 
 	// ==================== Profile Card ====================
 	.profile-card {
-		background: #1a1f26;
-		border: 1px solid #2d3748;
+		background: var(--color--card-background);
+		border: 1px solid rgba(var(--color--text-rgb), 0.08);
 		border-radius: 12px;
 		padding: 2rem;
 		margin-bottom: 2rem;
@@ -682,14 +641,14 @@
 		h2 {
 			font-size: 1.875rem;
 			font-weight: 700;
-			color: #ededed;
+			color: var(--color--text);
 			margin: 0 0 0.5rem 0;
 		}
 	}
 
 	.profile-email {
 		font-size: 1rem;
-		color: #a0aec0;
+		color: var(--color--text-shade);
 		margin: 0 0 1rem 0;
 	}
 
@@ -707,8 +666,8 @@
 	}
 
 	.detail-card {
-		background: #1a1f26;
-		border: 1px solid #2d3748;
+		background: var(--color--card-background);
+		border: 1px solid rgba(var(--color--text-rgb), 0.08);
 		border-radius: 12px;
 		overflow: hidden;
 	}
@@ -718,13 +677,13 @@
 		align-items: center;
 		gap: 0.75rem;
 		padding: 1.25rem 1.5rem;
-		background: #212830;
-		border-bottom: 1px solid #2d3748;
+		background: rgba(var(--color--text-rgb), 0.02);
+		border-bottom: 1px solid rgba(var(--color--text-rgb), 0.08);
 
 		h3 {
 			font-size: 1rem;
 			font-weight: 600;
-			color: #ededed;
+			color: var(--color--text);
 			margin: 0;
 		}
 	}
@@ -754,7 +713,7 @@
 		justify-content: space-between;
 		align-items: flex-start;
 		padding: 0.75rem 0;
-		border-bottom: 1px solid #2d3748;
+		border-bottom: 1px solid rgba(var(--color--text-rgb), 0.08);
 
 		&:last-child {
 			border-bottom: none;
@@ -764,14 +723,14 @@
 	.detail-label {
 		font-size: 0.875rem;
 		font-weight: 500;
-		color: #a0aec0;
+		color: var(--color--text-shade);
 		flex-shrink: 0;
 		margin-right: 1rem;
 	}
 
 	.detail-value {
 		font-size: 0.875rem;
-		color: #ededed;
+		color: var(--color--text);
 		text-align: right;
 
 		&.mono {
@@ -796,8 +755,8 @@
 		align-items: center;
 		gap: 0.75rem;
 		padding: 0.875rem 1rem;
-		background: #0f1419;
-		border: 1px solid #2d3748;
+		background: rgba(var(--color--text-rgb), 0.03);
+		border: 1px solid rgba(var(--color--text-rgb), 0.08);
 		border-radius: 8px;
 		text-decoration: none;
 		color: inherit;
@@ -853,12 +812,12 @@
 	.network-label {
 		font-size: 0.875rem;
 		font-weight: 600;
-		color: #ededed;
+		color: var(--color--text);
 	}
 
 	.network-url {
 		font-size: 0.75rem;
-		color: #a0aec0;
+		color: var(--color--text-shade);
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;
@@ -868,7 +827,7 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		color: #4a5568;
+		color: var(--color--text-shade);
 		transition: all 0.2s;
 
 		:global(svg) {
@@ -1146,64 +1105,8 @@
 		}
 	}
 
-	// ==================== Photo Container ====================
-	.photo-container {
-		position: relative;
-		display: inline-block;
-	}
-
-	.photo-type-indicator {
-		position: absolute;
-		top: -8px;
-		right: -8px;
-		z-index: 10;
-	}
-
-	.base64-badge,
-	.url-badge {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.25rem;
-		padding: 0.25rem 0.5rem;
-		border-radius: 12px;
-		font-size: 0.6rem;
-		font-weight: 600;
-		text-transform: uppercase;
-		letter-spacing: 0.02em;
-		border: 2px solid;
-
-		:global(svg) {
-			width: 10px;
-			height: 10px;
-		}
-	}
-
-	.base64-badge {
-		background: rgba(72, 187, 120, 0.9);
-		color: white;
-		border-color: rgba(72, 187, 120, 1);
-		box-shadow: 0 2px 8px rgba(72, 187, 120, 0.3);
-	}
-
-	.url-badge {
-		background: rgba(66, 153, 225, 0.9);
-		color: white;
-		border-color: rgba(66, 153, 225, 1);
-		box-shadow: 0 2px 8px rgba(66, 153, 225, 0.3);
-	}
-
-	.badge-photo {
-		background: rgba(139, 92, 246, 0.1);
-		border: 1px solid rgba(139, 92, 246, 0.3);
-		color: #8b5cf6;
-
-		:global(svg) {
-			width: 12px;
-			height: 12px;
-		}
-	}
-
-	// Mejorar el avatar para soportar imágenes grandes
+	// ==================== Avatar ====================
+	// Avatar mejorado para soportar imágenes grandes
 	.profile-avatar {
 		width: 120px;
 		height: 120px;

@@ -345,7 +345,6 @@
 		max-width: 1400px;
 		margin: 0 auto;
 		min-height: 100vh;
-		background: #0f1419;
 	}
 
 	// ==================== Loading & Error States ====================
@@ -359,7 +358,7 @@
 		gap: 1.5rem;
 
 		p {
-			color: #9ca3af;
+			color: var(--color--text-shade);
 			font-size: 1rem;
 			margin: 0;
 		}
@@ -368,8 +367,8 @@
 	.spinner {
 		width: 48px;
 		height: 48px;
-		border: 4px solid #2d3748;
-		border-top: 4px solid #10b981;
+		border: 4px solid rgba(var(--color--text-rgb), 0.15);
+		border-top: 4px solid var(--color--primary);
 		border-radius: 50%;
 		animation: spin 0.8s linear infinite;
 	}
@@ -396,17 +395,17 @@
 			align-items: center;
 			gap: 0.5rem;
 			padding: 0.625rem 1rem;
-			background: #1a1f26;
-			border: 1px solid #2d3748;
+			background: var(--color--card-background);
+			border: 1px solid rgba(var(--color--text-rgb), 0.15);
 			border-radius: 6px;
-			color: #9ca3af;
+			color: var(--color--text-shade);
 			font-size: 0.875rem;
 			cursor: pointer;
 			transition: all 0.15s ease;
 
 			&:hover {
-				border-color: #10b981;
-				color: #10b981;
+				border-color: var(--color--primary);
+				color: var(--color--primary);
 			}
 		}
 
@@ -419,19 +418,19 @@
 			.proyecto-code {
 				display: inline-block;
 				padding: 0.375rem 0.75rem;
-				background: #0f1419;
-				border: 1px solid #2d3748;
+				background: rgba(var(--color--text-rgb), 0.05);
+				border: 1px solid rgba(var(--color--text-rgb), 0.15);
 				border-radius: 6px;
 				font-family: 'SF Mono', monospace;
 				font-size: 0.875rem;
-				color: #10b981;
+				color: var(--color--primary);
 				margin-bottom: 1rem;
 			}
 
 			.proyecto-titulo {
 				font-size: 2.25rem;
 				font-weight: 700;
-				color: #ededed;
+				color: var(--color--text);
 				line-height: 1.2;
 				margin: 0 0 1rem 0;
 			}
@@ -457,15 +456,15 @@
 		align-items: flex-start;
 		gap: 1rem;
 		padding: 1.5rem;
-		background: linear-gradient(135deg, #1a1f26 0%, #0f1419 100%);
-		border: 1px solid #2d3748;
+		background: var(--color--card-background);
+		border: 1px solid rgba(var(--color--text-rgb), 0.15);
 		border-radius: 10px;
 		transition: all 0.2s ease;
 
 		&:hover {
-			border-color: #10b981;
+			border-color: var(--color--primary);
 			transform: translateY(-2px);
-			box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+			box-shadow: var(--card-shadow);
 		}
 
 		.stat-icon {
@@ -475,7 +474,7 @@
 			display: flex;
 			align-items: center;
 			justify-content: center;
-			background: rgba(16, 185, 129, 0.1);
+			background: rgba(var(--color--primary-rgb), 0.1);
 			border-radius: 12px;
 			flex-shrink: 0;
 		}
@@ -487,7 +486,7 @@
 
 		.stat-label {
 			font-size: 0.8125rem;
-			color: #9ca3af;
+			color: var(--color--text-shade);
 			text-transform: uppercase;
 			letter-spacing: 0.5px;
 			margin-bottom: 0.5rem;
@@ -496,27 +495,27 @@
 		.stat-value {
 			font-size: 1.875rem;
 			font-weight: 700;
-			color: #ededed;
+			color: var(--color--text);
 			line-height: 1;
 		}
 
 		.stat-value-small {
 			font-size: 0.9375rem;
 			font-weight: 600;
-			color: #ededed;
+			color: var(--color--text);
 			line-height: 1.4;
 		}
 
 		.progress-bar {
 			margin-top: 0.75rem;
 			height: 6px;
-			background: #0f1419;
+			background: rgba(var(--color--text-rgb), 0.08);
 			border-radius: 3px;
 			overflow: hidden;
 
 			.progress-fill {
 				height: 100%;
-				background: linear-gradient(90deg, #10b981, #059669);
+				background: var(--color--primary);
 				border-radius: 3px;
 				transition: width 0.3s ease;
 			}
@@ -531,8 +530,8 @@
 	}
 
 	.info-card {
-		background: #1a1f26;
-		border: 1px solid #2d3748;
+		background: var(--color--card-background);
+		border: 1px solid rgba(var(--color--text-rgb), 0.15);
 		border-radius: 10px;
 		margin-bottom: 1.5rem;
 		overflow: hidden;
@@ -546,11 +545,11 @@
 			align-items: center;
 			gap: 0.5rem;
 			padding: 1.25rem 1.5rem;
-			background: linear-gradient(90deg, rgba(16, 185, 129, 0.1) 0%, transparent 100%);
-			border-bottom: 1px solid #2d3748;
+			background: rgba(var(--color--primary-rgb), 0.05);
+			border-bottom: 1px solid rgba(var(--color--text-rgb), 0.15);
 			font-size: 1.125rem;
 			font-weight: 600;
-			color: #ededed;
+			color: var(--color--text);
 			margin: 0;
 		}
 
@@ -560,7 +559,7 @@
 	}
 
 	.text-content {
-		color: #d1d5db;
+		color: var(--color--text-shade);
 		line-height: 1.7;
 		font-size: 0.9375rem;
 		margin: 0;
@@ -575,13 +574,13 @@
 
 	.participante-item {
 		padding: 1rem;
-		background: #0f1419;
-		border: 1px solid #2d3748;
+		background: rgba(var(--color--text-rgb), 0.03);
+		border: 1px solid rgba(var(--color--text-rgb), 0.15);
 		border-radius: 8px;
 		transition: all 0.15s ease;
 
 		&:hover {
-			border-color: #10b981;
+			border-color: var(--color--primary);
 		}
 
 		.participante-info {
@@ -592,7 +591,7 @@
 
 		.participante-nombre {
 			font-weight: 600;
-			color: #ededed;
+			color: var(--color--text);
 			font-size: 0.9375rem;
 		}
 
@@ -614,7 +613,7 @@
 		.info-label {
 			font-size: 0.8125rem;
 			font-weight: 500;
-			color: #9ca3af;
+			color: var(--color--text-shade);
 			text-transform: uppercase;
 			letter-spacing: 0.5px;
 			margin-bottom: 0.5rem;
@@ -626,7 +625,7 @@
 		.info-value {
 			font-size: 0.9375rem;
 			font-weight: 500;
-			color: #ededed;
+			color: var(--color--text);
 		}
 
 		.info-tags {
@@ -639,11 +638,11 @@
 	.tag {
 		display: inline-block;
 		padding: 0.375rem 0.75rem;
-		background: rgba(16, 185, 129, 0.1);
-		border: 1px solid rgba(16, 185, 129, 0.3);
+		background: rgba(var(--color--primary-rgb), 0.1);
+		border: 1px solid rgba(var(--color--primary-rgb), 0.3);
 		border-radius: 6px;
 		font-size: 0.8125rem;
-		color: #10b981;
+		color: var(--color--primary);
 	}
 
 	// ==================== Instituciones ====================
@@ -655,20 +654,20 @@
 
 	.institucion-item {
 		padding: 1rem;
-		background: #0f1419;
-		border: 1px solid #2d3748;
+		background: rgba(var(--color--text-rgb), 0.03);
+		border: 1px solid rgba(var(--color--text-rgb), 0.15);
 		border-radius: 8px;
 
 		.institucion-nombre {
 			font-weight: 600;
-			color: #ededed;
+			color: var(--color--text);
 			margin-bottom: 0.25rem;
 			font-size: 0.9375rem;
 		}
 
 		.institucion-rol {
 			font-size: 0.8125rem;
-			color: #9ca3af;
+			color: var(--color--text-shade);
 		}
 	}
 
@@ -684,13 +683,13 @@
 		justify-content: space-between;
 		align-items: center;
 		padding: 1rem;
-		background: #0f1419;
-		border: 1px solid #2d3748;
+		background: rgba(var(--color--text-rgb), 0.03);
+		border: 1px solid rgba(var(--color--text-rgb), 0.15);
 		border-radius: 8px;
 
 		.fuente-nombre {
 			font-weight: 500;
-			color: #ededed;
+			color: var(--color--text);
 			font-size: 0.9375rem;
 		}
 	}
@@ -706,8 +705,8 @@
 		white-space: nowrap;
 
 		&.badge-success {
-			background: rgba(16, 185, 129, 0.15);
-			color: #10b981;
+			background: rgba(var(--color--primary-rgb), 0.15);
+			color: var(--color--primary);
 		}
 
 		&.badge-info {
@@ -727,8 +726,8 @@
 
 		&.badge-outline {
 			background: transparent;
-			border: 1px solid #2d3748;
-			color: #9ca3af;
+			border: 1px solid rgba(var(--color--text-rgb), 0.2);
+			color: var(--color--text-shade);
 			font-size: 0.75rem;
 		}
 	}
@@ -751,20 +750,21 @@
 	}
 
 	.btn-primary {
-		background: #10b981;
-		color: #0f1419;
+		background: var(--color--primary);
+		color: #ffffff;
 
 		&:hover {
 			background: #059669;
+			filter: brightness(0.95);
 		}
 	}
 
 	.btn-secondary {
-		background: #2d3748;
-		color: #ededed;
+		background: rgba(var(--color--text-rgb), 0.08);
+		color: var(--color--text);
 
 		&:hover {
-			background: #374151;
+			background: rgba(var(--color--text-rgb), 0.12);
 		}
 	}
 

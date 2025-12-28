@@ -215,16 +215,16 @@
 
 <style lang="scss">
 	.database-status-page {
-		background: #0f1419;
+		background: var(--color--background, #ffffff);
 		min-height: 100vh;
-		color: #ededed;
+		color: var(--color--text, #1f2937);
 		font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
 		padding: 0;
 	}
 
 	.top-bar {
-		background: #1a1f26;
-		border-bottom: 1px solid #2d3748;
+		background: var(--color--card-background, #f9fafb);
+		border-bottom: 1px solid rgba(var(--color--text-rgb), 0.08);
 		padding: 1rem 2rem;
 		display: flex;
 		justify-content: space-between;
@@ -239,14 +239,14 @@
 		align-items: center;
 		gap: 0.5rem;
 		font-size: 0.875rem;
-		color: #ededed;
+		color: var(--color--text, #1f2937);
 
 		.muted {
-			color: #6b7280;
+			color: var(--color--text-shade, #6b7280);
 		}
 
 		.separator {
-			color: #4b5563;
+			color: var(--color--text-shade, #4b5563);
 		}
 	}
 
@@ -258,8 +258,8 @@
 
 	.btn-icon {
 		background: transparent;
-		border: 1px solid #374151;
-		color: #9ca3af;
+		border: 1px solid rgba(var(--color--text-rgb), 0.15);
+		color: var(--color--text-shade, #9ca3af);
 		width: 2rem;
 		height: 2rem;
 		display: flex;
@@ -287,8 +287,8 @@
 
 	.btn-auto {
 		background: transparent;
-		border: 1px solid #374151;
-		color: #9ca3af;
+		border: 1px solid rgba(var(--color--text-rgb), 0.15);
+		color: var(--color--text-shade, #9ca3af);
 		padding: 0.5rem 0.75rem;
 		border-radius: 6px;
 		cursor: pointer;
@@ -305,7 +305,7 @@
 		}
 
 		&:hover {
-			border-color: #4b5563;
+			border-color: rgba(var(--color--text-rgb), 0.25);
 		}
 	}
 
@@ -313,7 +313,7 @@
 		width: 6px;
 		height: 6px;
 		border-radius: 50%;
-		background: #374151;
+		background: rgba(var(--color--text-rgb), 0.2);
 
 		&.active {
 			background: #10b981;
@@ -334,8 +334,8 @@
 	.status-banner {
 		margin: 2rem;
 		padding: 1rem 1.25rem;
-		background: #1a1f26;
-		border: 1px solid #374151;
+		background: var(--color--card-background, #f9fafb);
+		border: 1px solid rgba(var(--color--text-rgb), 0.15);
 		border-radius: 8px;
 		display: flex;
 		align-items: center;
@@ -343,12 +343,14 @@
 
 		&.connected {
 			border-color: #10b981;
-			background: rgba(16, 185, 129, 0.05);
+			background: var(--color--card-background, #f9fafb);
+			box-shadow: inset 0 0 0 1px rgba(16, 185, 129, 0.2);
 		}
 
 		&.error {
 			border-color: #ef4444;
-			background: rgba(239, 68, 68, 0.05);
+			background: var(--color--card-background, #f9fafb);
+			box-shadow: inset 0 0 0 1px rgba(239, 68, 68, 0.2);
 		}
 	}
 
@@ -356,7 +358,7 @@
 		width: 8px;
 		height: 8px;
 		border-radius: 50%;
-		background: #6b7280;
+		background: var(--color--text-shade, #6b7280);
 		flex-shrink: 0;
 	}
 
@@ -385,16 +387,16 @@
 	}
 
 	.status-label {
-		color: #6b7280;
+		color: var(--color--text-shade, #6b7280);
 	}
 
 	.status-value {
-		color: #ededed;
+		color: var(--color--text, #1f2937);
 		font-weight: 600;
 	}
 
 	.status-time {
-		color: #6b7280;
+		color: var(--color--text-shade, #6b7280);
 		font-size: 0.8125rem;
 		font-family: 'SF Mono', Monaco, monospace;
 	}
@@ -416,7 +418,7 @@
 		font-weight: 600;
 		text-transform: uppercase;
 		letter-spacing: 0.1em;
-		color: #6b7280;
+		color: var(--color--text-shade, #6b7280);
 		margin-bottom: 1rem;
 	}
 
@@ -427,20 +429,20 @@
 	}
 
 	.metric-box {
-		background: #1a1f26;
-		border: 1px solid #2d3748;
+		background: var(--color--card-background, #f9fafb);
+		border: 1px solid rgba(var(--color--text-rgb), 0.08);
 		border-radius: 8px;
 		padding: 1.25rem;
 		transition: border-color 0.15s;
 
 		&:hover {
-			border-color: #374151;
+			border-color: rgba(var(--color--text-rgb), 0.15);
 		}
 	}
 
 	.metric-label {
 		font-size: 0.8125rem;
-		color: #6b7280;
+		color: var(--color--text-shade, #6b7280);
 		margin-bottom: 0.75rem;
 		font-family: 'SF Mono', Monaco, monospace;
 	}
@@ -448,7 +450,7 @@
 	.metric-value {
 		font-size: 2rem;
 		font-weight: 700;
-		color: #ededed;
+		color: var(--color--text, #1f2937);
 		line-height: 1;
 		margin-bottom: 0.5rem;
 		font-family: 'SF Mono', Monaco, monospace;
@@ -468,12 +470,12 @@
 
 	.metric-status {
 		font-size: 0.75rem;
-		color: #6b7280;
+		color: var(--color--text-shade, #6b7280);
 	}
 
 	.table-list {
-		background: #1a1f26;
-		border: 1px solid #2d3748;
+		background: var(--color--card-background, #f9fafb);
+		border: 1px solid rgba(var(--color--text-rgb), 0.08);
 		border-radius: 8px;
 		overflow: hidden;
 	}
@@ -488,17 +490,17 @@
 	}
 
 	.table-header {
-		background: #151a1f;
-		border-bottom: 1px solid #2d3748;
+		background: rgba(var(--color--text-rgb), 0.02);
+		border-bottom: 1px solid rgba(var(--color--text-rgb), 0.08);
 		font-size: 0.75rem;
 		font-weight: 600;
 		text-transform: uppercase;
 		letter-spacing: 0.05em;
-		color: #6b7280;
+		color: var(--color--text-shade, #6b7280);
 	}
 
 	.table-row {
-		border-bottom: 1px solid #2d3748;
+		border-bottom: 1px solid rgba(var(--color--text-rgb), 0.08);
 		transition: background 0.15s;
 
 		&:last-child {
@@ -506,7 +508,7 @@
 		}
 
 		&:hover {
-			background: #151a1f;
+			background: rgba(var(--color--text-rgb), 0.02);
 		}
 	}
 
@@ -516,13 +518,13 @@
 		gap: 0.75rem;
 		font-family: 'SF Mono', Monaco, monospace;
 		font-size: 0.875rem;
-		color: #ededed;
+		color: var(--color--text, #1f2937);
 	}
 
 	.table-icon {
 		display: flex;
 		align-items: center;
-		color: #6b7280;
+		color: var(--color--text-shade, #6b7280);
 
 		:global(svg) {
 			width: 1rem;
@@ -532,7 +534,7 @@
 
 	code {
 		background: transparent;
-		color: #ededed;
+		color: var(--color--text, #1f2937);
 		font-family: 'SF Mono', Monaco, monospace;
 		font-size: 0.875rem;
 	}
@@ -543,8 +545,8 @@
 	}
 
 	.count-badge {
-		background: #2d3748;
-		color: #9ca3af;
+		background: rgba(var(--color--text-rgb), 0.1);
+		color: var(--color--text-shade, #9ca3af);
 		padding: 0.25rem 0.75rem;
 		border-radius: 6px;
 		font-size: 0.8125rem;
@@ -559,8 +561,8 @@
 	}
 
 	.info-section {
-		background: #1a1f26;
-		border: 1px solid #2d3748;
+		background: var(--color--card-background, #f9fafb);
+		border: 1px solid rgba(var(--color--text-rgb), 0.08);
 		border-radius: 8px;
 		padding: 1.25rem;
 	}
@@ -580,19 +582,19 @@
 
 	.info-label {
 		font-size: 0.8125rem;
-		color: #6b7280;
+		color: var(--color--text-shade, #6b7280);
 		font-family: 'SF Mono', Monaco, monospace;
 	}
 
 	.info-value {
 		font-size: 0.8125rem;
-		color: #ededed;
+		color: var(--color--text, #1f2937);
 		font-family: 'SF Mono', Monaco, monospace;
 		text-align: right;
 
 		&.mono {
 			font-size: 0.75rem;
-			color: #9ca3af;
+			color: var(--color--text-shade, #9ca3af);
 			word-break: break-all;
 		}
 

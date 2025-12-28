@@ -240,14 +240,14 @@
 		display: flex;
 		flex-direction: column;
 		height: 100vh;
-		background: #0f1419;
-		color: #ededed;
+		background: var(--color--background, #ffffff);
+		color: var(--color--text, #1f2937);
 		font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
 	}
 
 	.top-bar {
-		background: #1a1f26;
-		border-bottom: 1px solid #2d3748;
+		background: var(--color--card-background, #f9fafb);
+		border-bottom: 1px solid rgba(var(--color--text-rgb), 0.08);
 		padding: 1rem 2rem;
 		display: flex;
 		justify-content: space-between;
@@ -260,7 +260,7 @@
 		align-items: center;
 		gap: 0.5rem;
 		font-size: 0.875rem;
-		color: #ededed;
+		color: var(--color--text, #1f2937);
 
 		.muted {
 			color: #6b7280;
@@ -300,8 +300,8 @@
 
 	.btn-icon {
 		background: transparent;
-		border: 1px solid #374151;
-		color: #9ca3af;
+		border: 1px solid rgba(var(--color--text-rgb), 0.15);
+		color: var(--color--text-shade, #9ca3af);
 		width: 2rem;
 		height: 2rem;
 		display: flex;
@@ -324,7 +324,7 @@
 
 	.btn-clear {
 		background: transparent;
-		border: 1px solid #374151;
+		border: 1px solid rgba(var(--color--text-rgb), 0.15);
 		color: #ef4444;
 		padding: 0.5rem 0.75rem;
 		border-radius: 6px;
@@ -340,8 +340,8 @@
 	}
 
 	.filters-bar {
-		background: #151a1f;
-		border-bottom: 1px solid #2d3748;
+		background: var(--color--card-background, #f9fafb);
+		border-bottom: 1px solid rgba(var(--color--text-rgb), 0.08);
 		padding: 1rem 2rem;
 		display: flex;
 		gap: 1rem;
@@ -366,9 +366,9 @@
 
 		input,
 		select {
-			background: #1a1f26;
-			border: 1px solid #374151;
-			color: #ededed;
+			background: var(--color--input-background, rgba(255, 255, 255, 0.05));
+			border: 1px solid rgba(var(--color--text-rgb), 0.15);
+			color: var(--color--text, #1f2937);
 			padding: 0.5rem 0.75rem;
 			border-radius: 6px;
 			font-size: 0.8125rem;
@@ -381,7 +381,7 @@
 			}
 
 			&::placeholder {
-				color: #4b5563;
+				color: var(--color--text-shade, #9ca3af);
 			}
 		}
 
@@ -393,7 +393,7 @@
 	.logs-wrapper {
 		flex: 1;
 		overflow-y: auto;
-		background: #0f1419;
+		background: var(--color--background, #ffffff);
 		position: relative;
 	}
 
@@ -469,8 +469,8 @@
 	}
 
 	.status-bar {
-		background: #1a1f26;
-		border-top: 1px solid #2d3748;
+		background: var(--color--card-background, #f9fafb);
+		border-top: 1px solid rgba(var(--color--text-rgb), 0.08);
 		padding: 0.75rem 2rem;
 		display: flex;
 		gap: 2rem;
@@ -490,7 +490,7 @@
 		}
 
 		.status-value {
-			color: #ededed;
+			color: var(--color--text, #1f2937);
 			font-weight: 600;
 		}
 	}
@@ -501,15 +501,15 @@
 	}
 
 	.logs-wrapper::-webkit-scrollbar-track {
-		background: #0f1419;
+		background: var(--color--background, #ffffff);
 	}
 
 	.logs-wrapper::-webkit-scrollbar-thumb {
-		background: #374151;
+		background: rgba(var(--color--text-rgb), 0.2);
 		border-radius: 4px;
 
 		&:hover {
-			background: #4b5563;
+			background: rgba(var(--color--text-rgb), 0.3);
 		}
 	}
 

@@ -26,17 +26,35 @@ const CHART_COLORS = {
 
 const COLORS_ARRAY = Object.values(CHART_COLORS);
 
-// Función helper para colores de texto/ejes
+// Función helper para detectar el tema actual
+function getCurrentTheme(): 'light' | 'dark' {
+	if (typeof document === 'undefined') return 'dark';
+	return document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+}
+
+// Función helper para colores de texto/ejes adaptados al tema
 function getTextColor(): string {
-	return '#ffffff'; // Siempre blanco para mejor contraste en modo oscuro
+	return getCurrentTheme() === 'light' ? '#1f2937' : '#ffffff';
 }
 
 function getGridColor(): string {
-	return 'rgba(255, 255, 255, 0.1)'; // Líneas de cuadrícula sutiles
+	return getCurrentTheme() === 'light' ? 'rgba(0, 0, 0, 0.08)' : 'rgba(255, 255, 255, 0.1)';
 }
 
-// Configuración de scales con colores blancos
-const whiteScalesConfig = {
+function getTooltipBackgroundColor(): string {
+	return getCurrentTheme() === 'light' ? 'rgba(255, 255, 255, 0.95)' : 'rgba(0, 0, 0, 0.8)';
+}
+
+function getTooltipTextColor(): string {
+	return getCurrentTheme() === 'light' ? '#1f2937' : '#ffffff';
+}
+
+function getBorderColor(): string {
+	return getCurrentTheme() === 'light' ? '#e5e7eb' : '#374151';
+}
+
+// Configuración de scales con colores adaptativos
+const getScalesConfig = () => ({
 	x: {
 		ticks: {
 			color: getTextColor(),
@@ -46,6 +64,9 @@ const whiteScalesConfig = {
 		},
 		grid: {
 			color: getGridColor()
+		},
+		border: {
+			color: getBorderColor()
 		}
 	},
 	y: {
@@ -57,12 +78,15 @@ const whiteScalesConfig = {
 		},
 		grid: {
 			color: getGridColor()
+		},
+		border: {
+			color: getBorderColor()
 		}
 	}
-};
+});
 
-// Opciones comunes
-const commonOptions = {
+// Opciones comunes adaptativas
+const getCommonOptions = () => ({
 	responsive: true,
 	maintainAspectRatio: false,
 	plugins: {
@@ -72,7 +96,7 @@ const commonOptions = {
 			labels: {
 				usePointStyle: true,
 				padding: 15,
-				color: '#ffffff', // Texto blanco para leyendas
+				color: getTextColor(),
 				font: {
 					size: 12,
 					family: "'Inter', sans-serif"
@@ -81,7 +105,11 @@ const commonOptions = {
 		},
 		tooltip: {
 			enabled: true,
-			backgroundColor: 'rgba(0, 0, 0, 0.8)',
+			backgroundColor: getTooltipBackgroundColor(),
+			titleColor: getTooltipTextColor(),
+			bodyColor: getTooltipTextColor(),
+			borderColor: getBorderColor(),
+			borderWidth: 1,
 			padding: 12,
 			cornerRadius: 8,
 			titleFont: {
@@ -90,36 +118,11 @@ const commonOptions = {
 			},
 			bodyFont: {
 				size: 13
-			},
-			titleColor: '#ffffff',
-			bodyColor: '#ffffff'
+			}
 		}
 	},
-	scales: {
-		x: {
-			ticks: {
-				color: '#ffffff', // Etiquetas del eje X en blanco
-				font: {
-					size: 11
-				}
-			},
-			grid: {
-				color: 'rgba(255, 255, 255, 0.1)' // Líneas de cuadrícula sutiles
-			}
-		},
-		y: {
-			ticks: {
-				color: '#ffffff', // Etiquetas del eje Y en blanco
-				font: {
-					size: 11
-				}
-			},
-			grid: {
-				color: 'rgba(255, 255, 255, 0.1)'
-			}
-		}
-	}
-};
+	scales: getScalesConfig()
+});
 
 /**
  * 1. Top Facultades con más participantes
@@ -147,15 +150,15 @@ export function getTopFacultadesConfig(data: any): ChartConfiguration {
 			]
 		},
 		options: {
-			...commonOptions,
+			...getCommonOptions(),
 			indexAxis: 'y' as const,
 			scales: {
-				...whiteScalesConfig,
+				...getScalesConfig(),
 				x: {
-					...whiteScalesConfig.x,
+					...getScalesConfig().x,
 					beginAtZero: true,
 					ticks: {
-						...whiteScalesConfig.x.ticks,
+						...getScalesConfig().x.ticks,
 						precision: 0
 					}
 				}
@@ -196,21 +199,21 @@ export function getFacultadesGeneroConfig(data: any): ChartConfiguration {
 			]
 		},
 		options: {
-			...commonOptions,
+			...getCommonOptions(),
 			indexAxis: 'y' as const,
 			scales: {
-				...whiteScalesConfig,
+				...getScalesConfig(),
 				x: {
-					...whiteScalesConfig.x,
+					...getScalesConfig().x,
 					stacked: true,
 					beginAtZero: true,
 					ticks: {
-						...whiteScalesConfig.x.ticks,
+						...getScalesConfig().x.ticks,
 						precision: 0
 					}
 				},
 				y: {
-					...whiteScalesConfig.y,
+					...getScalesConfig().y,
 					stacked: true
 				}
 			}
@@ -242,15 +245,15 @@ export function getTopCarrerasConfig(data: any): ChartConfiguration {
 			]
 		},
 		options: {
-			...commonOptions,
+			...getCommonOptions(),
 			indexAxis: 'y' as const,
 			scales: {
-				...whiteScalesConfig,
+				...getScalesConfig(),
 				x: {
-					...whiteScalesConfig.x,
+					...getScalesConfig().x,
 					beginAtZero: true,
 					ticks: {
-						...whiteScalesConfig.x.ticks,
+						...getScalesConfig().x.ticks,
 						precision: 0
 					}
 				}
@@ -289,21 +292,21 @@ export function getCarrerasGeneroConfig(data: any): ChartConfiguration {
 			]
 		},
 		options: {
-			...commonOptions,
+			...getCommonOptions(),
 			indexAxis: 'y' as const,
 			scales: {
-				...whiteScalesConfig,
+				...getScalesConfig(),
 				x: {
-					...whiteScalesConfig.x,
+					...getScalesConfig().x,
 					stacked: true,
 					beginAtZero: true,
 					ticks: {
-						...whiteScalesConfig.x.ticks,
+						...getScalesConfig().x.ticks,
 						precision: 0
 					}
 				},
 				y: {
-					...whiteScalesConfig.y,
+					...getScalesConfig().y,
 					stacked: true
 				}
 			}
@@ -333,15 +336,15 @@ export function getTopCargosConfig(data: any): ChartConfiguration {
 			]
 		},
 		options: {
-			...commonOptions,
+			...getCommonOptions(),
 			indexAxis: 'y' as const,
 			scales: {
-				...whiteScalesConfig,
+				...getScalesConfig(),
 				x: {
-					...whiteScalesConfig.x,
+					...getScalesConfig().x,
 					beginAtZero: true,
 					ticks: {
-						...whiteScalesConfig.x.ticks,
+						...getScalesConfig().x.ticks,
 						precision: 0
 					}
 				}
@@ -378,21 +381,21 @@ export function getCargosGeneroConfig(data: any): ChartConfiguration {
 			]
 		},
 		options: {
-			...commonOptions,
+			...getCommonOptions(),
 			indexAxis: 'y' as const,
 			scales: {
-				...whiteScalesConfig,
+				...getScalesConfig(),
 				x: {
-					...whiteScalesConfig.x,
+					...getScalesConfig().x,
 					stacked: true,
 					beginAtZero: true,
 					ticks: {
-						...whiteScalesConfig.x.ticks,
+						...getScalesConfig().x.ticks,
 						precision: 0
 					}
 				},
 				y: {
-					...whiteScalesConfig.y,
+					...getScalesConfig().y,
 					stacked: true
 				}
 			}
@@ -426,16 +429,16 @@ export function getDistribucionGeneroConfig(data: any): ChartConfiguration {
 					data: [stats.total_masculino, stats.total_femenino, stats.total_otro_genero],
 					backgroundColor: [CHART_COLORS.primary, CHART_COLORS.pink, CHART_COLORS.purple],
 					borderWidth: 2,
-					borderColor: '#ffffff'
+					borderColor: getBorderColor()
 				}
 			]
 		},
 		options: {
-			...commonOptions,
+			...getCommonOptions(),
 			plugins: {
-				...commonOptions.plugins,
+				...getCommonOptions().plugins,
 				tooltip: {
-					...commonOptions.plugins.tooltip,
+					...getCommonOptions().plugins.tooltip,
 					callbacks: {
 						label: function (context: any) {
 							const label = context.label || '';
@@ -473,16 +476,16 @@ export function getDistribucionAcreditacionConfig(data: any): ChartConfiguration
 					],
 					backgroundColor: [CHART_COLORS.success, CHART_COLORS.warning, CHART_COLORS.info],
 					borderWidth: 2,
-					borderColor: '#ffffff'
+					borderColor: getBorderColor()
 				}
 			]
 		},
 		options: {
-			...commonOptions,
+			...getCommonOptions(),
 			plugins: {
-				...commonOptions.plugins,
+				...getCommonOptions().plugins,
 				tooltip: {
-					...commonOptions.plugins.tooltip,
+					...getCommonOptions().plugins.tooltip,
 					callbacks: {
 						label: function (context: any) {
 							const label = context.label || '';
@@ -527,14 +530,14 @@ export function getParticipacionDirectivaGeneroConfig(data: any): ChartConfigura
 			]
 		},
 		options: {
-			...commonOptions,
+			...getCommonOptions(),
 			scales: {
-				...whiteScalesConfig,
+				...getScalesConfig(),
 				y: {
-					...whiteScalesConfig.y,
+					...getScalesConfig().y,
 					beginAtZero: true,
 					ticks: {
-						...whiteScalesConfig.y.ticks,
+						...getScalesConfig().y.ticks,
 						precision: 0
 					}
 				}
@@ -577,19 +580,19 @@ export function getFacultadGeneroConfig(data: any): ChartConfiguration {
 			]
 		},
 		options: {
-			...commonOptions,
+			...getCommonOptions(),
 			scales: {
-				...whiteScalesConfig,
+				...getScalesConfig(),
 				x: {
-					...whiteScalesConfig.x,
+					...getScalesConfig().x,
 					stacked: true
 				},
 				y: {
-					...whiteScalesConfig.y,
+					...getScalesConfig().y,
 					stacked: true,
 					beginAtZero: true,
 					ticks: {
-						...whiteScalesConfig.y.ticks,
+						...getScalesConfig().y.ticks,
 						precision: 0
 					}
 				}
@@ -627,19 +630,19 @@ export function getCargoGeneroConfig(data: any): ChartConfiguration {
 			]
 		},
 		options: {
-			...commonOptions,
+			...getCommonOptions(),
 			scales: {
-				...whiteScalesConfig,
+				...getScalesConfig(),
 				x: {
-					...whiteScalesConfig.x,
+					...getScalesConfig().x,
 					stacked: true
 				},
 				y: {
-					...whiteScalesConfig.y,
+					...getScalesConfig().y,
 					stacked: true,
 					beginAtZero: true,
 					ticks: {
-						...whiteScalesConfig.y.ticks,
+						...getScalesConfig().y.ticks,
 						precision: 0
 					}
 				}
@@ -666,7 +669,7 @@ function getEmptyConfig(): ChartConfiguration {
 			labels: [],
 			datasets: []
 		},
-		options: commonOptions
+		options: getCommonOptions()
 	};
 }
 

@@ -38,7 +38,8 @@
 		align-items: center;
 		margin-bottom: 2rem;
 		padding: 1.5rem;
-		background: rgba(255, 255, 255, 0.03);
+		background: var(--color--card-background);
+		border: 1px solid rgba(var(--color--text-rgb), 0.08);
 		border-radius: 12px;
 	}
 
@@ -46,12 +47,12 @@
 		font-size: 2rem;
 		font-weight: 700;
 		margin: 0 0 0.5rem 0;
-		color: #ffffff;
+		color: var(--color--text);
 	}
 
 	.last-update {
 		font-size: 0.875rem;
-		color: rgba(255, 255, 255, 0.6);
+		color: var(--color--text-shade);
 		margin: 0;
 	}
 
@@ -65,9 +66,9 @@
 		align-items: center;
 		gap: 0.5rem;
 		padding: 0.75rem 1.25rem;
-		background: rgba(255, 255, 255, 0.1);
-		color: #ffffff;
-		border: 1px solid rgba(255, 255, 255, 0.2);
+		background: rgba(var(--color--text-rgb), 0.08);
+		color: var(--color--text);
+		border: 1px solid rgba(var(--color--text-rgb), 0.15);
 		border-radius: 8px;
 		font-size: 0.875rem;
 		font-weight: 500;
@@ -77,6 +78,7 @@
 
 	.export-btn {
 		background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+		color: #ffffff;
 		border: none;
 	}
 
