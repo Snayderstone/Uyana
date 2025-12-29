@@ -3,12 +3,32 @@
 	import { fade, fly } from 'svelte/transition';
 	import type { ChatMessage } from '$lib/stores/chatStore';
 	import Sparkles from '$lib/components/atoms/Sparkles.svelte';
+	import TypingText from '$lib/components/atoms/TypingText.svelte';
 
 	export let message: ChatMessage;
 	export let showTimestamp = false;
 	export let showAvatar = true;
+	export let enableTyping = true; // Habilitar efecto de escritura
+	export let isLastAssistantMessage = false; // Indica si es el último mensaje del asistente
 
 	let isVisible = false;
+	let shouldShowTyping = false;
+	let hasTyped = false; // Para evitar que se repita el efecto
+
+	// Determinar si debe mostrar el efecto de escritura
+	// Solo se activa en el último mensaje del asistente y solo una vez
+	$: shouldShowTyping =
+		enableTyping &&
+		isLastAssistantMessage &&
+		message.role === 'assistant' &&
+		!message.pending &&
+		!message.error &&
+		!hasTyped;
+
+	// Marcar como ya escrito cuando termina el efecto
+	function handleTypingComplete() {
+		hasTyped = true;
+	}
 
 	const roleConfig = {
 		user: {
@@ -63,11 +83,19 @@
 	});
 
 	function formatMessage(content: string): string {
-		return content.replace(/\n/g, '<br>');
-	}
+		// Primero procesar markdown básico
+		let formatted = content;
 
-	function copyMessage() {
-		navigator.clipboard.writeText(message.content);
+		// Convertir **texto** a <strong>texto</strong> (negrita)
+		formatted = formatted.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+
+		// Convertir *texto* a <em>texto</em> (cursiva)
+		formatted = formatted.replace(/(?<!\*)\*(?!\*)(.+?)\*(?!\*)/g, '<em>$1</em>');
+
+		// Convertir saltos de línea
+		formatted = formatted.replace(/\n/g, '<br>');
+
+		return formatted;
 	}
 </script>
 
@@ -97,26 +125,12 @@
 		"
 		>
 			<div class="content" class:visible={isVisible}>
-				{@html formattedContent}
+				{#if shouldShowTyping}
+					<TypingText text={message.content} speed={20} on:complete={handleTypingComplete} />
+				{:else}
+					{@html formattedContent}
+				{/if}
 			</div>
-
-			{#if message.role === 'user' || message.role === 'assistant'}
-				<div class="message-actions">
-					<button class="action-button" on:click={copyMessage} title="Copiar mensaje">
-						<svg
-							width="16"
-							height="16"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="1.5"
-						>
-							<rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-							<path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
-						</svg>
-					</button>
-				</div>
-			{/if}
 		</div>
 
 		{#if showTimestamp}
@@ -128,8 +142,8 @@
 <style lang="scss">
 	.message-container {
 		display: flex;
-		gap: 12px;
-		margin-bottom: 16px;
+		gap: 0.625rem;
+		margin-bottom: 0.75rem;
 		align-items: flex-start;
 		opacity: 0;
 		animation: fadeInUp 0.3s ease-out forwards;
@@ -143,14 +157,14 @@
 	}
 
 	.avatar {
-		width: 36px;
-		height: 36px;
+		width: 28px;
+		height: 28px;
 		border-radius: 50%;
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		flex-shrink: 0;
-		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+		box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
 		transition: transform 0.2s ease;
 		position: relative;
 
@@ -159,7 +173,7 @@
 		}
 
 		.avatar-icon {
-			font-size: 18px;
+			font-size: 12px;
 			color: white;
 			z-index: 2;
 			position: relative;
@@ -174,7 +188,7 @@
 			position: relative;
 
 			.avatar-icon {
-				font-size: 18px;
+				font-size: 12px;
 				color: white;
 				z-index: 3;
 				position: relative;
@@ -190,25 +204,21 @@
 	}
 
 	.message-content {
-		max-width: calc(100% - 48px);
+		max-width: calc(100% - 38px);
 		flex: 1;
 		min-width: 0;
 	}
 
 	.message-bubble {
-		padding: 16px 20px;
+		padding: 0.625rem 0.875rem;
 		position: relative;
 		backdrop-filter: blur(10px);
 		transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05);
+		box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03);
 
 		&:hover {
-			transform: translateY(-2px);
-			box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12), 0 4px 16px rgba(0, 0, 0, 0.08);
-			.message-actions {
-				opacity: 1;
-				visibility: visible;
-			}
+			transform: translateY(-1px);
+			box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08), 0 2px 6px rgba(0, 0, 0, 0.05);
 		}
 	}
 
@@ -235,7 +245,8 @@
 	}
 
 	.content {
-		line-height: 1.6;
+		font-size: 12px;
+		line-height: 1.5;
 		opacity: 0;
 		transform: translateY(10px);
 		transition: all 0.3s ease;
@@ -247,21 +258,21 @@
 		}
 
 		:global(h1) {
-			font-size: 1.5em;
+			font-size: 12px;
 			font-weight: 600;
 			margin: 0 0 12px 0;
 			color: var(--color--primary);
 		}
 		:global(h2) {
-			font-size: 1.3em;
+			font-size: 12px;
 			font-weight: 600;
-			margin: 16px 0 8px 0;
+			margin: 14px 0 7px 0;
 			color: var(--color--primary);
 		}
 		:global(h3) {
-			font-size: 1.1em;
+			font-size: 12px;
 			font-weight: 600;
-			margin: 12px 0 6px 0;
+			margin: 10px 0 5px 0;
 			color: var(--color--primary);
 		}
 		:global(strong) {
@@ -279,13 +290,7 @@
 			padding: 2px 6px;
 			border-radius: 4px;
 			font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
-			font-size: 0.9em;
-			border: 1px solid rgba(var(--color--primary-rgb), 0.2);
-		}
-
-		:global(.code-block) {
-			background: var(--color--surface);
-			border: 1px solid rgba(var(--color--border-rgb), 0.1);
+			font-size: 12px;
 			border-radius: 8px;
 			margin: 12px 0;
 			overflow: hidden;
@@ -293,7 +298,7 @@
 			:global(.code-header) {
 				background: rgba(var(--color--primary-rgb), 0.1);
 				padding: 8px 16px;
-				font-size: 0.85em;
+				font-size: 12px;
 				font-weight: 500;
 				color: var(--color--primary);
 				border-bottom: 1px solid rgba(var(--color--border-rgb), 0.1);
@@ -306,7 +311,7 @@
 
 				:global(code) {
 					font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
-					font-size: 0.9em;
+					font-size: 12px;
 					line-height: 1.5;
 					color: var(--color--text-primary);
 				}
@@ -329,40 +334,8 @@
 		}
 	}
 
-	.message-actions {
-		position: absolute;
-		top: 8px;
-		right: 8px;
-		opacity: 0;
-		visibility: hidden;
-		transition: all 0.2s ease;
-		display: flex;
-		gap: 4px;
-	}
-
-	.action-button {
-		background: rgba(var(--color--surface-rgb), 0.9);
-		border: 1px solid rgba(var(--color--border-rgb), 0.2);
-		border-radius: 6px;
-		padding: 6px;
-		cursor: pointer;
-		transition: all 0.2s ease;
-		color: var(--color--text-secondary);
-		backdrop-filter: blur(10px);
-
-		&:hover {
-			background: rgba(var(--color--surface-rgb), 1);
-			color: var(--color--text-primary);
-			transform: scale(1.05);
-		}
-
-		&:active {
-			transform: scale(0.95);
-		}
-	}
-
 	.timestamp {
-		font-size: 0.75em;
+		font-size: 12px;
 		color: var(--color--text-tertiary);
 		margin-top: 6px;
 		text-align: right;
@@ -392,7 +365,7 @@
 			width: 32px;
 			height: 32px;
 			.avatar-icon {
-				font-size: 16px;
+				font-size: 12px;
 			}
 		}
 		.message-content {
@@ -400,15 +373,6 @@
 		}
 		.message-bubble {
 			padding: 12px 16px;
-		}
-		.message-actions {
-			position: relative;
-			top: auto;
-			right: auto;
-			opacity: 1;
-			visibility: visible;
-			margin-top: 8px;
-			justify-content: flex-end;
 		}
 	}
 </style>

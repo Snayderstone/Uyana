@@ -126,12 +126,9 @@
 						</label>
 						<div class="tool-description">{tool.description}</div>
 						<div class="tool-actions">
-							{#if tool.category}
-								<div class="tool-category">📂 {tool.category}</div>
-							{/if}
 							<button class="info-button" on:click|stopPropagation={() => showToolInfo(tool)}>
 								<span class="info-icon">ℹ️</span>
-								<span>Más información</span>
+								<span>Más info</span>
 							</button>
 						</div>
 					</div>
@@ -199,27 +196,27 @@
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
-		padding: 1.5rem;
+		padding: 1rem 1.25rem;
 		border-bottom: 1px solid rgba(var(--color--border-rgb), 0.1);
 		background: linear-gradient(
 			135deg,
-			rgba(var(--color--primary-rgb), 0.05),
-			rgba(var(--color--secondary-rgb), 0.05)
+			rgba(var(--color--primary-rgb), 0.04),
+			rgba(var(--color--secondary-rgb), 0.04)
 		);
 
 		h3 {
 			margin: 0;
-			font-size: 1.1rem;
+			font-size: 0.95rem;
 			font-weight: 600;
 			color: var(--color--text);
 		}
 
 		.close-button {
-			width: 32px;
-			height: 32px;
-			border-radius: 8px;
+			width: 28px;
+			height: 28px;
+			border-radius: 6px;
 			border: none;
-			background: rgba(var(--color--text-rgb), 0.1);
+			background: rgba(var(--color--text-rgb), 0.08);
 			display: flex;
 			align-items: center;
 			justify-content: center;
@@ -228,7 +225,7 @@
 			transition: all 0.2s ease;
 
 			&:hover {
-				background: rgba(var(--color--text-rgb), 0.15);
+				background: rgba(var(--color--text-rgb), 0.12);
 				color: var(--color--text);
 			}
 		}
@@ -236,9 +233,9 @@
 
 	.tools-list {
 		flex: 1;
-		padding: 1rem 0;
+		padding: 0.75rem 0;
 		overflow-y: auto;
-		max-height: 400px;
+		max-height: 350px;
 
 		/* Scrollbar personalizada */
 		&::-webkit-scrollbar {
@@ -256,9 +253,9 @@
 	}
 
 	.tool-item {
-		padding: 0.75rem 1.5rem;
+		padding: 0.625rem 1.25rem;
 		transition: background-color 0.2s ease;
-		border-left: 3px solid transparent;
+		border-left: 2px solid transparent;
 
 		&:hover {
 			background-color: rgba(var(--color--primary-rgb), 0.03);
@@ -269,10 +266,10 @@
 	.tool-checkbox {
 		display: flex;
 		align-items: center;
-		gap: 0.75rem;
+		gap: 0.625rem;
 		cursor: pointer;
 		user-select: none;
-		margin-bottom: 0.5rem;
+		margin-bottom: 0.375rem;
 		position: relative;
 
 		input[type='checkbox'] {
@@ -294,9 +291,9 @@
 		}
 
 		.checkbox-custom {
-			width: 20px;
-			height: 20px;
-			border: 2px solid rgba(var(--color--border-rgb), 0.3);
+			width: 18px;
+			height: 18px;
+			border: 2px solid rgba(var(--color--text-rgb), 0.6);
 			border-radius: 4px;
 			display: flex;
 			align-items: center;
@@ -308,49 +305,44 @@
 				opacity: 0;
 				transform: scale(0.5);
 				transition: all 0.2s ease;
+				width: 12px;
+				height: 12px;
 			}
 		}
 
 		.tool-icon {
-			font-size: 1.2rem;
+			font-size: 0.9rem;
 			flex-shrink: 0;
 		}
 
 		.tool-name {
 			font-weight: 500;
 			color: var(--color--text);
-			text-transform: capitalize;
+			font-size: 0.8rem;
 		}
 	}
 
 	.tool-description {
-		margin-left: 2.95rem;
-		font-size: 0.85rem;
+		margin-left: 2.625rem;
+		font-size: 0.7rem;
 		color: var(--color--text-shade);
-		line-height: 1.4;
-		margin-bottom: 0.25rem;
+		line-height: 1.3;
+		opacity: 0.85;
 	}
 
 	.tool-actions {
 		display: flex;
-		justify-content: space-between;
+		justify-content: flex-end;
 		align-items: center;
-		margin-left: 2.95rem;
-		margin-top: 0.5rem;
-	}
-
-	.tool-category {
-		font-size: 0.8rem;
-		color: var(--color--primary);
-		font-weight: 500;
-		opacity: 0.8;
+		margin-left: 2.625rem;
+		margin-top: 0.375rem;
 	}
 
 	.info-button {
 		background: none;
 		border: none;
 		padding: 0.25rem 0.5rem;
-		font-size: 0.8rem;
+		font-size: 0.75rem;
 		color: var(--color--text-shade);
 		display: flex;
 		align-items: center;
@@ -365,7 +357,7 @@
 		}
 
 		.info-icon {
-			font-size: 0.9rem;
+			font-size: 0.85rem;
 		}
 	}
 
@@ -391,7 +383,7 @@
 	}
 
 	.tools-panel-footer {
-		padding: 1rem 1.5rem;
+		padding: 0.875rem 1.25rem;
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
@@ -399,7 +391,7 @@
 		background: rgba(var(--color--primary-rgb), 0.02);
 
 		.active-count {
-			font-size: 0.85rem;
+			font-size: 0.8rem;
 			color: var(--color--text-shade);
 			font-weight: 500;
 		}
@@ -420,8 +412,7 @@
 			padding: 0.75rem 1rem;
 		}
 
-		.tool-description,
-		.tool-category {
+		.tool-description {
 			margin-left: 2.75rem;
 		}
 

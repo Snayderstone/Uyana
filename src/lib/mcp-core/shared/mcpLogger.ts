@@ -8,12 +8,9 @@
  * - DeepSeek -> Usuario
  */
 
-export enum LogLevel {
-	DEBUG = 0,
-	INFO = 1,
-	WARN = 2,
-	ERROR = 3
-}
+import { LogLevel } from '../config/logging.config';
+
+export { LogLevel };
 
 export interface LogOptions {
 	level?: LogLevel;
@@ -22,6 +19,7 @@ export interface LogOptions {
 	includeSource?: boolean;
 	storeLogs?: boolean;
 	maxLogSize?: number;
+	productionMode?: boolean;
 }
 
 export class McpLogger {
@@ -35,9 +33,13 @@ export class McpLogger {
 	private storeLogs: boolean;
 	private requestId: string = 'unknown';
 	private isServer: boolean = typeof window === 'undefined';
+	private productionMode: boolean;
+	private lastLog: string = '';
+	private lastLogCount: number = 0;
 
 	constructor(options: LogOptions = {}) {
-		this.logLevel = options.level ?? LogLevel.INFO;
+		this.productionMode = options.productionMode ?? process.env.NODE_ENV === 'production';
+		this.logLevel = options.level ?? (this.productionMode ? LogLevel.INFO : LogLevel.DEBUG);
 		this.colorize = options.colorize ?? true;
 		this.timestamps = options.timestamps ?? true;
 		this.includeSource = options.includeSource ?? true;
@@ -152,6 +154,45 @@ export class McpLogger {
 	}
 
 	/**
+	 * Sanitizar datos para modo producción
+	 */
+	private sanitizeDataForProduction(data: any): any {
+		if (!data) return data;
+
+		// Si es array de tools, simplificar
+		if (Array.isArray(data.tools)) {
+			return {
+				...data,
+				tools: data.tools.map((tool: any) => ({
+					name: tool.name,
+					title: tool.title,
+					category: tool.category
+				}))
+			};
+		}
+
+		// Omitir metadata verbose
+		if (data.metadata) {
+			const { metadata, ...rest } = data;
+			return rest;
+		}
+
+		// Omitir userAgent y otros datos técnicos
+		if (data.userAgent || data.ipAddress) {
+			const { userAgent, ipAddress, ...rest } = data;
+			return rest;
+		}
+
+		// Omitir response completo si es muy grande
+		if (data.response && typeof data.response === 'object') {
+			const { response, ...rest } = data;
+			return rest;
+		}
+
+		return data;
+	}
+
+	/**
 	 * Registrar mensaje
 	 */
 	private log(
@@ -166,7 +207,35 @@ export class McpLogger {
 			return;
 		}
 
-		const formattedMessage = this.formatMessage(levelName, source, operation, message, data);
+		// En modo producción, omitir datos grandes y verbose
+		let processedData = data;
+		if (this.productionMode && data) {
+			processedData = this.sanitizeDataForProduction(data);
+		}
+
+		const formattedMessage = this.formatMessage(
+			levelName,
+			source,
+			operation,
+			message,
+			processedData
+		);
+
+		// Deduplicación: evitar logs repetidos consecutivos
+		const logKey = `${source}:${operation}:${message}`;
+		if (logKey === this.lastLog) {
+			this.lastLogCount++;
+			return; // Omitir log duplicado
+		}
+
+		// Si había logs duplicados, mostrar contador
+		if (this.lastLogCount > 0) {
+			const repeatMsg = `  ↳ [Mensaje anterior repetido ${this.lastLogCount} veces]`;
+			console.info(repeatMsg);
+			this.lastLogCount = 0;
+		}
+
+		this.lastLog = logKey;
 
 		// En servidor o cliente, siempre imprimir en consola
 		switch (level) {
@@ -232,19 +301,13 @@ export class McpLogger {
 	 * Logs específicos para flujos MCP
 	 */
 	public userInput(message: string, metadata?: any): void {
-		this.info('USER', 'INPUT', 'Mensaje de usuario recibido', {
-			message,
-			timestamp: Date.now(),
-			...metadata
-		});
+		// Solo loggear en modo debug
+		this.debug('USER', 'INPUT', `Mensaje (${message.length} chars)`);
 	}
 
 	public aiProcessing(prompt: any, model: string): void {
-		this.info('AI', 'PROCESSING', `Enviando solicitud a ${model}`, {
-			prompt,
-			model,
-			timestamp: Date.now()
-		});
+		// Solo loggear en modo debug
+		this.debug('AI', 'PROCESSING', `Procesando con ${model}`);
 	}
 
 	public toolDetection(toolName: string, args: any): void {
@@ -292,28 +355,24 @@ export class McpLogger {
 	}
 
 	public aiResponse(response: any, duration: number): void {
-		this.info('AI', 'RESPONSE', `Respuesta generada en ${duration}ms`, {
-			response,
-			duration: `${duration}ms`,
-			timestamp: Date.now()
-		});
+		// Solo loggear si tarda mucho
+		if (duration > 3000) {
+			this.info('AI', 'RESPONSE', `Respuesta lenta: ${duration}ms`);
+		}
 	}
 
 	public mcpRequest(method: string, params: any): void {
-		this.info('MCP', 'REQUEST', `Llamada a método ${method}`, {
-			method,
-			params,
-			timestamp: Date.now()
-		});
+		// Solo loggear callTool
+		if (method === 'callTool' && params?.name) {
+			this.info('MCP', 'TOOL_CALL', `⚙️ ${params.name}`);
+		}
 	}
 
 	public mcpResponse(method: string, result: any, duration: number): void {
-		this.info('MCP', 'RESPONSE', `Respuesta de ${method} (${duration}ms)`, {
-			method,
-			result,
-			duration: `${duration}ms`,
-			timestamp: Date.now()
-		});
+		// Solo loggear callTool o respuestas lentas
+		if (method === 'callTool' || duration > 500) {
+			this.debug('MCP', 'RESPONSE', `${method} ✓ ${duration}ms`);
+		}
 	}
 
 	/**
@@ -363,12 +422,15 @@ export class McpLogger {
 }
 
 // Instancia global del logger MCP
+import { loggingConfig } from '../config/logging.config';
+
 export const mcpLogger = McpLogger.getInstance({
-	level: LogLevel.DEBUG,
-	colorize: true,
-	timestamps: true,
-	includeSource: true,
-	storeLogs: true
+	level: loggingConfig.level,
+	colorize: loggingConfig.colorize,
+	timestamps: loggingConfig.timestamps,
+	includeSource: loggingConfig.includeSource,
+	storeLogs: loggingConfig.storeLogs,
+	productionMode: loggingConfig.productionMode
 });
 
 // Exportar como default para facilitar importación

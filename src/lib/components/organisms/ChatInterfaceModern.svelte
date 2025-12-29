@@ -14,10 +14,17 @@
 	import Button from '$lib/components/atoms/Button.svelte';
 
 	import { useChatStore } from '$lib/stores/chatStore';
-	import { mcpClientManager } from '$lib/mcp-core/client/mcpClient';
-	import { aiClient } from '$lib/ai/aiClient';
+	import { mcpClientManager, publicMcpClientManager } from '$lib/mcp-core/client/mcpClient';
+	import { aiClient, publicAiClient } from '$lib/ai/aiClient';
 	import { mcpLogger } from '$lib/mcp-core/shared/mcpLogger';
 	import TimelineChart from '../molecules/TimelineChart.svelte';
+
+	// Propiedad para indicar si es modo público
+	export let isPublic: boolean = false;
+
+	// Seleccionar clientes según el modo (público o admin)
+	$: currentMcpManager = isPublic ? publicMcpClientManager : mcpClientManager;
+	$: currentAiClient = isPublic ? publicAiClient : aiClient;
 
 	// Estado de la interfaz
 	let selectedModel = 'deepseek';
@@ -56,26 +63,6 @@
 		setActiveTools
 	} = useChatStore();
 
-	// Debug reactivo para monitorear mensajes
-	$: {
-		console.log('📊 Store mensajes reactivo:', {
-			length: $messages.length,
-			messages: $messages.map((m) => ({
-				id: m.id,
-				role: m.role,
-				content: m.content.substring(0, 50) + '...'
-			}))
-		});
-	}
-
-	// Sugerencias para el estado vacío
-	const welcomeSuggestions = [
-		'¿Qué es UYANA y qué servicios ofrece?',
-		'¿Qué es la dirección general de investigación?',
-		'¿Cuál es la facultad que más proyectos de investigación tiene?',
-		'¿Cuáles son los proyectos de investigación con impacto internacional?'
-	];
-
 	// Inicialización al montar
 	onMount(async () => {
 		await initializeInterface();
@@ -83,15 +70,12 @@
 
 		// Activar automáticamente las herramientas
 		toggleTool('fecha-tiempo-ecuador');
-		console.log('🕒 Herramienta fecha-tiempo-ecuador activada automáticamente');
-
-		toggleTool('proyectos-uce');
-		console.log('📊 Herramienta proyectos-uce activada automáticamente');
+		toggleTool('estadisticas-uyana');
 
 		mcpLogger.info(
 			'CHAT_INTERFACE',
 			'TOOL_AUTO_ACTIVATED',
-			'Herramientas de fecha-tiempo y proyectos-uce activadas automáticamente'
+			'Herramientas automáticas activadas: fecha-tiempo-ecuador, estadisticas-uyana'
 		);
 
 		// Listener global para atajos de teclado
@@ -138,7 +122,7 @@
 			connectionError = null;
 
 			// Intentar inicializar MCP con timeout
-			const mcpPromise = mcpClientManager.ensureInitialized();
+			const mcpPromise = currentMcpManager.ensureInitialized();
 			const timeoutPromise = new Promise((_, reject) =>
 				setTimeout(() => reject(new Error('Timeout de conexión MCP')), 10000)
 			);
@@ -147,7 +131,7 @@
 
 			// Verificar IA con fallback
 			try {
-				const healthCheck = await aiClient.healthCheck();
+				const healthCheck = await currentAiClient.healthCheck();
 				if (healthCheck.healthy) {
 					console.log('✅ Servicio de IA disponible');
 				}
@@ -179,9 +163,8 @@
 	 */
 	async function loadAvailableTools(): Promise<void> {
 		try {
-			const client = mcpClientManager.getClient();
+			const client = currentMcpManager.getClient();
 			availableTools = await client.listTools();
-			console.log('🔧 Herramientas disponibles:', availableTools);
 		} catch (error) {
 			console.warn('⚠️ No se pudieron cargar las herramientas:', error);
 			availableTools = [];
@@ -193,43 +176,25 @@
 	 */
 	async function handleSendMessage(event: CustomEvent<{ message: string }>): Promise<void> {
 		const { message } = event.detail;
-		console.log('📤 Enviando mensaje:', message);
 
 		if (!message.trim() || $isLoading) {
-			console.log('❌ Mensaje vacío o loading activo');
 			return;
 		}
 
 		// Auto-activar herramientas basadas en el mensaje
 		const shouldActivateFechaTiempo = detectFechaTiempoEcuadorQuery(message) !== null;
-		const shouldActivateProyectos = detectProyectosUceQuery(message) !== null;
+		const shouldActivateEstadisticas = detectProyectosUceQuery(message) !== null;
 
 		// Si debemos activar alguna herramienta, actualizar las herramientas activas
-		if (shouldActivateFechaTiempo || shouldActivateProyectos) {
+		if (shouldActivateFechaTiempo || shouldActivateEstadisticas) {
 			const newActiveTools = new Set($activeTools);
 
 			if (shouldActivateFechaTiempo && !newActiveTools.has('fecha-tiempo-ecuador')) {
 				newActiveTools.add('fecha-tiempo-ecuador');
-				mcpLogger.debug(
-					'CHAT_INTERFACE',
-					'AUTO_ACTIVATE_TOOL',
-					'Activando herramienta fecha-tiempo-ecuador',
-					{
-						message: message.substring(0, 100)
-					}
-				);
 			}
 
-			if (shouldActivateProyectos && !newActiveTools.has('proyectos-uce')) {
-				newActiveTools.add('proyectos-uce');
-				mcpLogger.debug(
-					'CHAT_INTERFACE',
-					'AUTO_ACTIVATE_TOOL',
-					'Activando herramienta proyectos-uce',
-					{
-						message: message.substring(0, 100)
-					}
-				);
+			if (shouldActivateEstadisticas && !newActiveTools.has('estadisticas-uyana')) {
+				newActiveTools.add('estadisticas-uyana');
 			}
 
 			// Solo actualizar si hay cambios
@@ -238,10 +203,8 @@
 			}
 		}
 
-		// Agregar mensaje del usuario con animación
-		console.log('➕ Agregando mensaje del usuario');
+		// Agregar mensaje del usuario
 		const userMessageId = addUserMessage(message);
-		console.log('💬 Messages después de agregar usuario:', $messages.length);
 
 		// Agregar mensaje de carga del asistente
 		const assistantMessageId = addAssistantMessage('Pensando...', { pending: true });
@@ -255,43 +218,32 @@
 			await new Promise((resolve) => setTimeout(resolve, 800));
 
 			// Verificar si alguna herramienta activa puede manejar el mensaje
-			let toolResponse = null;
+			let toolResults: any[] = [];
 			if ($activeTools.size > 0) {
-				toolResponse = await tryActiveTools(message);
+				toolResults = await tryActiveTools(message);
+			}
+
+			// Generar respuesta del AI con contexto de herramientas
+			// Si hay resultados de herramientas, incluirlos en el contexto
+			let aiResponse;
+			if (toolResults.length > 0) {
+				aiResponse = await generateAIResponseWithTools(message, toolResults);
+			} else {
+				aiResponse = await generateAIResponse(message);
 			}
 
 			// Ocultar indicador de escritura antes de mostrar respuesta
 			showTyping = false;
 			await new Promise((resolve) => setTimeout(resolve, 300));
 
-			// Si una herramienta manejó el mensaje, no crear respuesta del asistente
-			if (toolResponse && toolResponse !== 'TOOL_HANDLED') {
-				updateMessage(assistantMessageId, {
-					content: toolResponse,
-					pending: false,
-					metadata: {
-						source: 'mcp-tool'
-					}
-				});
-				return;
-			} else if (toolResponse === 'TOOL_HANDLED') {
-				// La herramienta ya agregó su respuesta al historial,
-				// remover el mensaje pendiente del asistente
-				removeMessage(assistantMessageId);
-				return;
-			}
-
-			// De lo contrario, usar el modelo de IA
-			const aiResponse = await generateAIResponse(message);
-
-			// Mostrar respuesta
+			// Mostrar respuesta del AI
 			updateMessage(assistantMessageId, {
 				content: aiResponse.content,
 				pending: false,
 				metadata: {
 					model: aiResponse.model || selectedModel,
 					usage: aiResponse.usage,
-					source: 'ai'
+					source: toolResults.length > 0 ? 'ai-with-tools' : 'ai'
 				}
 			});
 		} catch (error) {
@@ -320,17 +272,6 @@
 		switch (command) {
 			case 'clear':
 				clearChat();
-				break;
-
-			case 'help':
-				addAssistantMessage(
-					'# 🤖 Comandos Disponibles\n\n' +
-						'- `/clear` - Limpiar el historial de chat\n' +
-						'- `/help` - Mostrar esta ayuda\n' +
-						'- `/status` - Ver estado de conexión\n' +
-						'- `/model [nombre]` - Cambiar modelo de IA\n\n' +
-						'**Accesos rápidos:** Usa `⌘K` (Ctrl+K) para ver opciones rápidas.'
-				);
 				break;
 
 			case 'status':
@@ -395,30 +336,36 @@
 	/**
 	 * Intenta usar herramientas activas para procesar el mensaje
 	 */
-	async function tryActiveTools(message: string): Promise<string | null> {
-		const client = mcpClientManager.getClient();
+	async function tryActiveTools(message: string): Promise<any[]> {
+		const client = currentMcpManager.getClient();
+		const toolResults: any[] = [];
 
 		// Detectar si el mensaje puede ser manejado por herramientas activas
 		for (const toolName of $activeTools) {
 			try {
 				const detectedArgs = await detectToolUsage(message, toolName);
 				if (detectedArgs) {
-					console.log(`🔧 Usando herramienta ${toolName} con args:`, detectedArgs);
+					mcpLogger.info('CHAT_INTERFACE', 'TOOL_DETECTED', `Herramienta detectada: ${toolName}`, {
+						args: detectedArgs
+					});
 
 					const toolResponse = await client.callTool(toolName, detectedArgs);
 
-					// Agregar mensaje de herramienta al historial
-					addToolMessage(formatToolResponse(toolResponse), toolName, detectedArgs);
-
-					// Retornar una marca especial indicando que la herramienta ya procesó el mensaje
-					return 'TOOL_HANDLED';
+					// Guardar resultado para pasarlo al AI
+					toolResults.push({
+						toolName,
+						args: detectedArgs,
+						response: toolResponse
+					});
 				}
 			} catch (error) {
-				console.warn(`⚠️ Error usando herramienta ${toolName}:`, error);
+				mcpLogger.warn('CHAT_INTERFACE', 'TOOL_ERROR', `Error usando herramienta ${toolName}`, {
+					error: error instanceof Error ? error.message : String(error)
+				});
 			}
 		}
 
-		return null;
+		return toolResults;
 	}
 
 	/**
@@ -438,6 +385,8 @@
 				return detectTimeQuery(message);
 			case 'fecha-tiempo-ecuador':
 				return detectFechaTiempoEcuadorQuery(message);
+			case 'estadisticas-uyana':
+				return detectEstadisticasQuery(message);
 			case 'proyectos-uce':
 				return detectProyectosUceQuery(message);
 			default:
@@ -686,6 +635,45 @@
 	}
 
 	/**
+	 * Detecta consultas de estadísticas de UYANA
+	 */
+	function detectEstadisticasQuery(message: string): Record<string, any> | null {
+		const lowerMessage = message.toLowerCase().trim();
+
+		// Lista de saludos simples que NO deben activar la herramienta
+		const saludosSimples = [
+			'hola',
+			'hi',
+			'hello',
+			'buenas',
+			'saludos',
+			'hey',
+			'que tal',
+			'buenos dias',
+			'buenas tardes',
+			'buenas noches',
+			'como estas',
+			'como estás',
+			'que onda',
+			'qué onda'
+		];
+
+		// Si es solo un saludo simple, no activar la herramienta
+		// Dejar que el AI responda naturalmente
+		if (
+			saludosSimples.some(
+				(saludo) =>
+					lowerMessage === saludo || lowerMessage === saludo + '!' || lowerMessage === saludo + '?'
+			)
+		) {
+			return null;
+		}
+
+		// Para cualquier otro mensaje, pasar a la herramienta
+		return { input: message };
+	}
+
+	/**
 	 * Detección genérica para herramientas personalizadas
 	 */
 	function detectGenericQuery(message: string, toolName: string): Record<string, any> | null {
@@ -724,43 +712,74 @@
 		const messages: import('$lib/ai/aiManager').AIMessage[] = [
 			{
 				role: 'system',
-				content: `Eres **Chasky**, el asistente inteligente oficial de **UYANA**, una plataforma de divulgación de la actividad investigativa desarrollada junto con la **Dirección de Investigación de la Universidad Central del Ecuador (UCE)**. 
-**Tu rol principal:**
-- Ser el mensajero digital de la investigación, inspirado en los antiguos chaskis andinos.
-- Facilitar el acceso a la información científica y académica generada en la UCE.
+				content: `Eres Chasky, el asistente inteligente de Uyana, una plataforma de 
+				divulgación de la actividad investigativa en la Universidad Central del Ecuador impulsada por 
+				la Dirección de Investigación. 
+Tu rol principal:
+- Facilitar el acceso a la información científica y académica.
 - Guiar a investigadores, estudiantes y público en general hacia el conocimiento de forma clara y confiable.
-
-**Tu personalidad:**
-- Cercano, amigable y siempre respetuoso 🤝
-- Profesional y confiable 📚
-- Claro, estructurado y didáctico ✨
-- Usas emojis con moderación para dar calidez y dinamismo 🌍
-
-**Tus capacidades principales incluyen:**
-1. Información sobre proyectos de investigación de la UCE (activos, inactivos, facultades, líneas de investigación, investigadores).
-2. Soporte en temas académicos relacionados con investigación, publicaciones y revistas de la UCE.
-3. Respuestas rápidas y útiles a preguntas del público en general, manteniendo un tono accesible y confiable.
-4. Explicar y guiar en temas de divulgación científica, publicaciones y revistas de la UCE.
-5. Dar información sobre la dirección de investigación de la UCE.
-6. Proveer información sobre el proyecto UYANA y sus actores.
-
-**Estilo de respuesta:**
+Tu personalidad:
+- Cercano, amigable y siempre respetuoso.
+- Profesional y confiable.
+- Claro, estructurado.
+Tus capacidades principales incluyen:
+1. Información sobre proyectos de investigación de la Universidad Central del Ecuador (activos, inactivos, facultades, líneas de investigación, investigadores).
+2. Respuestas rápidas y útiles a preguntas del público en general, manteniendo un tono accesible y confiable.
+Estilo de respuesta:
 - Sé breve pero sustancioso: responde en párrafos cortos y fáciles de leer.
 - Explica términos técnicos de forma sencilla cuando el usuario lo requiera.
-- Organiza la información con viñetas, listas o tablas si mejora la claridad.
-- Incluye referencias a la UCE o a la Dirección de Investigación cuando corresponda.
-- Siempre responde con precisión y evita divagar.
-
-Recuerda: eres **Chasky 👣**, el mensajero digital que conecta el conocimiento de la dirección de investigación de la UCE con la sociedad.`
+- Siempre responde con precisión y evita divagar.`
 			},
-			...chatHistory,
-			{
-				role: 'user',
-				content: message
-			}
+			...chatHistory
+			// No agregar el mensaje del usuario aquí porque ya está en chatHistory
 		];
 
-		return await aiClient.generateResponse(messages, { model: selectedModel });
+		return await currentAiClient.generateResponse(messages, { model: selectedModel });
+	}
+
+	/**
+	 * Genera respuesta de AI con resultados de herramientas MCP
+	 */
+	async function generateAIResponseWithTools(message: string, toolResults: any[]): Promise<any> {
+		const chatHistory = getChatHistory();
+
+		// Formatear resultados de herramientas para el contexto del AI
+		const toolContext = toolResults
+			.map((result) => {
+				const responseText = result.response?.content?.[0]?.text || JSON.stringify(result.response);
+				return `\n[Resultado de herramienta "${result.toolName}"]\n${responseText}`;
+			})
+			.join('\n\n');
+
+		const messages: import('$lib/ai/aiManager').AIMessage[] = [
+			{
+				role: 'system',
+				content: `Eres Chasky, el asistente inteligente de Uyana, una plataforma de 
+				divulgación de la actividad investigativa en la Universidad Central del Ecuador impulsada por 
+				la Dirección de Investigación. 
+Tu rol principal:
+- Facilitar el acceso a la información científica y académica.
+- Guiar a investigadores, estudiantes y público en general hacia el conocimiento de forma clara y confiable.
+Tu personalidad:
+- Cercano, amigable y siempre respetuoso.
+- Profesional y confiable.
+- Claro, estructurado.
+Tus capacidades principales incluyen:
+1. Información sobre proyectos de investigación de la Universidad Central del Ecuador (activos, inactivos, facultades, líneas de investigación, investigadores).
+2. Respuestas rápidas y útiles a preguntas del público en general, manteniendo un tono accesible y confiable.
+Estilo de respuesta:
+- Sé breve pero sustancioso: responde en párrafos cortos y fáciles de leer.
+- Explica términos técnicos de forma sencilla cuando el usuario lo requiera.
+- Siempre responde con precisión y evita divagar.
+
+**IMPORTANTE:** He consultado las herramientas disponibles y obtuve la siguiente información. Úsala para responder la pregunta del usuario de forma natural y conversacional:
+
+${toolContext}`
+			},
+			...chatHistory
+		];
+
+		return await currentAiClient.generateResponse(messages, { model: selectedModel });
 	}
 
 	/**
@@ -838,8 +857,8 @@ Recuerda: eres **Chasky 👣**, el mensajero digital que conecta el conocimiento
 						variant="outline"
 						size="small"
 						on:click={clearChat}
-						disabled={$messages.length === 0}
-						title="Limpiar chat"
+						disabled={$messages.filter((m) => m.role === 'user').length === 0}
+						title="Nuevo chat"
 					>
 						<svg width="16" height="16" viewBox="0 0 24 24" fill="none">
 							<path
@@ -864,9 +883,8 @@ Recuerda: eres **Chasky 👣**, el mensajero digital que conecta el conocimiento
 	>
 		{#if $messages.length === 0}
 			<ChatWelcomeScreen
-				title="¡Hola! Soy Chasky 👋"
-				subtitle="Tu asistente especializado en investigación. ¿En qué puedo ayudarte hoy?"
-				suggestions={welcomeSuggestions}
+				title="Chasky"
+				subtitle="Asistente Conversacional"
 				on:suggestion={handleSuggestion}
 			/>
 		{:else}

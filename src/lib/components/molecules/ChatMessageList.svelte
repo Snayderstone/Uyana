@@ -30,7 +30,26 @@
 	// Procesa los mensajes para agruparlos si son del mismo remitente
 	$: processedMessages = groupSimilarMessages
 		? groupMessages(messages)
-		: messages.map((msg) => ({ message: msg, showAvatar: true, showTimestamp: false }));
+		: messages.map((msg, index) => ({
+				message: msg,
+				showAvatar: true,
+				showTimestamp: false,
+				isLastAssistantMessage: isLastAssistantMsg(messages, index)
+		  }));
+
+	// Función para determinar si es el último mensaje del asistente
+	function isLastAssistantMsg(msgs: ChatMessage[], currentIndex: number): boolean {
+		const currentMsg = msgs[currentIndex];
+		if (currentMsg.role !== 'assistant') return false;
+
+		// Buscar si hay algún mensaje del asistente después de este
+		for (let i = currentIndex + 1; i < msgs.length; i++) {
+			if (msgs[i].role === 'assistant') {
+				return false;
+			}
+		}
+		return true;
+	}
 
 	// Función para agrupar mensajes del mismo remitente
 	function groupMessages(msgs: ChatMessage[]) {
@@ -46,7 +65,8 @@
 			result.push({
 				message: msgs[i],
 				showAvatar,
-				showTimestamp
+				showTimestamp,
+				isLastAssistantMessage: isLastAssistantMsg(msgs, i)
 			});
 
 			lastRole = msgs[i].role;
@@ -107,8 +127,13 @@
 			</div>
 		</div>
 	{:else}
-		{#each processedMessages as { message, showAvatar, showTimestamp: showMessageTimestamp } (message.id)}
-			<ChatMessageModern {message} {showAvatar} showTimestamp={showMessageTimestamp} />
+		{#each processedMessages as { message, showAvatar, showTimestamp: showMessageTimestamp, isLastAssistantMessage } (message.id)}
+			<ChatMessageModern
+				{message}
+				{showAvatar}
+				showTimestamp={showMessageTimestamp}
+				{isLastAssistantMessage}
+			/>
 		{/each}
 	{/if}
 
@@ -139,7 +164,7 @@
 
 	.messages-container {
 		flex: 1;
-		padding: 1.5rem 1.5rem 0.5rem;
+		padding: 1rem 1rem 0.375rem;
 		overflow-y: auto;
 		display: flex;
 		flex-direction: column;
@@ -154,28 +179,29 @@
 		justify-content: center;
 		text-align: center;
 		height: 100%;
-		padding: 3rem 2rem;
+		padding: 2rem 1.5rem;
 		opacity: 0.9;
 
 		.empty-icon {
-			font-size: 3rem;
-			margin-bottom: 1rem;
-			filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1));
+			font-size: 2.25rem;
+			margin-bottom: 0.75rem;
+			filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.08));
 		}
 
 		h3 {
-			font-size: 1.5rem;
-			margin: 0 0 0.5rem;
+			font-size: 1.25rem;
+			margin: 0 0 0.375rem;
 			color: var(--color--text);
 			font-weight: 600;
 		}
 
 		p {
 			color: var(--color--text-shade);
-			font-size: 1rem;
-			max-width: 400px;
-			margin: 0 0 2rem;
+			font-size: 0.875rem;
+			max-width: 380px;
+			margin: 0 0 1.5rem;
 			line-height: 1.5;
+			opacity: 0.9;
 		}
 	}
 
@@ -183,20 +209,20 @@
 		display: flex;
 		flex-wrap: wrap;
 		justify-content: center;
-		gap: 12px;
-		margin-top: 1rem;
+		gap: 0.5rem;
+		margin-top: 0.75rem;
 
 		.suggestion-chip {
 			background-color: var(--color--card-background);
 			color: var(--color--text);
-			border: 2px solid rgba(var(--color--primary-rgb), 0.2);
-			border-radius: 20px;
-			padding: 10px 18px;
-			font-size: 0.9rem;
+			border: 1.5px solid rgba(var(--color--primary-rgb), 0.15);
+			border-radius: 16px;
+			padding: 0.5rem 0.875rem;
+			font-size: 0.8rem;
 			font-weight: 500;
 			transition: all 0.2s ease;
 			cursor: pointer;
-			box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+			box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 
 			&:hover {
 				background-color: rgba(var(--color--primary-rgb), 0.1);

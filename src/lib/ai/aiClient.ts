@@ -158,6 +158,11 @@ export class AIClientManager {
 }
 
 /**
- * Instancia global del cliente de IA
+ * Instancia global del cliente de IA (para admin)
  */
-export const aiClient = new AIClientManager();
+export const aiClient = new AIClientManager('/api/admin/ai');
+
+/**
+ * Instancia pública del cliente de IA (sin autenticación)
+ */
+export const publicAiClient = new AIClientManager('/api/ai');

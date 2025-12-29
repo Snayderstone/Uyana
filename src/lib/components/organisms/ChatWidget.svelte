@@ -24,10 +24,30 @@
 	let lastMessageCount = 0;
 	let isMounted = false;
 	let previousPath = '';
+	let showNewChatConfirmation = false;
 
 	// Referencias
 	let widgetContainer: HTMLElement;
 	let chatContainer: HTMLElement;
+
+	// Función para manejar nuevo chat
+	function handleNewChat() {
+		// Si hay mensajes, mostrar confirmación
+		if ($messages.length > 0) {
+			if (
+				confirm(
+					'¿Estás seguro de que deseas iniciar una nueva conversación? Se perderá el historial actual.'
+				)
+			) {
+				const chatStore = useChatStore();
+				chatStore.clearChat();
+			}
+		} else {
+			// Si no hay mensajes, simplemente limpiar
+			const chatStore = useChatStore();
+			chatStore.clearChat();
+		}
+	}
 
 	// Variables reactivas para carga de página y transiciones
 	$: if (browser && $messages.length > lastMessageCount && !$state.isOpen) {
@@ -125,9 +145,12 @@
 		if (!$state.isOpen) return;
 
 		const target = event.target as HTMLElement;
-		if (widgetContainer && !widgetContainer.contains(target)) {
-			closeChat();
+		// No cerrar si el clic es dentro del widget o en cualquier elemento del chat
+		if (widgetContainer && widgetContainer.contains(target)) {
+			return; // No cerrar si se hace clic dentro del widget
 		}
+
+		closeChat();
 	}
 
 	// Manejar tecla Escape
@@ -258,37 +281,42 @@
 			>
 				<!-- Header del chat expandido -->
 				<div class="chat-expanded__header">
-					<div class="chat-expanded__title">
-						<div class="chat-expanded__avatar">
-							<svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-								<circle cx="12" cy="12" r="10" stroke="url(#chatGradient)" stroke-width="2" />
-								<path
-									d="M8 12L11 15L16 9"
-									stroke="url(#chatGradient)"
-									stroke-width="2"
-									stroke-linecap="round"
-									stroke-linejoin="round"
-								/>
-								<defs>
-									<linearGradient id="chatGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-										<stop offset="0%" style="stop-color:var(--color--primary)" />
-										<stop offset="100%" style="stop-color:var(--color--secondary)" />
-									</linearGradient>
-								</defs>
-							</svg>
-						</div>
-						<div class="chat-expanded__info">
-							<h3>Chasky</h3>
-							<p class="connection-status" class:connected={$connectionStatus === 'connected'}>
-								{$connectionStatus === 'connected' ? 'En línea' : 'Conectando...'}
-							</p>
-						</div>
-					</div>
-
 					<Button variant="ghost" size="small" on:click={closeChat} aria-label="Cerrar chat">
-						<svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+						<svg width="18" height="18" viewBox="0 0 24 24" fill="none">
 							<path
 								d="M18 6L6 18M6 6L18 18"
+								stroke="currentColor"
+								stroke-width="2"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+							/>
+						</svg>
+					</Button>
+
+					<div class="chat-expanded__info">
+						<h3>Chasky</h3>
+						<p class="connection-status" class:connected={$connectionStatus === 'connected'}>
+							{$connectionStatus === 'connected' ? 'En línea' : 'Conectando...'}
+						</p>
+					</div>
+
+					<Button
+						variant="ghost"
+						size="small"
+						on:click={handleNewChat}
+						aria-label="Nueva conversación"
+						title="Nueva conversación"
+					>
+						<svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+							<path
+								d="M21 11.5C21.0034 12.8199 20.6951 14.1219 20.1 15.3C19.3944 16.7118 18.3098 17.8992 16.9674 18.7293C15.6251 19.5594 14.0782 19.9994 12.5 20C11.1801 20.0035 9.87812 19.6951 8.7 19.1L3 21L4.9 15.3C4.30493 14.1219 3.99656 12.8199 4 11.5C4.00061 9.92179 4.44061 8.37488 5.27072 7.03258C6.10083 5.69028 7.28825 4.60573 8.7 3.90003C9.87812 3.30496 11.1801 2.99659 12.5 3.00003H13C15.0843 3.11502 17.053 3.99479 18.5291 5.47089C20.0052 6.94699 20.885 8.91568 21 11V11.5Z"
+								stroke="currentColor"
+								stroke-width="2"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+							/>
+							<path
+								d="M12 11V15M12 11H14M12 11H10"
 								stroke="currentColor"
 								stroke-width="2"
 								stroke-linecap="round"
@@ -300,7 +328,7 @@
 
 				<!-- Contenido del chat -->
 				<div class="chat-expanded__content">
-					<ChatInterfaceModern />
+					<ChatInterfaceModern isPublic={true} />
 				</div>
 			</div>
 		{/if}
@@ -405,66 +433,54 @@
 	}
 
 	.chat-expanded {
-		width: 400px;
-		height: 600px;
+		width: 360px;
+		height: 520px;
 		background: var(--color--card-background);
-		border-radius: 20px;
-		box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15), 0 4px 20px rgba(0, 0, 0, 0.1),
-			0 0 0 1px rgba(var(--color--border-rgb), 0.1);
+		border-radius: 14px;
+		box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12), 0 2px 12px rgba(0, 0, 0, 0.08);
 		backdrop-filter: blur(20px);
-		margin-bottom: 1rem;
+		margin-bottom: 0.625rem;
 		overflow: hidden;
 		display: flex;
 		flex-direction: column;
-		border: 1px solid rgba(var(--color--border-rgb), 0.1);
+		border: 1px solid rgba(var(--color--border-rgb), 0.08);
 
 		&__header {
 			display: flex;
 			align-items: center;
-			justify-content: space-between;
-			padding: 1.25rem 1.5rem;
-			border-bottom: 1px solid rgba(var(--color--border-rgb), 0.08);
-			background: rgba(var(--color--card-background), 0.95);
-			backdrop-filter: blur(10px);
-		}
-
-		&__title {
-			display: flex;
-			align-items: center;
-			gap: 0.75rem;
-		}
-
-		&__avatar {
-			width: 40px;
-			height: 40px;
+			gap: 0.625rem;
+			padding: 0.625rem 0.875rem;
+			border-bottom: 1px solid rgba(var(--color--border-rgb), 0.06);
 			background: linear-gradient(
-				135deg,
-				rgba(var(--color--primary-rgb), 0.1),
-				rgba(var(--color--secondary-rgb), 0.1)
+				180deg,
+				rgba(var(--color--card-background), 0.98) 0%,
+				rgba(var(--color--card-background), 0.95) 100%
 			);
-			border-radius: 12px;
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			border: 1px solid rgba(var(--color--primary-rgb), 0.2);
+			backdrop-filter: blur(10px);
+			justify-content: space-between;
 		}
 
 		&__info {
+			flex: 1;
+
 			h3 {
 				margin: 0;
-				font-size: 1.1rem;
+				font-size: 0.875rem;
 				font-weight: 600;
 				color: var(--color--text);
+				letter-spacing: -0.01em;
 			}
 
 			.connection-status {
 				margin: 0;
-				font-size: 0.8rem;
+				font-size: 0.65rem;
 				color: var(--color--text-shade);
 				font-weight: 500;
+				opacity: 0.8;
 
 				&.connected {
 					color: var(--color--callout-accent--success);
+					opacity: 1;
 				}
 			}
 		}
@@ -503,12 +519,12 @@
 	}
 
 	.chat-bubble {
-		width: 60px;
-		height: 60px;
+		width: 52px;
+		height: 52px;
 		background: linear-gradient(135deg, var(--color--primary), var(--color--secondary));
 		border: none;
 		border-radius: 50%;
-		box-shadow: 0 8px 24px rgba(var(--color--primary-rgb), 0.3), 0 4px 12px rgba(0, 0, 0, 0.15);
+		box-shadow: 0 6px 18px rgba(var(--color--primary-rgb), 0.28), 0 3px 10px rgba(0, 0, 0, 0.12);
 		cursor: pointer;
 		display: flex;
 		align-items: center;
@@ -519,8 +535,8 @@
 		overflow: hidden;
 
 		&:hover {
-			transform: scale(1.05);
-			box-shadow: 0 12px 32px rgba(var(--color--primary-rgb), 0.4), 0 6px 16px rgba(0, 0, 0, 0.2);
+			transform: scale(1.08) translateY(-2px);
+			box-shadow: 0 10px 26px rgba(var(--color--primary-rgb), 0.35), 0 5px 14px rgba(0, 0, 0, 0.18);
 		}
 
 		&:active {

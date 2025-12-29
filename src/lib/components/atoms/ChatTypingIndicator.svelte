@@ -45,7 +45,7 @@
 		<div class="typing-content">
 			<div class="avatar">
 				<div class="avatar-icon">
-					<svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+					<svg width="16" height="16" viewBox="0 0 24 24" fill="none">
 						<path
 							d="M20 21V19C20 17.9391 19.5786 16.9217 18.8284 16.1716C18.0783 15.4214 17.0609 15 16 15H8C6.93913 15 5.92172 15.4214 5.17157 16.1716C4.42143 16.9217 4 17.9391 4 19V21"
 							stroke="currentColor"
@@ -101,25 +101,25 @@
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		padding: 1rem 1.5rem;
-		margin: 0.5rem 0;
+		padding: 0.75rem 1rem;
+		margin: 0.375rem 0;
 		background: var(--color--card-background);
-		border: 1px solid rgba(var(--color--primary-rgb), 0.1);
-		border-radius: 16px;
-		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+		border: 1px solid rgba(var(--color--primary-rgb), 0.08);
+		border-radius: 12px;
+		box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
 		backdrop-filter: blur(10px);
 	}
 
 	.typing-content {
 		display: flex;
 		align-items: center;
-		gap: 1rem;
+		gap: 0.75rem;
 	}
 
 	.avatar {
 		position: relative;
-		width: 36px;
-		height: 36px;
+		width: 28px;
+		height: 28px;
 		flex-shrink: 0;
 
 		.avatar-icon {
@@ -152,23 +152,24 @@
 	.typing-text {
 		display: flex;
 		flex-direction: column;
-		gap: 0.25rem;
+		gap: 0.2rem;
 
 		.typing-label {
-			font-size: 0.8rem;
+			font-size: 0.75rem;
 			color: var(--color--text-shade);
 			font-weight: 500;
+			opacity: 0.9;
 		}
 	}
 
 	.dots {
 		display: flex;
-		gap: 0.25rem;
+		gap: 0.2rem;
 		align-items: center;
 
 		.dot {
-			width: 6px;
-			height: 6px;
+			width: 5px;
+			height: 5px;
 			border-radius: 50%;
 			background-color: var(--color--text-shade);
 			opacity: 0.3;
@@ -177,7 +178,7 @@
 			&.active {
 				opacity: 1;
 				background-color: var(--color--primary);
-				transform: scale(1.2);
+				transform: scale(1.15);
 			}
 		}
 	}
@@ -187,8 +188,8 @@
 		border: none;
 		color: var(--color--text-shade);
 		cursor: pointer;
-		padding: 0.5rem;
-		border-radius: 8px;
+		padding: 0.375rem;
+		border-radius: 6px;
 		display: flex;
 		align-items: center;
 		justify-content: center;

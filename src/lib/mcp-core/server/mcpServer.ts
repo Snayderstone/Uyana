@@ -1,4 +1,16 @@
-import { randomUUID } from 'crypto';
+// Helper para generar UUID compatible con navegador y servidor
+function generateUUID(): string {
+	if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+		return crypto.randomUUID();
+	}
+	// Fallback para entornos sin crypto.randomUUID
+	return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+		const r = (Math.random() * 16) | 0;
+		const v = c === 'x' ? r : (r & 0x3) | 0x8;
+		return v.toString(16);
+	});
+}
+
 import type {
 	McpServerConfig,
 	McpSession,
@@ -12,7 +24,7 @@ import { JsonRpcErrorCodes, McpValidation } from '../shared/types';
 import { mcpLogger } from '../shared/mcpLogger';
 import { weatherTool } from './tools/weatherTool';
 import { fechaTiempoTool } from './tools/fechaTiempoTool';
-import { proyectosTool } from './tools/proyectosTool';
+import { estadisticasUyanaTool } from './tools/estadisticasUyanaTool';
 
 /**
  * Configuración del servidor MCP de UYANA
@@ -20,8 +32,7 @@ import { proyectosTool } from './tools/proyectosTool';
 const UYANA_MCP_CONFIG: McpServerConfig = {
 	name: 'uyana-mcp-server',
 	version: '2.0.0',
-	description:
-		'Servidor MCP para la plataforma UYANA con herramientas de investigación',
+	description: 'Servidor MCP para la plataforma UYANA con herramientas de investigación',
 	author: 'UYANA Team',
 	capabilities: {
 		tools: true,
@@ -96,7 +107,7 @@ class SessionManager {
 	 * Crea una nueva sesión
 	 */
 	createSession(sessionId?: string): McpSession {
-		const id = sessionId || randomUUID();
+		const id = sessionId || generateUUID();
 		const now = Date.now();
 
 		const session: McpSession = {
@@ -171,8 +182,8 @@ class SessionManager {
 		// Herramienta de fecha y tiempo en Ecuador
 		session.tools.set(fechaTiempoTool.name, fechaTiempoTool);
 
-		// Herramienta de proyectos UCE
-		session.tools.set(proyectosTool.name, proyectosTool);
+		// Herramienta de estadísticas de UYANA
+		session.tools.set(estadisticasUyanaTool.name, estadisticasUyanaTool);
 	}
 
 	/**
@@ -252,24 +263,8 @@ class UyanaMcpServer {
 		// Establecer ID de solicitud para logging
 		mcpLogger.setRequestId(request.id.toString());
 
-		// Registrar inicio de procesamiento
-		mcpLogger.info(
-			'MCP_SERVER',
-			'PROCESS_REQUEST',
-			`Procesando solicitud JSON-RPC: ${request.method}`,
-			{
-				requestId: request.id,
-				method: request.method,
-				hasParams: request.params !== undefined,
-				sessionId: sessionId || 'none'
-			}
-		);
-
-		// Registrar parámetros detallados en nivel debug
-		mcpLogger.debug('MCP_SERVER', 'REQUEST_PARAMS', 'Parámetros de la solicitud', {
-			params: request.params,
-			metadata
-		});
+		// Registrar inicio de procesamiento (solo en modo debug)
+		mcpLogger.debug('MCP_SERVER', 'PROCESS', `${request.method} - ${request.id}`);
 
 		// Validar solicitud
 		if (!McpValidation.isValidJsonRpcRequest(request)) {
@@ -289,23 +284,18 @@ class UyanaMcpServer {
 		// Obtener o crear sesión
 		const { sessionId: newSessionId, session } = this.sessionManager.getOrCreateSession(sessionId);
 
-		mcpLogger.info(
-			'MCP_SERVER',
-			'SESSION',
-			sessionId ? 'Usando sesión existente' : 'Creada nueva sesión',
-			{
-				sessionId: newSessionId,
-				isNewSession: sessionId !== newSessionId
-			}
-		);
+		// Solo loggear si es nueva sesión
+		if (sessionId !== newSessionId) {
+			mcpLogger.info(
+				'MCP_SERVER',
+				'NEW_SESSION',
+				`Sesión creada: ${newSessionId.substring(0, 8)}...`
+			);
+		}
 
 		// Agregar metadata si se proporciona
 		if (metadata) {
 			session.metadata = { ...session.metadata, ...metadata };
-			mcpLogger.debug('MCP_SERVER', 'METADATA', 'Metadata actualizada para sesión', {
-				sessionId: newSessionId,
-				metadata: session.metadata
-			});
 		}
 
 		try {
@@ -314,85 +304,53 @@ class UyanaMcpServer {
 
 			switch (request.method) {
 				case 'initialize':
-					mcpLogger.info('MCP_SERVER', 'INITIALIZE', 'Inicializando servidor MCP');
+					mcpLogger.debug('MCP_SERVER', 'INIT', 'Inicializando servidor');
 					result = await this.handleInitialize(session, request.params);
 					break;
 
 				case 'listTools':
-					mcpLogger.info(
-						'MCP_SERVER',
-						'LIST_TOOLS',
-						`Listando herramientas (${session.tools.size} disponibles)`
-					);
+					mcpLogger.debug('MCP_SERVER', 'LIST_TOOLS', `${session.tools.size} herramientas`);
 					result = await this.handleListTools(session);
 					break;
 
 				case 'callTool':
 					if (!request.params?.name) {
-						mcpLogger.error(
-							'MCP_SERVER',
-							'CALL_TOOL_ERROR',
-							'Nombre de herramienta no especificado'
-						);
+						mcpLogger.error('MCP_SERVER', 'ERROR', 'Nombre de herramienta no especificado');
 						throw new Error('Nombre de herramienta requerido');
 					}
 
-					mcpLogger.info(
-						'MCP_SERVER',
-						'CALL_TOOL',
-						`Llamando herramienta: ${request.params.name}`,
-						{
-							toolName: request.params.name,
-							hasArgs: !!request.params.arguments
-						}
-					);
+					mcpLogger.info('MCP_SERVER', 'CALL_TOOL', `Ejecutando: ${request.params.name}`);
 
 					result = await this.handleCallTool(session, request.params);
 					break;
 
 				case 'listResources':
-					mcpLogger.info(
-						'MCP_SERVER',
-						'LIST_RESOURCES',
-						`Listando recursos (${session.resources.size} disponibles)`
-					);
+					mcpLogger.debug('MCP_SERVER', 'LIST_RESOURCES', `${session.resources.size} recursos`);
 					result = await this.handleListResources(session);
 					break;
 
 				case 'getResource':
 					if (!request.params?.name) {
-						mcpLogger.error(
-							'MCP_SERVER',
-							'GET_RESOURCE_ERROR',
-							'Nombre de recurso no especificado'
-						);
+						mcpLogger.error('MCP_SERVER', 'ERROR', 'Nombre de recurso no especificado');
 						throw new Error('Nombre de recurso requerido');
 					}
 
-					mcpLogger.info(
-						'MCP_SERVER',
-						'GET_RESOURCE',
-						`Obteniendo recurso: ${request.params.name}`
-					);
+					mcpLogger.debug('MCP_SERVER', 'GET_RESOURCE', request.params.name);
 					result = await this.handleGetResource(session, request.params);
 					break;
 
 				case 'listPrompts':
-					mcpLogger.info(
-						'MCP_SERVER',
-						'LIST_PROMPTS',
-						`Listando prompts (${session.prompts.size} disponibles)`
-					);
+					mcpLogger.debug('MCP_SERVER', 'LIST_PROMPTS', `${session.prompts.size} prompts`);
 					result = await this.handleListPrompts(session);
 					break;
 
 				case 'getPrompt':
 					if (!request.params?.name) {
-						mcpLogger.error('MCP_SERVER', 'GET_PROMPT_ERROR', 'Nombre de prompt no especificado');
+						mcpLogger.error('MCP_SERVER', 'ERROR', 'Nombre de prompt no especificado');
 						throw new Error('Nombre de prompt requerido');
 					}
 
-					mcpLogger.info('MCP_SERVER', 'GET_PROMPT', `Obteniendo prompt: ${request.params.name}`);
+					mcpLogger.debug('MCP_SERVER', 'GET_PROMPT', request.params.name);
 					result = await this.handleGetPrompt(session, request.params);
 					break;
 
@@ -418,21 +376,10 @@ class UyanaMcpServer {
 			const methodDuration = Date.now() - methodStartTime;
 			const totalDuration = Date.now() - startTime;
 
-			mcpLogger.info(
-				'MCP_SERVER',
-				'REQUEST_SUCCESS',
-				`Solicitud ${request.method} completada exitosamente`,
-				{
-					method: request.method,
-					methodDuration: `${methodDuration}ms`,
-					totalDuration: `${totalDuration}ms`
-				}
-			);
-
-			// Registrar resultado detallado en nivel debug
-			mcpLogger.debug('MCP_SERVER', 'RESULT_DETAIL', `Resultado para ${request.method}`, {
-				result
-			});
+			// Solo loggear si tarda más de 100ms o es callTool
+			if (methodDuration > 100 || request.method === 'callTool') {
+				mcpLogger.info('MCP_SERVER', 'SUCCESS', `${request.method} ✓ ${methodDuration}ms`);
+			}
 
 			return {
 				response: McpValidation.createJsonRpcSuccess(request.id, result),

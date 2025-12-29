@@ -698,7 +698,7 @@ export const weatherTool: McpTool<WeatherToolArgs> = {
 	name: 'weather',
 	title: 'Pronóstico del Clima Global',
 	description:
-		'Obtiene el pronóstico del clima actual y de los próximos 7 días para cualquier ciudad del mundo usando datos meteorológicos en tiempo real',
+		'Obtiene el pronóstico del clima actual y de los próximos 7 días para cualquier ciudad del mundo.',
 	category: 'information',
 	schema: weatherToolSchema,
 	handler: handleWeatherTool,

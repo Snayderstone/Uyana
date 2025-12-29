@@ -13,7 +13,6 @@
 	let message = '';
 	let textarea: HTMLTextAreaElement;
 	let isFocused = false;
-	let showToolsPanel = false;
 
 	const dispatch = createEventDispatcher<{
 		send: { message: string };
@@ -70,28 +69,8 @@
 		textarea.style.height = `${newHeight}px`;
 	}
 
-	function toggleToolsPanel() {
-		showToolsPanel = !showToolsPanel;
-		dispatch('tools-toggle');
-	}
-
 	function handleToolToggle(toolName: string) {
 		dispatch('toggle-tool', { toolName });
-	}
-
-	function getToolEmoji(toolName: string): string {
-		const emojiMap: Record<string, string> = {
-			weather: '🌤️',
-			time: '🕒',
-			chart: '📊',
-			search: '🔍',
-			document: '📄',
-			chat: '💬',
-			map: '🗺️',
-			geo: '🌍',
-			data: '💾'
-		};
-		return emojiMap[toolName] || '⚙️';
 	}
 
 	$: if (textarea && message !== undefined) {
@@ -109,7 +88,7 @@
 				<button
 					class="tools-button"
 					class:active={activeTools.size > 0}
-					on:click={toggleToolsPanel}
+					on:click={() => dispatch('tools-toggle')}
 					title="Herramientas disponibles"
 					type="button"
 				>
@@ -193,39 +172,16 @@
 			</button>
 		</div>
 
-		<!-- Panel mini de herramientas -->
-		{#if showToolsPanel && showToolsButton}
-			<div class="tools-mini-panel" transition:fly={{ y: 5, duration: 150 }}>
-				<div class="tools-grid">
-					{#each availableTools.slice(0, 6) as tool}
-						<label class="tool-mini-item" class:active={activeTools.has(tool.name)}>
-							<input
-								type="checkbox"
-								checked={activeTools.has(tool.name)}
-								on:change={() => handleToolToggle(tool.name)}
-							/>
-							<span class="tool-emoji">{getToolEmoji(tool.name)}</span>
-							<span class="tool-mini-name">{tool.title || tool.name}</span>
-						</label>
-					{/each}
-				</div>
-				{#if availableTools.length > 6}
-					<div class="tools-more">
-						+{availableTools.length - 6} más
-					</div>
-				{/if}
+		<!-- Contador compacto -->
+		{#if message.length > 0}
+			<div
+				class="char-counter"
+				class:warning={message.length > 800}
+				transition:fade={{ duration: 150 }}
+			>
+				{message.length}
 			</div>
 		{/if}
-
-		<!-- Indicadores de estado -->
-		<div class="input-footer" class:visible={message.length > 0 || isFocused}>
-			<div class="char-counter" class:warning={message.length > 500}>
-				{message.length}/1000
-			</div>
-			<div class="shortcuts-hint">
-				Usa <kbd>/help</kbd> para comandos • <kbd>⌘K</kbd> para accesos rápidos
-			</div>
-		</div>
 	</div>
 </div>
 
@@ -234,7 +190,7 @@
 
 	.enhanced-chat-input {
 		width: 100%;
-		padding: 1rem 2rem;
+		padding: 0.75rem 1rem;
 		max-width: 1100px;
 		margin: 0 auto;
 	}
@@ -248,16 +204,16 @@
 		display: flex;
 		align-items: flex-end;
 		background: var(--color--card-background);
-		border: 2px solid rgba(var(--color--border-rgb), 0.15);
-		border-radius: 24px;
-		transition: all 0.3s ease;
-		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+		border: 1.5px solid rgba(var(--color--border-rgb), 0.12);
+		border-radius: 16px;
+		transition: all 0.25s ease;
+		box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
 		backdrop-filter: blur(10px);
 
 		&.focused {
 			border-color: var(--color--primary);
-			box-shadow: 0 0 0 4px rgba(var(--color--primary-rgb), 0.1);
-			transform: translateY(-1px);
+			box-shadow: 0 0 0 3px rgba(var(--color--primary-rgb), 0.08);
+			transform: translateY(-0.5px);
 		}
 
 		&.disabled {
@@ -275,15 +231,15 @@
 	.message-input {
 		flex: 1;
 		width: 100%;
-		min-height: 24px;
-		max-height: 150px;
-		padding: 14px 20px;
-		padding-right: 64px; /* Solo espacio para botón de envío */
+		min-height: 20px;
+		max-height: 120px;
+		padding: 0.625rem 0.875rem;
+		padding-right: 52px; /* Solo espacio para botón de envío */
 		background: transparent;
 		color: var(--color--text);
 		font-family: inherit;
-		font-size: 1rem;
-		line-height: 1.5;
+		font-size: 12px;
+		line-height: 1.4;
 		resize: none;
 		border: none;
 		outline: none;
@@ -314,22 +270,22 @@
 
 	.send-button {
 		position: absolute;
-		right: 12px;
-		bottom: 12px;
-		width: 40px;
-		height: 40px;
+		right: 8px;
+		bottom: 8px;
+		width: 34px;
+		height: 34px;
 		border: none;
-		border-radius: 20px;
-		background: rgba(var(--color--text-rgb), 0.08);
+		border-radius: 17px;
+		background: rgba(var(--color--text-rgb), 0.06);
 		color: rgba(var(--color--text-rgb), 0.4);
 		cursor: pointer;
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		transition: all 0.3s ease;
+		transition: all 0.25s ease;
 
 		&:hover:not(:disabled) {
-			background: rgba(var(--color--text-rgb), 0.12);
+			background: rgba(var(--color--text-rgb), 0.1);
 			color: rgba(var(--color--text-rgb), 0.6);
 			transform: scale(1.05);
 		}
@@ -340,7 +296,7 @@
 
 			&:hover {
 				background: rgba(var(--color--primary-rgb), 0.9);
-				transform: scale(1.08);
+				transform: scale(1.06);
 			}
 		}
 
@@ -360,17 +316,17 @@
 
 	.tools-button {
 		position: absolute;
-		left: 12px;
+		left: 8px;
 		top: 50%;
 		transform: translateY(-50%);
-		width: 36px;
-		height: 36px;
+		width: 30px;
+		height: 30px;
 		border: none;
-		border-radius: 18px;
-		background: rgba(var(--color--text-rgb), 0.08);
+		border-radius: 15px;
+		background: rgba(var(--color--text-rgb), 0.06);
 		color: rgba(var(--color--text-rgb), 0.5);
 		cursor: pointer;
-		transition: all 0.3s ease;
+		transition: all 0.25s ease;
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -383,162 +339,39 @@
 		}
 
 		&.active {
-			background: rgba(var(--color--primary-rgb), 0.15);
+			background: rgba(var(--color--primary-rgb), 0.12);
 			color: var(--color--primary);
 		}
 
 		.tools-count {
 			position: absolute;
-			top: -4px;
-			right: -4px;
-			width: 18px;
-			height: 18px;
+			top: -3px;
+			right: -3px;
+			width: 16px;
+			height: 16px;
 			background: var(--color--primary);
 			color: white;
-			border-radius: 9px;
-			font-size: 10px;
+			border-radius: 8px;
+			font-size: 12px;
 			font-weight: 600;
 			display: flex;
 			align-items: center;
 			justify-content: center;
-			animation: pulse 2s infinite;
-		}
-	}
-
-	.tools-mini-panel {
-		position: absolute;
-		bottom: calc(100% + 4px);
-		left: 0;
-		background: var(--color--card-background);
-		border: 1px solid rgba(var(--color--border-rgb), 0.2);
-		border-radius: 8px;
-		backdrop-filter: blur(20px);
-		padding: 8px;
-		z-index: 1000;
-		box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-		width: max-content;
-		max-width: min(80vw, 600px);
-		min-width: 200px;
-
-		.tools-grid {
-			display: flex;
-			flex-wrap: nowrap;
-			gap: 6px;
-			align-items: center;
-
-			.tool-mini-item {
-				display: flex;
-				align-items: center;
-				gap: 4px;
-				padding: 4px 8px;
-				border: 1px solid rgba(var(--color--border-rgb), 0.2);
-				border-radius: 6px;
-				cursor: pointer;
-				transition: all 0.2s ease;
-				background: rgba(var(--color--card-background));
-				white-space: nowrap;
-				font-size: 11px;
-
-				&:hover {
-					background: rgba(var(--color--primary-rgb), 0.08);
-					border-color: rgba(var(--color--primary-rgb), 0.3);
-				}
-
-				&.active {
-					background: rgba(var(--color--primary-rgb), 0.12);
-					border-color: rgba(var(--color--primary-rgb), 0.4);
-				}
-
-				input {
-					appearance: none;
-					width: 12px;
-					height: 12px;
-					border: 1.5px solid rgba(var(--color--border-rgb), 0.3);
-					border-radius: 2px;
-					background: transparent;
-					cursor: pointer;
-					position: relative;
-					transition: all 0.2s ease;
-					flex-shrink: 0;
-
-					&:checked {
-						background: var(--color--primary);
-						border-color: var(--color--primary);
-
-						&::after {
-							content: '✓';
-							position: absolute;
-							top: 50%;
-							left: 50%;
-							transform: translate(-50%, -50%);
-							color: white;
-							font-size: 8px;
-							font-weight: bold;
-						}
-					}
-				}
-
-				.tool-emoji {
-					font-size: 12px;
-					flex-shrink: 0;
-				}
-
-				.tool-mini-name {
-					font-size: 10px;
-					font-weight: 500;
-					color: var(--color--text);
-					white-space: nowrap;
-				}
-			}
-		}
-
-		.tools-more {
-			margin-left: 8px;
-			font-size: 9px;
-			color: rgba(var(--color--text-rgb), 0.5);
-			padding: 4px 6px;
-			background: rgba(var(--color--border-rgb), 0.1);
-			border-radius: 4px;
-			white-space: nowrap;
-		}
-	}
-
-	.input-footer {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		padding: 0.5rem 0.75rem 0;
-		opacity: 0;
-		transform: translateY(-10px);
-		transition: all 0.3s ease;
-
-		&.visible {
-			opacity: 1;
-			transform: translateY(0);
 		}
 	}
 
 	.char-counter {
-		font-size: 0.75rem;
+		position: absolute;
+		bottom: -20px;
+		right: 8px;
+		font-size: 12px;
 		color: var(--color--text-shade);
+		opacity: 0.7;
+		font-weight: 500;
 
 		&.warning {
 			color: var(--color--callout-accent--warning);
-		}
-	}
-
-	.shortcuts-hint {
-		font-size: 0.75rem;
-		color: var(--color--text-shade);
-
-		kbd {
-			background: var(--color--code-inline-background);
-			color: var(--color--text);
-			padding: 2px 4px;
-			border-radius: 3px;
-			font-size: 0.7rem;
-			font-family: inherit;
-			border: 1px solid rgba(var(--color--border-rgb), 0.2);
+			opacity: 1;
 		}
 	}
 
@@ -573,7 +406,7 @@
 		.message-input {
 			padding: 12px 18px;
 			padding-right: 60px;
-			font-size: 0.95rem;
+			font-size: 12px;
 		}
 
 		.send-button {
@@ -593,16 +426,6 @@
 				height: 18px;
 			}
 		}
-
-		.tools-mini-panel {
-			position: fixed;
-			bottom: calc(80px + 60px);
-			left: 16px;
-			right: auto;
-			width: max-content;
-			max-width: calc(100vw - 32px);
-			min-width: 200px;
-		}
 	}
 
 	@include for-phone-only {
@@ -617,7 +440,7 @@
 		.message-input {
 			padding: 10px 16px;
 			padding-right: 56px;
-			font-size: 0.9rem;
+			font-size: 12px;
 		}
 
 		.send-button {
@@ -645,26 +468,8 @@
 			.tools-count {
 				width: 16px;
 				height: 16px;
-				font-size: 9px;
+				font-size: 12px;
 			}
-		}
-
-		.tools-mini-panel {
-			position: fixed;
-			bottom: calc(70px + 60px);
-			left: 12px;
-			right: auto;
-			width: max-content;
-			max-width: calc(100vw - 24px);
-			min-width: 180px;
-
-			.tools-grid {
-				flex-wrap: wrap;
-			}
-		}
-
-		.shortcuts-hint {
-			display: none; /* Ocultar en móvil */
 		}
 	}
 </style>

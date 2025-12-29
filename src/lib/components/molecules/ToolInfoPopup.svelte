@@ -185,27 +185,27 @@
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
-		padding: 1.5rem;
+		padding: 1rem 1.25rem;
 		border-bottom: 1px solid rgba(var(--color--border-rgb), 0.1);
 		background: linear-gradient(
 			135deg,
-			rgba(var(--color--primary-rgb), 0.05),
-			rgba(var(--color--secondary-rgb), 0.05)
+			rgba(var(--color--primary-rgb), 0.04),
+			rgba(var(--color--secondary-rgb), 0.04)
 		);
 
 		h3 {
 			margin: 0;
-			font-size: 1.1rem;
+			font-size: 0.95rem;
 			font-weight: 600;
 			color: var(--color--text);
 		}
 
 		.close-button {
-			width: 32px;
-			height: 32px;
-			border-radius: 8px;
+			width: 28px;
+			height: 28px;
+			border-radius: 6px;
 			border: none;
-			background: rgba(var(--color--text-rgb), 0.1);
+			background: rgba(var(--color--text-rgb), 0.08);
 			display: flex;
 			align-items: center;
 			justify-content: center;
@@ -214,7 +214,7 @@
 			transition: all 0.2s ease;
 
 			&:hover {
-				background: rgba(var(--color--text-rgb), 0.15);
+				background: rgba(var(--color--text-rgb), 0.12);
 				color: var(--color--text);
 			}
 		}
@@ -249,15 +249,15 @@
 		}
 
 		h4 {
-			font-size: 1rem;
-			margin: 0 0 0.75rem;
+			font-size: 0.875rem;
+			margin: 0 0 0.625rem;
 			color: var(--color--primary);
 			font-weight: 600;
 		}
 
 		.info-description {
-			font-size: 0.95rem;
-			line-height: 1.5;
+			font-size: 0.85rem;
+			line-height: 1.4;
 			color: var(--color--text);
 			margin: 0;
 		}
@@ -269,10 +269,10 @@
 		margin: 0;
 
 		li {
-			font-size: 0.9rem;
+			font-size: 0.8rem;
 			margin-bottom: 0.5rem;
 			color: var(--color--text);
-			line-height: 1.5;
+			line-height: 1.4;
 			position: relative;
 			padding-left: 0.5rem;
 
