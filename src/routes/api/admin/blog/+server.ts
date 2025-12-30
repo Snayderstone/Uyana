@@ -49,11 +49,11 @@ export const GET: RequestHandler = async (event) => {
 
 /**
  * POST - Crear un nuevo post
- * NOTA: Por ahora usar autor_id = 1 (debe implementarse autenticación)
  */
-export const POST: RequestHandler = async ({ request }) => {
+export const POST: RequestHandler = async (event) => {
 	try {
-		const body = (await request.json()) as CreateBlogPostDTO;
+		const usuario = await requireAdmin(event);
+		const body = (await event.request.json()) as CreateBlogPostDTO;
 
 		// Validar campos
 		const validationErrors = AdminBlogService.validatePost(body);
@@ -68,11 +68,8 @@ export const POST: RequestHandler = async ({ request }) => {
 			);
 		}
 
-		// TODO: Obtener autor_id del token/sesión
-		const autorId = 1;
-
-		// Crear post (slug se genera automáticamente)
-		const post = await AdminBlogService.createPost(body, autorId);
+		// Usar el usuario autenticado
+		const post = await AdminBlogService.createPost(body, usuario.id, usuario.nombre);
 
 		if (!post) {
 			return json(

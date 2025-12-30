@@ -20,6 +20,7 @@ export interface BlogPost {
 	contenido: string;
 	resumen: string;
 	imagen_portada: string;
+	autor_nombre?: string;
 	fecha_publicacion: string;
 	publicado: boolean;
 	creado_en: string;

@@ -9,6 +9,7 @@ export interface BlogPost {
 	titulo: string;
 	contenido: string;
 	autor_id: number;
+	autor_nombre?: string;
 	slug: string;
 	resumen?: string;
 	imagen_portada?: string;

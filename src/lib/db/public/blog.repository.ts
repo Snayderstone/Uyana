@@ -99,13 +99,25 @@ export class BlogRepository {
 	 * Incrementa el contador de vistas de un post
 	 */
 	async incrementPostViews(postId: number): Promise<void> {
-		const { error } = await this.supabase.rpc('increment_post_views', {
-			post_id: postId
-		});
+		try {
+			// Obtener vistas actuales
+			const { data: postActual, error: errorGet } = await this.supabase
+				.from('blog_posts')
+				.select('vistas')
+				.eq('id', postId)
+				.single();
 
-		if (error) {
-			console.error('Error incrementando vistas:', error);
-			// No lanzamos error para no afectar la carga de la página
+			if (errorGet) throw errorGet;
+
+			// Incrementar
+			const { error: errorUpdate } = await this.supabase
+				.from('blog_posts')
+				.update({ vistas: (postActual?.vistas || 0) + 1 })
+				.eq('id', postId);
+
+			if (errorUpdate) throw errorUpdate;
+		} catch (error: any) {
+			console.error('Error incrementando vistas:', error.message);
 		}
 	}
 }

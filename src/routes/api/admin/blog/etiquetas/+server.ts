@@ -17,7 +17,6 @@ export const GET: RequestHandler = async (event) => {
 		const usuario = await requireAdmin(event);
 		const etiquetas = await AdminBlogService.listEtiquetas();
 
-		console.log(`[AUDIT] ${usuario.email} obtuvo etiquetas del blog`);
 		return json({
 			success: true,
 			data: etiquetas

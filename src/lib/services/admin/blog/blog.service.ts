@@ -66,7 +66,11 @@ export const AdminBlogService = {
 	/**
 	 * Crear un post
 	 */
-	async createPost(dto: CreateBlogPostDTO, autorId: number): Promise<BlogPostResponseDTO | null> {
+	async createPost(
+		dto: CreateBlogPostDTO,
+		autorId: number,
+		autorNombre: string
+	): Promise<BlogPostResponseDTO | null> {
 		const errors = this.validatePost(dto);
 		if (errors.length > 0) {
 			console.error('Errores de validación:', errors);
@@ -81,6 +85,7 @@ export const AdminBlogService = {
 			contenido: dto.contenido.trim(),
 			slug,
 			autor_id: autorId,
+			autor_nombre: autorNombre,
 			resumen: dto.resumen?.trim(),
 			imagen_portada: dto.imagen_portada,
 			publicado: dto.publicado || false,
@@ -117,9 +122,13 @@ export const AdminBlogService = {
 			return null;
 		}
 
-		// NOTA: El slug NO se actualiza en ediciones, mantiene el original
+		// Actualizar datos básicos
 		const updateData: Partial<BlogPost> = {};
-		if (dto.titulo) updateData.titulo = dto.titulo.trim();
+		if (dto.titulo) {
+			updateData.titulo = dto.titulo.trim();
+			// Regenerar slug a partir del nuevo título
+			updateData.slug = this.generateSlugFromName(dto.titulo);
+		}
 		if (dto.contenido) updateData.contenido = dto.contenido.trim();
 		if (dto.resumen !== undefined) updateData.resumen = dto.resumen?.trim();
 		if (dto.imagen_portada !== undefined) updateData.imagen_portada = dto.imagen_portada;
@@ -222,7 +231,7 @@ export const AdminBlogService = {
 					id: c!.id,
 					nombre: c!.nombre,
 					slug: c!.slug,
-				color: c!.color
+					color: c!.color
 				})),
 			etiquetas: etiquetas
 				.filter((t) => t !== null)

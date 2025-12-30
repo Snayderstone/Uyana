@@ -50,7 +50,7 @@ class BlogService {
 					imagen_portada: post.imagen_portada,
 					fecha_publicacion: post.fecha_publicacion,
 					tiempo_lectura: this.calculateReadingTime(post.contenido),
-					retiquetas: etiquetas.map((e) => ({
+					etiquetas: etiquetas.map((e) => ({
 						id: e.id,
 						nombre: e.nombre,
 						slug: e.slug,
@@ -71,11 +71,8 @@ class BlogService {
 			return null;
 		}
 
-		// Incrementar contador de vistas de forma asíncrona
-		// No esperamos el resultado para no ralentizar la carga
-		this.repository.incrementPostViews(post.id).catch((err) => {
-			console.error('Error al incrementar vistas:', err);
-		});
+		// Incrementar vistas de forma asíncrona
+		this.repository.incrementPostViews(post.id).catch(() => {});
 
 		// Obtener las categorías y etiquetas del post
 		const categorias = await this.repository.getPostCategories(post.id);
@@ -102,7 +99,7 @@ class BlogService {
 				color: e.color
 			})),
 			autor: {
-				nombre: 'Dirección de Investigación UCE',
+				nombre: post.autor_nombre || 'Dirección de Investigación UCE',
 				avatar: null
 			}
 		};

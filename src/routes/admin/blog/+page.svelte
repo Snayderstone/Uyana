@@ -108,6 +108,15 @@
 	// Cargar datos iniciales
 	onMount(async () => {
 		await Promise.all([loadPosts(), loadCategorias(), loadEtiquetas()]);
+
+		// Actualizar posts cada 30 segundos para reflejar cambios en vistas
+		const interval = setInterval(() => {
+			if (!showEditorModal && !showDeleteModal) {
+				loadPosts();
+			}
+		}, 30000);
+
+		return () => clearInterval(interval);
 	});
 
 	async function loadPosts() {
@@ -771,6 +780,22 @@
 						{/if}
 
 						<div class="post-meta">
+							{#if post.autor_nombre}
+								<span class="meta-item">
+									<svg
+										width="16"
+										height="16"
+										viewBox="0 0 24 24"
+										fill="none"
+										stroke="currentColor"
+										stroke-width="2"
+									>
+										<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+										<circle cx="12" cy="7" r="4" />
+									</svg>
+									{post.autor_nombre}
+								</span>
+							{/if}
 							<span class="meta-item">
 								<svg
 									width="16"
@@ -785,41 +810,44 @@
 									<line x1="8" y1="2" x2="8" y2="6" />
 									<line x1="3" y1="10" x2="21" y2="10" />
 								</svg>
-								{formatDate(post.fecha_publicacion)}
-							</span>
-							<span class="meta-item">
-								<svg
-									width="16"
-									height="16"
-									viewBox="0 0 24 24"
-									fill="none"
-									stroke="currentColor"
-									stroke-width="2"
-								>
-									<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-									<circle cx="12" cy="12" r="3" />
-								</svg>
-								{post.vistas || 0} vistas
+								Actualizado: {formatDate(post.fecha_publicacion)}
+								<span class="meta-item">
+									<svg
+										width="16"
+										height="16"
+										viewBox="0 0 24 24"
+										fill="none"
+										stroke="currentColor"
+										stroke-width="2"
+									>
+										<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+										<circle cx="12" cy="12" r="3" />
+									</svg>
+									{post.vistas || 0} vistas
+								</span>
 							</span>
 						</div>
 
 						{#if post.categorias?.length > 0}
 							<div class="post-tags">
-								<div class="tag-label">Categorías:</div>
+								<span class="tag-section-label">Categoría:</span>
 								{#each post.categorias.slice(0, 3) as cat}
-									<span class="tag category-tag" style:background-color={cat.color}>{cat.slug}</span
-									>
+									<span class="tag category-tag" style:border-color={cat.color}>
+										<span class="tag-name">{cat.slug}</span>
+										<span class="tag-indicator" style:background-color={cat.color} />
+									</span>
 								{/each}
 							</div>
 						{/if}
 
 						{#if post.etiquetas?.length > 0}
 							<div class="post-tags">
-								<div class="tag-label">Etiquetas:</div>
+								<span class="tag-section-label">Tags:</span>
 								{#each post.etiquetas.slice(0, 3) as etiq}
-									<span class="tag etiqueta-tag" style:background-color={etiq.color}
-										>{etiq.slug}</span
-									>
+									<span class="tag etiqueta-tag" style:border-color={etiq.color}>
+										<span class="tag-name">{etiq.slug}</span>
+										<span class="tag-indicator" style:background-color={etiq.color} />
+									</span>
 								{/each}
 							</div>
 						{/if}
@@ -1383,7 +1411,10 @@
 			</div>
 
 			<div class="color-preview">
-				<div class="preview-pill" style:background-color={newCategoriaColor}>Vista previa</div>
+				<div class="preview-pill-outline" style:border-color={newCategoriaColor}>
+					<span class="preview-name">Vista previa</span>
+					<span class="preview-indicator" style:background-color={newCategoriaColor} />
+				</div>
 			</div>
 		</form>
 
@@ -1479,8 +1510,9 @@
 			</div>
 
 			<div class="color-preview">
-				<div class="preview-pill" style:background-color={newEtiquetaColor} style:color="white">
-					Vista previa
+				<div class="preview-pill-outline" style:border-color={newEtiquetaColor}>
+					<span class="preview-name">Vista previa</span>
+					<span class="preview-indicator" style:background-color={newEtiquetaColor} />
 				</div>
 			</div>
 		</form>
@@ -1789,25 +1821,42 @@
 		display: flex;
 		flex-wrap: wrap;
 		align-items: center;
-		gap: 0.375rem;
+		gap: 0.5rem;
 		margin-top: 0.5rem;
 
-		.tag-label {
+		.tag-section-label {
 			font-size: 0.7rem;
 			font-weight: 600;
 			color: rgba(var(--color--text-rgb), 0.6);
 			text-transform: uppercase;
 			letter-spacing: 0.5px;
+			margin-right: 0.25rem;
 		}
 
 		.tag {
-			padding: 0.25rem 0.625rem;
-			border-radius: 12px;
+			display: inline-flex;
+			align-items: center;
+			gap: 0.4rem;
+			padding: 0.4rem 0.75rem;
+			border-radius: 20px;
 			font-size: 0.75rem;
 			font-weight: 500;
-			color: white;
-			text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-			border: 1px solid rgba(0, 0, 0, 0.1);
+			border: 2px solid;
+			background: transparent;
+			color: var(--color--text);
+			transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+			font-family: var(--font--default);
+		}
+
+		.tag-name {
+			line-height: 1;
+		}
+
+		.tag-indicator {
+			width: 7px;
+			height: 7px;
+			border-radius: 50%;
+			flex-shrink: 0;
 		}
 	}
 
@@ -2596,5 +2645,31 @@
 		display: inline-flex;
 		align-items: center;
 		gap: 0.25rem;
+	}
+
+	.preview-pill-outline {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.5rem 0.875rem;
+		border-radius: 20px;
+		font-size: 0.8125rem;
+		font-weight: 500;
+		border: 2px solid;
+		background: transparent;
+		color: var(--color--text);
+		transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+		font-family: var(--font--default);
+	}
+
+	.preview-name {
+		line-height: 1;
+	}
+
+	.preview-indicator {
+		width: 8px;
+		height: 8px;
+		border-radius: 50%;
+		flex-shrink: 0;
 	}
 </style>
