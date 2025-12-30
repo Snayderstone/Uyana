@@ -50,7 +50,12 @@ class BlogService {
 					imagen_portada: post.imagen_portada,
 					fecha_publicacion: post.fecha_publicacion,
 					tiempo_lectura: this.calculateReadingTime(post.contenido),
-					etiquetas: etiquetas.map((e) => e.slug)
+					retiquetas: etiquetas.map((e) => ({
+						id: e.id,
+						nombre: e.nombre,
+						slug: e.slug,
+						color: e.color
+					}))
 				};
 			})
 		);

@@ -7,7 +7,7 @@
 	export let coverImage: string | undefined = undefined;
 	export let excerpt: string;
 	export let slug: string;
-	export let tags: string[] | undefined;
+	export let tags: { id: number; nombre: string; slug: string; color: string }[] | undefined;
 	export let readingTime: string | undefined = undefined;
 
 	export let showImage = true;
@@ -40,7 +40,10 @@
 		{#if tags?.length}
 			<div class="tags">
 				{#each tags.slice(0, 2) as tag}
-					<Tag>{tag}</Tag>
+					<span class="tag-pill" style:border-color={tag.color}>
+						<span class="tag-name">{tag.slug}</span>
+						<span class="tag-indicator" style:background-color={tag.color} />
+					</span>
 				{/each}
 			</div>
 		{/if}
@@ -70,6 +73,32 @@
 		align-items: center;
 		gap: 5px;
 		flex-wrap: wrap;
+	}
+
+	.tag-pill {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4rem;
+		padding: 0.4rem 0.75rem;
+		border-radius: 20px;
+		font-size: 0.75rem;
+		font-weight: 500;
+		border: 2px solid;
+		background: transparent;
+		color: var(--color--text);
+		transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+		font-family: var(--font--default);
+	}
+
+	.tag-name {
+		line-height: 1;
+	}
+
+	.tag-indicator {
+		width: 7px;
+		height: 7px;
+		border-radius: 50%;
+		flex-shrink: 0;
 	}
 
 	.note {

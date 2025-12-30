@@ -6,7 +6,7 @@ export type BlogPostListItemDTO = {
 	imagen_portada: string;
 	fecha_publicacion: string;
 	tiempo_lectura?: string;
-	etiquetas?: string[];
+	etiquetas?: { id: number; nombre: string; slug: string; color: string }[];
 };
 
 export type BlogPostDetailDTO = {
