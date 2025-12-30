@@ -61,7 +61,7 @@ export class BlogRepository {
 	async getPostCategories(postId: number): Promise<BlogCategory[]> {
 		const { data, error } = await this.supabase
 			.from('blog_post_categoria')
-			.select('categoria:blog_categorias(id, nombre, slug, descripcion, creado_en)')
+			.select('categoria:blog_categorias(id, nombre, slug, color, descripcion, creado_en)')
 			.eq('post_id', postId);
 
 		if (error) {
@@ -78,10 +78,12 @@ export class BlogRepository {
 	/**
 	 * Obtiene las etiquetas de un post específico
 	 */
-	async getPostTags(postId: number): Promise<{ id: number; nombre: string; slug: string }[]> {
+	async getPostTags(
+		postId: number
+	): Promise<{ id: number; nombre: string; slug: string; color: string }[]> {
 		const { data, error } = await this.supabase
 			.from('blog_post_etiqueta')
-			.select('etiqueta:blog_etiquetas(id, nombre, slug)')
+			.select('etiqueta:blog_etiquetas(id, nombre, slug, color)')
 			.eq('post_id', postId);
 
 		if (error) {
@@ -91,5 +93,19 @@ export class BlogRepository {
 
 		// Extraer las etiquetas del objeto anidado
 		return (data || []).map((item: any) => item.etiqueta).filter((tag: any) => tag !== null);
+	}
+
+	/**
+	 * Incrementa el contador de vistas de un post
+	 */
+	async incrementPostViews(postId: number): Promise<void> {
+		const { error } = await this.supabase.rpc('increment_post_views', {
+			post_id: postId
+		});
+
+		if (error) {
+			console.error('Error incrementando vistas:', error);
+			// No lanzamos error para no afectar la carga de la página
+		}
 	}
 }

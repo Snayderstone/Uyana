@@ -6,8 +6,9 @@
 	export let maxTags = 10;
 	export let onDelete: ((etiqueta: any) => void) | undefined = undefined;
 
-	let inputValue = '';
-	let isCreatingNew = false;
+	let searchTerm = '';
+	let showAll = false;
+	const INITIAL_DISPLAY_LIMIT = 12;
 
 	function toggleTag(id: number) {
 		if (disabled) return;
@@ -25,21 +26,31 @@
 	}
 
 	function handleKeyDown(e: KeyboardEvent) {
-		if (e.key === 'Enter' && inputValue.trim()) {
+		if (e.key === 'Enter' && searchTerm.trim()) {
 			e.preventDefault();
 			// Buscar etiqueta existente
 			const existing = etiquetas.find(
-				(t) => t.nombre.toLowerCase() === inputValue.trim().toLowerCase()
+				(t) => t.slug.toLowerCase() === searchTerm.trim().toLowerCase()
 			);
 			if (existing && !seleccionadas.includes(existing.id)) {
 				toggleTag(existing.id);
+				searchTerm = '';
 			}
-			inputValue = '';
 		}
 	}
 
 	$: etiquetasSeleccionadas = etiquetas.filter((e) => seleccionadas.includes(e.id));
 	$: etiquetasDisponibles = etiquetas.filter((e) => !seleccionadas.includes(e.id));
+
+	// Filter available tags based on search term
+	$: etiquetasFiltradas = searchTerm.trim()
+		? etiquetasDisponibles.filter((e) => e.slug.toLowerCase().includes(searchTerm.toLowerCase()))
+		: etiquetasDisponibles;
+
+	// Determine how many tags to display
+	$: displayLimit = showAll ? etiquetasFiltradas.length : INITIAL_DISPLAY_LIMIT;
+	$: etiquetasMostradas = etiquetasFiltradas.slice(0, displayLimit);
+	$: remainingCount = etiquetasFiltradas.length - displayLimit;
 </script>
 
 <div class="tag-selector" class:disabled>
@@ -55,7 +66,7 @@
 					title="Clic para quitar"
 					{disabled}
 				>
-					<span class="tag-name">{tag.nombre}</span>
+					<span class="tag-name">{tag.slug}</span>
 					<span class="tag-remove">×</span>
 				</button>
 			{/each}
@@ -66,9 +77,9 @@
 	<div class="tag-input-wrapper">
 		<input
 			type="text"
-			bind:value={inputValue}
+			bind:value={searchTerm}
 			on:keydown={handleKeyDown}
-			placeholder={seleccionadas.length === 0 ? placeholder : 'Buscar más etiquetas...'}
+			placeholder={seleccionadas.length === 0 ? placeholder : 'Buscar etiquetas...'}
 			class="tag-input"
 			disabled={disabled || seleccionadas.length >= maxTags}
 		/>
@@ -78,11 +89,17 @@
 	</div>
 
 	<!-- Etiquetas sugeridas -->
-	{#if etiquetasDisponibles.length > 0}
+	{#if etiquetasMostradas.length > 0}
 		<div class="available-tags">
-			<p class="section-label">Etiquetas disponibles:</p>
+			<p class="section-label">
+				{#if searchTerm.trim()}
+					Resultados: {etiquetasFiltradas.length}
+				{:else}
+					Etiquetas disponibles
+				{/if}
+			</p>
 			<div class="tag-list">
-				{#each etiquetasDisponibles.slice(0, 12) as tag (tag.id)}
+				{#each etiquetasMostradas as tag (tag.id)}
 					<div class="tag-item">
 						<button
 							type="button"
@@ -92,7 +109,7 @@
 							disabled={disabled || seleccionadas.length >= maxTags}
 							title="Clic para agregar"
 						>
-							<span class="tag-name">{tag.nombre}</span>
+							<span class="tag-name">{tag.slug}</span>
 							<span class="tag-add">+</span>
 						</button>
 						{#if onDelete}
@@ -109,6 +126,21 @@
 					</div>
 				{/each}
 			</div>
+
+			<!-- Show more button -->
+			{#if remainingCount > 0 && !showAll}
+				<button type="button" class="btn-show-more" on:click={() => (showAll = true)} {disabled}>
+					Mostrar más (+{remainingCount})
+				</button>
+			{:else if showAll && etiquetasFiltradas.length > INITIAL_DISPLAY_LIMIT}
+				<button type="button" class="btn-show-more" on:click={() => (showAll = false)} {disabled}>
+					Mostrar menos
+				</button>
+			{/if}
+		</div>
+	{:else if searchTerm.trim() && etiquetasFiltradas.length === 0}
+		<div class="no-results">
+			<p>No se encontraron etiquetas con "{searchTerm}"</p>
 		</div>
 	{/if}
 </div>
@@ -304,6 +336,48 @@
 		&:disabled {
 			opacity: 0.2;
 			cursor: not-allowed;
+		}
+	}
+
+	.btn-show-more {
+		width: 100%;
+		padding: 0.625rem 1rem;
+		background: rgba(var(--color--primary-rgb), 0.08);
+		border: 1.5px solid rgba(var(--color--primary-rgb), 0.2);
+		border-radius: 8px;
+		color: var(--color--primary);
+		font-size: 0.875rem;
+		font-weight: 600;
+		font-family: var(--font--default);
+		cursor: pointer;
+		transition: all 0.2s ease;
+
+		&:hover:not(:disabled) {
+			background: rgba(var(--color--primary-rgb), 0.12);
+			border-color: rgba(var(--color--primary-rgb), 0.3);
+			transform: translateY(-1px);
+		}
+
+		&:active:not(:disabled) {
+			transform: translateY(0);
+		}
+
+		&:disabled {
+			opacity: 0.5;
+			cursor: not-allowed;
+		}
+	}
+
+	.no-results {
+		padding: 1.5rem;
+		text-align: center;
+		color: var(--color--text-shade);
+		font-size: 0.875rem;
+		background: rgba(var(--color--text-rgb), 0.05);
+		border-radius: 8px;
+
+		p {
+			margin: 0;
 		}
 	}
 

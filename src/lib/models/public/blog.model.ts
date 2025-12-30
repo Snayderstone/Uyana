@@ -8,6 +8,7 @@ export interface BlogCategory {
 	id: number;
 	nombre: string;
 	slug: string;
+	color: string;
 	descripcion?: string;
 	creado_en: string;
 }

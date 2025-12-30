@@ -8,6 +8,13 @@
 	let editor: HTMLDivElement;
 	let isInitialized = false;
 
+	// Modal para insertar enlaces
+	let showLinkModal = false;
+	let linkText = '';
+	let linkUrl = '';
+	let savedSelection: Range | null = null;
+	let editingLink: HTMLAnchorElement | null = null; // Para editar enlaces existentes
+
 	onMount(() => {
 		if (editor) {
 			editor.innerHTML = value;
@@ -39,14 +46,118 @@
 		execCommand('formatBlock', `h${level}`);
 	}
 
+	function formatParagraph() {
+		execCommand('formatBlock', 'p');
+	}
+
 	function insertList(ordered: boolean) {
 		execCommand(ordered ? 'insertOrderedList' : 'insertUnorderedList');
 	}
 
-	function insertLink() {
-		const url = prompt('Ingresa la URL:');
-		if (url) {
-			execCommand('createLink', url);
+	function openLinkModal() {
+		if (disabled) return;
+
+		// Guardar la selección actual
+		savedSelection = saveSelection();
+
+		// Obtener texto seleccionado si existe
+		const sel = window.getSelection();
+		if (sel && sel.toString()) {
+			linkText = sel.toString();
+		} else {
+			linkText = '';
+		}
+
+		linkUrl = '';
+		editingLink = null;
+		showLinkModal = true;
+	}
+
+	function editLink(link: HTMLAnchorElement) {
+		if (disabled) return;
+
+		editingLink = link;
+		linkText = link.textContent || '';
+		linkUrl = link.href;
+		showLinkModal = true;
+	}
+
+	function handleEditorClick(e: MouseEvent) {
+		if (disabled) return;
+
+		const target = e.target as HTMLElement;
+		// Si se hace clic en un enlace, abrir modal de edición
+		if (target.tagName === 'A') {
+			e.preventDefault();
+			editLink(target as HTMLAnchorElement);
+		}
+	}
+
+	function insertLinkFromModal() {
+		if (!linkUrl.trim()) {
+			alert('Por favor ingresa una URL');
+			return;
+		}
+
+		// Si estamos editando un enlace existente
+		if (editingLink) {
+			editingLink.href = linkUrl;
+			editingLink.textContent = linkText.trim() || linkUrl;
+			editingLink.setAttribute('target', '_blank');
+			editor.focus();
+			handleInput();
+			closeLinkModal();
+			return;
+		}
+
+		// Restaurar la selección
+		if (savedSelection) {
+			restoreSelection(savedSelection);
+		}
+
+		// Si hay texto, usarlo, sino usar la URL
+		const displayText = linkText.trim() || linkUrl;
+
+		// Si no hay texto seleccionado, insertar el texto y luego crear el enlace
+		const sel = window.getSelection();
+		if (!sel || sel.toString() === '') {
+			document.execCommand(
+				'insertHTML',
+				false,
+				`<a href="${linkUrl}" target="_blank">${displayText}</a>&nbsp;`
+			);
+		} else {
+			// Si hay texto seleccionado, solo crear el enlace
+			document.execCommand('createLink', false, linkUrl);
+			// Agregar target="_blank" al enlace creado
+			const link = sel.anchorNode?.parentElement;
+			if (link && link.tagName === 'A') {
+				link.setAttribute('target', '_blank');
+			}
+		}
+
+		editor.focus();
+		handleInput();
+		closeLinkModal();
+	}
+
+	function closeLinkModal() {
+		showLinkModal = false;
+		linkText = '';
+		linkUrl = '';
+		savedSelection = null;
+		editingLink = null;
+	}
+
+	function removeLink() {
+		if (editingLink) {
+			// Reemplazar el enlace con su texto
+			const text = editingLink.textContent || '';
+			const textNode = document.createTextNode(text);
+			editingLink.parentNode?.replaceChild(textNode, editingLink);
+			editor.focus();
+			handleInput();
+			closeLinkModal();
 		}
 	}
 
@@ -81,6 +192,15 @@
 <div class="rich-editor" class:disabled>
 	<div class="toolbar">
 		<div class="toolbar-group">
+			<button
+				type="button"
+				class="toolbar-btn"
+				on:click={formatParagraph}
+				title="Texto normal"
+				{disabled}
+			>
+				<span class="icon">N</span>
+			</button>
 			<button
 				type="button"
 				class="toolbar-btn"
@@ -230,7 +350,7 @@
 			<button
 				type="button"
 				class="toolbar-btn"
-				on:click={insertLink}
+				on:click={openLinkModal}
 				title="Insertar enlace"
 				{disabled}
 			>
@@ -299,6 +419,16 @@
 		class="editor-content"
 		contenteditable={!disabled}
 		on:input={handleInput}
+		on:click={handleEditorClick}
+		on:keydown={(e) => {
+			// Manejador de teclado para accesibilidad
+			// @ts-ignore
+			if (e.key === 'Enter' && e.target?.tagName === 'A') {
+				e.preventDefault();
+				// @ts-ignore
+				editLink(e.target);
+			}
+		}}
 		on:paste={(e) => {
 			// Pegar como texto plano
 			e.preventDefault();
@@ -311,8 +441,121 @@
 		role="textbox"
 		aria-multiline="true"
 		aria-label="Editor de contenido"
+		tabindex="0"
 	/>
 </div>
+
+<!-- Modal para insertar enlace -->
+{#if showLinkModal}
+	<div
+		class="modal-overlay"
+		on:click={closeLinkModal}
+		on:keydown={(e) => {
+			if (e.key === 'Escape') closeLinkModal();
+		}}
+		role="button"
+		tabindex="0"
+		aria-label="Cerrar modal"
+	>
+		<div
+			class="modal-content"
+			on:click|stopPropagation
+			on:keydown={(e) => e.stopPropagation()}
+			role="dialog"
+			aria-modal="true"
+		>
+			<div class="modal-header">
+				<h3>{editingLink ? 'Editar Enlace' : 'Insertar Enlace'}</h3>
+				<button type="button" class="modal-close" on:click={closeLinkModal} aria-label="Cerrar">
+					<svg
+						width="20"
+						height="20"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+					>
+						<line x1="18" y1="6" x2="6" y2="18" />
+						<line x1="6" y1="6" x2="18" y2="18" />
+					</svg>
+				</button>
+			</div>
+
+			<div class="modal-body">
+				<div class="form-group">
+					<label for="link-text">Texto a mostrar</label>
+					<input
+						type="text"
+						id="link-text"
+						bind:value={linkText}
+						placeholder="Ej: Visita nuestro sitio web"
+						class="modal-input"
+						autocomplete="off"
+					/>
+					<small class="help-text"
+						>El texto que verán los usuarios (opcional, si está vacío se usa la URL)</small
+					>
+				</div>
+
+				<div class="form-group">
+					<label for="link-url">URL <span class="required">*</span></label>
+					<input
+						type="url"
+						id="link-url"
+						bind:value={linkUrl}
+						placeholder="https://ejemplo.com"
+						class="modal-input"
+						required
+						autocomplete="off"
+					/>
+					<small class="help-text">La dirección web del enlace</small>
+				</div>
+			</div>
+
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" on:click={closeLinkModal}>
+					Cancelar
+				</button>
+				{#if editingLink}
+					<button type="button" class="btn btn-danger" on:click={removeLink}>
+						<svg
+							width="16"
+							height="16"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+						>
+							<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+							<path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+							<line x1="18" y1="6" x2="6" y2="18" />
+							<line x1="6" y1="6" x2="18" y2="18" />
+						</svg>
+						Eliminar Enlace
+					</button>
+				{/if}
+				<button type="button" class="btn btn-primary" on:click={insertLinkFromModal}>
+					<svg
+						width="16"
+						height="16"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+					>
+						{#if editingLink}
+							<path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
+						{:else}
+							<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+							<path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+						{/if}
+					</svg>
+					{editingLink ? 'Actualizar Enlace' : 'Insertar Enlace'}
+				</button>
+			</div>
+		</div>
+	</div>
+{/if}
 
 <style lang="scss">
 	.rich-editor {
@@ -455,6 +698,15 @@
 		:global(a) {
 			color: var(--color--primary);
 			text-decoration: underline;
+			cursor: pointer;
+			transition: all 0.2s ease;
+			padding: 0 2px;
+			border-radius: 2px;
+
+			&:hover {
+				background: rgba(var(--color--primary-rgb), 0.1);
+				text-decoration-color: var(--color--primary);
+			}
 		}
 
 		:global(img) {
@@ -500,6 +752,227 @@
 			min-width: 28px;
 			height: 28px;
 			padding: 0.375rem;
+		}
+	}
+
+	/* Modal de enlace */
+	.modal-overlay {
+		position: fixed;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		background: rgba(0, 0, 0, 0.6);
+		backdrop-filter: blur(4px);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		z-index: 10000;
+		padding: 1rem;
+		animation: fadeIn 0.2s ease;
+	}
+
+	@keyframes fadeIn {
+		from {
+			opacity: 0;
+		}
+		to {
+			opacity: 1;
+		}
+	}
+
+	.modal-content {
+		background: var(--color--card-background);
+		border-radius: 12px;
+		box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+		width: 100%;
+		max-width: 500px;
+		max-height: 90vh;
+		overflow-y: auto;
+		animation: slideUp 0.3s ease;
+	}
+
+	@keyframes slideUp {
+		from {
+			transform: translateY(20px);
+			opacity: 0;
+		}
+		to {
+			transform: translateY(0);
+			opacity: 1;
+		}
+	}
+
+	.modal-header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding: 1.25rem 1.5rem;
+		border-bottom: 1px solid rgba(var(--color--text-rgb), 0.1);
+
+		h3 {
+			margin: 0;
+			font-size: 1.25rem;
+			font-weight: 600;
+			color: var(--color--text);
+			font-family: var(--font--title);
+		}
+	}
+
+	.modal-close {
+		background: transparent;
+		border: none;
+		color: var(--color--text-shade);
+		cursor: pointer;
+		padding: 0.375rem;
+		border-radius: 4px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		transition: all 0.2s;
+
+		&:hover {
+			background: rgba(var(--color--text-rgb), 0.1);
+			color: var(--color--text);
+		}
+	}
+
+	.modal-body {
+		padding: 1.5rem;
+	}
+
+	.form-group {
+		margin-bottom: 1.25rem;
+
+		&:last-child {
+			margin-bottom: 0;
+		}
+
+		label {
+			display: block;
+			font-weight: 600;
+			color: var(--color--text);
+			margin-bottom: 0.5rem;
+			font-size: 0.9375rem;
+
+			.required {
+				color: #ef4444;
+				margin-left: 0.25rem;
+			}
+		}
+	}
+
+	.modal-input {
+		width: 100%;
+		padding: 0.75rem;
+		border: 1px solid rgba(var(--color--text-rgb), 0.15);
+		border-radius: 8px;
+		font-size: 1rem;
+		font-family: var(--font--default);
+		background: var(--color--page-background);
+		color: var(--color--text);
+		transition: border-color 0.2s ease;
+		box-sizing: border-box;
+
+		&:focus {
+			outline: none;
+			border-color: var(--color--primary);
+			box-shadow: 0 0 0 3px rgba(var(--color--primary-rgb), 0.1);
+		}
+
+		&::placeholder {
+			color: var(--color--text-shade);
+			opacity: 0.6;
+		}
+	}
+
+	.help-text {
+		display: block;
+		margin-top: 0.375rem;
+		font-size: 0.8125rem;
+		color: var(--color--text-shade);
+		line-height: 1.4;
+	}
+
+	.modal-footer {
+		display: flex;
+		align-items: center;
+		justify-content: flex-end;
+		gap: 0.75rem;
+		padding: 1rem 1.5rem;
+		border-top: 1px solid rgba(var(--color--text-rgb), 0.1);
+	}
+
+	.btn {
+		padding: 0.625rem 1.25rem;
+		border: none;
+		border-radius: 8px;
+		font-size: 0.9375rem;
+		font-weight: 500;
+		cursor: pointer;
+		transition: all 0.2s;
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
+		font-family: var(--font--default);
+
+		&.btn-primary {
+			background: var(--color--primary);
+			color: white;
+
+			&:hover {
+				background: var(--color--primary-shade);
+				transform: translateY(-1px);
+				box-shadow: 0 4px 12px rgba(var(--color--primary-rgb), 0.3);
+			}
+
+			&:active {
+				transform: translateY(0);
+			}
+		}
+
+		&.btn-secondary {
+			background: rgba(var(--color--text-rgb), 0.1);
+			color: var(--color--text);
+
+			&:hover {
+				background: rgba(var(--color--text-rgb), 0.15);
+			}
+		}
+
+		&.btn-danger {
+			background: rgba(239, 68, 68, 0.1);
+			color: rgb(239, 68, 68);
+			border: 1px solid rgba(239, 68, 68, 0.3);
+
+			&:hover {
+				background: rgba(239, 68, 68, 0.15);
+				border-color: rgba(239, 68, 68, 0.5);
+				transform: translateY(-1px);
+			}
+
+			&:active {
+				transform: translateY(0);
+			}
+		}
+
+		svg {
+			width: 16px;
+			height: 16px;
+		}
+	}
+
+	@media (max-width: 640px) {
+		.modal-content {
+			max-width: 100%;
+			margin: 0;
+			border-radius: 12px 12px 0 0;
+			max-height: 85vh;
+		}
+
+		.modal-overlay {
+			padding: 0;
+			align-items: flex-end;
 		}
 	}
 </style>

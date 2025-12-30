@@ -85,6 +85,16 @@
 	let deleting = false;
 	let toggling = false;
 
+	// Estados para crear categorías y etiquetas
+	let showCreateCategoriaModal = false;
+	let showCreateEtiquetaModal = false;
+	let newCategoriaName = '';
+	let newCategoriaColor = '#' + Math.floor(Math.random() * 16777215).toString(16);
+	let newEtiquetaName = '';
+	let newEtiquetaColor = '#' + Math.floor(Math.random() * 16777215).toString(16);
+	let creatingCategoria = false;
+	let creatingEtiqueta = false;
+
 	// Función para mostrar toast
 	function showToastMessage(message: string, type: 'success' | 'error' | 'info' = 'success') {
 		toastMessage = message;
@@ -152,6 +162,79 @@
 	}
 
 	// Crear nueva categoría
+	async function createCategoria() {
+		if (!newCategoriaName.trim()) {
+			showToastMessage('Por favor ingresa un nombre para la categoría', 'error');
+			return;
+		}
+
+		creatingCategoria = true;
+		try {
+			const response = await fetch('/api/admin/blog/categorias', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					nombre: newCategoriaName.trim(),
+					color: newCategoriaColor
+				})
+			});
+
+			const result = await response.json();
+			if (result.success && result.data) {
+				categorias = [...categorias, result.data];
+				// Asignar automáticamente la nueva categoría a la selección
+				formData.categorias_seleccionadas = [...formData.categorias_seleccionadas, result.data.id];
+				categoriasError = false;
+				showToastMessage('Categoría creada exitosamente', 'success');
+				showCreateCategoriaModal = false;
+				newCategoriaName = '';
+				newCategoriaColor = '#' + Math.floor(Math.random() * 16777215).toString(16);
+			} else {
+				showToastMessage(result.message || 'Error al crear categoría', 'error');
+			}
+		} catch (err) {
+			showToastMessage('Error al crear categoría', 'error');
+		} finally {
+			creatingCategoria = false;
+		}
+	}
+
+	// Crear nueva etiqueta
+	async function createEtiqueta() {
+		if (!newEtiquetaName.trim()) {
+			showToastMessage('Por favor ingresa un nombre para la etiqueta', 'error');
+			return;
+		}
+
+		creatingEtiqueta = true;
+		try {
+			const response = await fetch('/api/admin/blog/etiquetas', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					nombre: newEtiquetaName.trim(),
+					color: newEtiquetaColor
+				})
+			});
+
+			const result = await response.json();
+			if (result.success && result.data) {
+				etiquetas = [...etiquetas, result.data];
+				// Asignar automáticamente la nueva etiqueta a la selección
+				formData.etiquetas_seleccionadas = [...formData.etiquetas_seleccionadas, result.data.id];
+				showToastMessage('Etiqueta creada exitosamente', 'success');
+				showCreateEtiquetaModal = false;
+				newEtiquetaName = '';
+				newEtiquetaColor = '#' + Math.floor(Math.random() * 16777215).toString(16);
+			} else {
+				showToastMessage(result.message || 'Error al crear etiqueta', 'error');
+			}
+		} catch (err) {
+			showToastMessage('Error al crear etiqueta', 'error');
+		} finally {
+			creatingEtiqueta = false;
+		}
+	}
 
 	// Abrir modal para crear
 	function openCreateModal() {
@@ -272,12 +355,49 @@
 		}, 100);
 	}
 
-	// Generar resumen automático del contenido HTML
+	// Generar resumen automático del contenido HTML (extrae el primer párrafo con formato)
 	function generateSummary(html: string): string {
 		const tempDiv = document.createElement('div');
 		tempDiv.innerHTML = html;
+
+		// Buscar el primer párrafo, div o elemento de texto
+		const firstParagraph = tempDiv.querySelector('p, div');
+
+		if (firstParagraph) {
+			// Obtener el HTML del primer párrafo
+			let summary = firstParagraph.innerHTML.trim();
+
+			// Limitar a aproximadamente 200 caracteres (contando el texto, no las etiquetas)
+			const textContent = firstParagraph.textContent || '';
+			if (textContent.length > 200) {
+				// Truncar el texto manteniendo las etiquetas HTML
+				const words = summary.split(' ');
+				let truncated = '';
+				let charCount = 0;
+
+				for (const word of words) {
+					const wordText = word.replace(/<[^>]*>/g, '');
+					if (charCount + wordText.length > 200) break;
+					truncated += word + ' ';
+					charCount += wordText.length;
+				}
+
+				summary = truncated.trim() + '...';
+			}
+
+			return summary;
+		}
+
+		// Fallback: extraer texto plano
 		const text = tempDiv.textContent || tempDiv.innerText || '';
 		return text.slice(0, 200).trim() + (text.length > 200 ? '...' : '');
+	}
+
+	// Función para generar resumen automáticamente
+	function autoGenerateSummary() {
+		if (formData.contenido.trim()) {
+			formData.resumen = generateSummary(formData.contenido);
+		}
 	}
 
 	// Guardar post (crear o actualizar)
@@ -647,7 +767,7 @@
 						<h3 class="post-title">{post.titulo}</h3>
 
 						{#if post.resumen}
-							<p class="post-excerpt">{post.resumen}</p>
+							<div class="post-excerpt">{@html post.resumen}</div>
 						{/if}
 
 						<div class="post-meta">
@@ -685,8 +805,21 @@
 
 						{#if post.categorias?.length > 0}
 							<div class="post-tags">
+								<div class="tag-label">Categorías:</div>
 								{#each post.categorias.slice(0, 3) as cat}
-									<span class="tag" style:background-color={cat.color}>{cat.nombre}</span>
+									<span class="tag category-tag" style:background-color={cat.color}>{cat.slug}</span
+									>
+								{/each}
+							</div>
+						{/if}
+
+						{#if post.etiquetas?.length > 0}
+							<div class="post-tags">
+								<div class="tag-label">Etiquetas:</div>
+								{#each post.etiquetas.slice(0, 3) as etiq}
+									<span class="tag etiqueta-tag" style:background-color={etiq.color}
+										>{etiq.slug}</span
+									>
 								{/each}
 							</div>
 						{/if}
@@ -782,21 +915,6 @@
 			/>
 		</div>
 
-		<!-- Editor de contenido -->
-		<div class="form-group" id="contenido">
-			<label for="contenido-editor"
-				>Contenido {#if contenidoError}<span class="error-mark">*</span>{/if}</label
-			>
-			<div class="editor-wrapper" class:error={contenidoError}>
-				<RichTextEditor
-					bind:value={formData.contenido}
-					disabled={saving}
-					placeholder="Escribe tu contenido aquí..."
-					on:input={() => (contenidoError = false)}
-				/>
-			</div>
-		</div>
-
 		<!-- Imagen de portada -->
 		<div class="form-group">
 			<label for="imagen">Imagen de portada</label>
@@ -845,11 +963,64 @@
 			</div>
 		</div>
 
+		<!-- Resumen -->
+		<div class="form-group">
+			<label for="resumen">Resumen / Extracto</label>
+			<textarea
+				id="resumen"
+				bind:value={formData.resumen}
+				placeholder="Escribe un resumen breve que se mostrará en las tarjetas del blog..."
+				disabled={saving}
+				class="form-control resumen-textarea"
+				rows="4"
+			/>
+			<small class="help-text">
+				Este resumen se mostrará en las tarjetas del blog y en la vista previa.
+			</small>
+		</div>
+
+		<!-- Editor de contenido -->
+		<div class="form-group" id="contenido">
+			<label for="contenido-editor"
+				>Contenido {#if contenidoError}<span class="error-mark">*</span>{/if}</label
+			>
+			<div class="editor-wrapper" class:error={contenidoError}>
+				<RichTextEditor
+					bind:value={formData.contenido}
+					disabled={saving}
+					placeholder="Escribe tu contenido aquí..."
+					on:input={() => (contenidoError = false)}
+				/>
+			</div>
+		</div>
+
 		<!-- Categorías -->
 		<div class="form-group" id="categorias">
-			<span class="form-label"
-				>Categorías {#if categoriasError}<span class="error-mark">*</span>{/if}</span
-			>
+			<div class="section-header">
+				<span class="form-label"
+					>Categorías {#if categoriasError}<span class="error-mark">*</span>{/if}</span
+				>
+				<button
+					type="button"
+					class="btn-create-item"
+					on:click={() => (showCreateCategoriaModal = true)}
+					disabled={saving}
+					title="Crear nueva categoría"
+				>
+					<svg
+						width="14"
+						height="14"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+					>
+						<line x1="12" y1="5" x2="12" y2="19" />
+						<line x1="5" y1="12" x2="19" y2="12" />
+					</svg>
+					Nueva Categoría
+				</button>
+			</div>
 
 			<!-- Categorías seleccionadas -->
 			{#if formData.categorias_seleccionadas.length > 0}
@@ -868,7 +1039,7 @@
 							title="Clic para quitar"
 							disabled={saving}
 						>
-							<span class="category-name">{categoria.nombre}</span>
+							<span class="category-name">{categoria.slug}</span>
 							<span class="category-remove">×</span>
 						</button>
 					{/each}
@@ -895,7 +1066,7 @@
 								title="Clic para agregar"
 								disabled={saving}
 							>
-								<span class="category-name">{categoria.nombre}</span>
+								<span class="category-name">{categoria.slug}</span>
 								<span class="category-indicator" style:background-color={categoria.color} />
 								<span class="category-add">+</span>
 							</button>
@@ -907,7 +1078,29 @@
 
 		<!-- Etiquetas -->
 		<div class="form-group">
-			<span class="form-label">Etiquetas</span>
+			<div class="section-header">
+				<span class="form-label">Etiquetas</span>
+				<button
+					type="button"
+					class="btn-create-item"
+					on:click={() => (showCreateEtiquetaModal = true)}
+					disabled={saving}
+					title="Crear nueva etiqueta"
+				>
+					<svg
+						width="14"
+						height="14"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+					>
+						<line x1="12" y1="5" x2="12" y2="19" />
+						<line x1="5" y1="12" x2="19" y2="12" />
+					</svg>
+					Nueva Etiqueta
+				</button>
+			</div>
 			<TagSelector
 				{etiquetas}
 				bind:seleccionadas={formData.etiquetas_seleccionadas}
@@ -1136,6 +1329,200 @@
 	</Modal>
 {/if}
 
+<!-- Modal para crear nueva categoría -->
+{#if showCreateCategoriaModal}
+	<Modal
+		bind:isOpen={showCreateCategoriaModal}
+		title="Crear Nueva Categoría"
+		size="small"
+		onClose={() => (showCreateCategoriaModal = false)}
+	>
+		<form on:submit|preventDefault={createCategoria} class="create-item-form">
+			<div class="form-group">
+				<label for="new-categoria-name">Nombre de la categoría</label>
+				<input
+					type="text"
+					id="new-categoria-name"
+					bind:value={newCategoriaName}
+					placeholder="Ej: Tecnología"
+					class="form-control"
+					required
+					disabled={creatingCategoria}
+				/>
+			</div>
+
+			<div class="form-group">
+				<label for="new-categoria-color">Color</label>
+				<div class="color-picker-wrapper">
+					<input
+						type="color"
+						id="new-categoria-color"
+						bind:value={newCategoriaColor}
+						class="color-picker"
+						disabled={creatingCategoria}
+					/>
+					<input
+						type="text"
+						bind:value={newCategoriaColor}
+						placeholder="#000000"
+						class="color-input"
+						pattern="^#[0-9A-Fa-f]{6}$"
+						disabled={creatingCategoria}
+					/>
+					<button
+						type="button"
+						class="btn-random-color"
+						on:click={() =>
+							(newCategoriaColor = '#' + Math.floor(Math.random() * 16777215).toString(16))}
+						disabled={creatingCategoria}
+						title="Color aleatorio"
+					>
+						🎲
+					</button>
+				</div>
+			</div>
+
+			<div class="color-preview">
+				<div class="preview-pill" style:background-color={newCategoriaColor}>Vista previa</div>
+			</div>
+		</form>
+
+		<div slot="footer">
+			<button
+				type="button"
+				class="btn btn-secondary"
+				on:click={() => (showCreateCategoriaModal = false)}
+				disabled={creatingCategoria}
+			>
+				Cancelar
+			</button>
+			<button
+				type="button"
+				class="btn btn-primary"
+				on:click={createCategoria}
+				disabled={creatingCategoria}
+			>
+				{#if creatingCategoria}
+					<span class="spinner-small" />
+					Creando...
+				{:else}
+					<svg
+						width="16"
+						height="16"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+					>
+						<path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+						<polyline points="17 21 17 13 7 13 7 21" />
+						<polyline points="7 3 7 8 15 8" />
+					</svg>
+					Crear Categoría
+				{/if}
+			</button>
+		</div>
+	</Modal>
+{/if}
+
+<!-- Modal para crear nueva etiqueta -->
+{#if showCreateEtiquetaModal}
+	<Modal
+		bind:isOpen={showCreateEtiquetaModal}
+		title="Crear Nueva Etiqueta"
+		size="small"
+		onClose={() => (showCreateEtiquetaModal = false)}
+	>
+		<form on:submit|preventDefault={createEtiqueta} class="create-item-form">
+			<div class="form-group">
+				<label for="new-etiqueta-name">Nombre de la etiqueta</label>
+				<input
+					type="text"
+					id="new-etiqueta-name"
+					bind:value={newEtiquetaName}
+					placeholder="Ej: JavaScript"
+					class="form-control"
+					required
+					disabled={creatingEtiqueta}
+				/>
+			</div>
+
+			<div class="form-group">
+				<label for="new-etiqueta-color">Color</label>
+				<div class="color-picker-wrapper">
+					<input
+						type="color"
+						id="new-etiqueta-color"
+						bind:value={newEtiquetaColor}
+						class="color-picker"
+						disabled={creatingEtiqueta}
+					/>
+					<input
+						type="text"
+						bind:value={newEtiquetaColor}
+						placeholder="#000000"
+						class="color-input"
+						pattern="^#[0-9A-Fa-f]{6}$"
+						disabled={creatingEtiqueta}
+					/>
+					<button
+						type="button"
+						class="btn-random-color"
+						on:click={() =>
+							(newEtiquetaColor = '#' + Math.floor(Math.random() * 16777215).toString(16))}
+						disabled={creatingEtiqueta}
+						title="Color aleatorio"
+					>
+						🎲
+					</button>
+				</div>
+			</div>
+
+			<div class="color-preview">
+				<div class="preview-pill" style:background-color={newEtiquetaColor} style:color="white">
+					Vista previa
+				</div>
+			</div>
+		</form>
+
+		<div slot="footer">
+			<button
+				type="button"
+				class="btn btn-secondary"
+				on:click={() => (showCreateEtiquetaModal = false)}
+				disabled={creatingEtiqueta}
+			>
+				Cancelar
+			</button>
+			<button
+				type="button"
+				class="btn btn-primary"
+				on:click={createEtiqueta}
+				disabled={creatingEtiqueta}
+			>
+				{#if creatingEtiqueta}
+					<span class="spinner-small" />
+					Creando...
+				{:else}
+					<svg
+						width="16"
+						height="16"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+					>
+						<path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+						<polyline points="17 21 17 13 7 13 7 21" />
+						<polyline points="7 3 7 8 15 8" />
+					</svg>
+					Crear Etiqueta
+				{/if}
+			</button>
+		</div>
+	</Modal>
+{/if}
+
 <style lang="scss">
 	.blog-admin {
 		padding: 2rem;
@@ -1343,6 +1730,39 @@
 		line-clamp: 2;
 		-webkit-box-orient: vertical;
 		overflow: hidden;
+
+		/* Estilos para contenido HTML anidado */
+		:global(p) {
+			margin: 0;
+			display: inline;
+		}
+
+		:global(strong),
+		:global(b) {
+			font-weight: 700;
+		}
+
+		:global(em),
+		:global(i) {
+			font-style: italic;
+		}
+
+		:global(a) {
+			color: var(--color--primary);
+			text-decoration: underline;
+		}
+
+		:global(h1),
+		:global(h2),
+		:global(h3),
+		:global(h4),
+		:global(h5),
+		:global(h6) {
+			margin: 0;
+			display: inline;
+			font-size: inherit;
+			font-weight: 600;
+		}
 	}
 
 	.post-meta {
@@ -1368,8 +1788,17 @@
 	.post-tags {
 		display: flex;
 		flex-wrap: wrap;
+		align-items: center;
 		gap: 0.375rem;
-		margin-top: auto;
+		margin-top: 0.5rem;
+
+		.tag-label {
+			font-size: 0.7rem;
+			font-weight: 600;
+			color: rgba(var(--color--text-rgb), 0.6);
+			text-transform: uppercase;
+			letter-spacing: 0.5px;
+		}
 
 		.tag {
 			padding: 0.25rem 0.625rem;
@@ -1377,6 +1806,8 @@
 			font-size: 0.75rem;
 			font-weight: 500;
 			color: white;
+			text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+			border: 1px solid rgba(0, 0, 0, 0.1);
 		}
 	}
 
@@ -1505,7 +1936,7 @@
 		}
 	}
 
-	/* Estilos del formulario en el modal */
+	/* Estilos del formulario en el modal - Estilo Medium */
 	.editor-form {
 		display: flex;
 		flex-direction: column;
@@ -1521,7 +1952,10 @@
 		.form-label {
 			font-weight: 600;
 			color: var(--color--text);
-			font-size: 0.9375rem;
+			font-size: 0.75rem;
+			letter-spacing: 0.015em;
+			text-transform: uppercase;
+			opacity: 0.85;
 
 			.error-mark {
 				color: var(--color--danger);
@@ -1533,14 +1967,15 @@
 	}
 
 	.form-control {
-		padding: 0.75rem;
-		border: 1px solid rgba(var(--color--text-rgb), 0.15);
-		border-radius: 8px;
-		font-size: 1rem;
+		padding: 0.625rem 0.875rem;
+		border: 1px solid rgba(var(--color--text-rgb), 0.12);
+		border-radius: 6px;
+		font-size: 0.9375rem;
 		font-family: var(--font--default);
 		background: var(--color--page-background);
 		color: var(--color--text);
-		transition: border-color 0.2s ease;
+		transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+		line-height: 1.5;
 
 		&.error {
 			border-color: var(--color--danger);
@@ -1552,18 +1987,46 @@
 		&:focus {
 			outline: none;
 			border-color: var(--color--primary);
-			box-shadow: 0 0 0 3px rgba(var(--color--primary-rgb), 0.1);
+			box-shadow: 0 0 0 4px rgba(var(--color--primary-rgb), 0.08);
+			background: var(--color--card-background);
+		}
+
+		&:hover:not(:disabled):not(:focus) {
+			border-color: rgba(var(--color--text-rgb), 0.25);
 		}
 
 		&:disabled {
 			opacity: 0.6;
 			cursor: not-allowed;
+			background: rgba(var(--color--text-rgb), 0.03);
 		}
+
+		&::placeholder {
+			color: var(--color--text-shade);
+			opacity: 0.5;
+		}
+	}
+
+	.resumen-textarea {
+		min-height: 90px;
+		resize: vertical;
+		line-height: 1.5;
+		font-size: 0.9375rem;
+	}
+
+	.help-text {
+		display: block;
+		margin-top: 0.375rem;
+		font-size: 0.75rem;
+		color: var(--color--text-shade);
+		line-height: 1.4;
+		font-style: italic;
+		opacity: 0.85;
 	}
 
 	.file-input-wrapper {
 		display: flex;
-		gap: 0.5rem;
+		gap: 0.75rem;
 		align-items: center;
 	}
 
@@ -1573,64 +2036,100 @@
 
 	.file-label {
 		flex: 1;
-		padding: 0.75rem;
-		border: 1px solid rgba(var(--color--text-rgb), 0.15);
+		padding: 0.75rem 1rem;
+		border: 2px dashed rgba(var(--color--text-rgb), 0.15);
 		border-radius: 8px;
-		background: var(--color--page-background);
+		background: rgba(var(--color--text-rgb), 0.02);
 		color: var(--color--text);
 		cursor: pointer;
 		display: flex;
 		align-items: center;
+		justify-content: center;
 		gap: 0.5rem;
-		transition: all 0.2s;
+		transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+		font-weight: 500;
+		font-size: 0.875rem;
+
+		svg {
+			transition: transform 0.25s ease;
+		}
 
 		&:hover {
 			border-color: var(--color--primary);
 			background: rgba(var(--color--primary-rgb), 0.05);
+			transform: translateY(-1px);
+
+			svg {
+				transform: scale(1.1);
+			}
+		}
+
+		&:active {
+			transform: translateY(0);
 		}
 	}
 
 	.btn-clear {
-		padding: 0.5rem;
+		padding: 0.625rem;
 		border: 1px solid rgba(var(--color--danger-rgb), 0.3);
-		border-radius: 6px;
-		background: var(--color--callout-error-background);
+		border-radius: 8px;
+		background: transparent;
 		color: var(--color--callout-error-color);
 		cursor: pointer;
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		transition: all 0.2s;
+		transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+		flex-shrink: 0;
 
 		&:hover:not(:disabled) {
-			background: rgba(var(--color--danger-rgb), 0.2);
+			background: var(--color--callout-error-background);
+			border-color: rgba(var(--color--danger-rgb), 0.5);
+			transform: scale(1.05);
+		}
+
+		&:active:not(:disabled) {
+			transform: scale(0.95);
 		}
 	}
 
 	.image-preview {
 		margin-top: 0.5rem;
-		border: 1px solid rgba(var(--color--text-rgb), 0.15);
-		border-radius: 8px;
+		border: 1px solid rgba(var(--color--text-rgb), 0.1);
+		border-radius: 10px;
 		overflow: hidden;
-		max-height: 200px;
+		max-height: 220px;
+		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+		transition: box-shadow 0.2s ease;
+
+		&:hover {
+			box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+		}
 
 		img {
 			width: 100%;
 			height: auto;
 			display: block;
+			transition: filter 0.2s ease;
+
+			&[src*='placeholder'] {
+				filter: grayscale(100%);
+				opacity: 0.7;
+			}
 		}
 	}
 
-	/* Estilos para categorías pills (igual que etiquetas) */
+	/* Estilos para categorías pills - Estilo Medium mejorado */
 	.selected-categories {
 		display: flex;
 		flex-wrap: wrap;
 		gap: 0.5rem;
 		padding: 0.75rem;
-		background: rgba(var(--color--text-rgb), 0.03);
+		background: rgba(var(--color--text-rgb), 0.025);
 		border-radius: 8px;
 		border: 2px solid transparent;
-		transition: border-color 0.3s ease;
+		transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+		min-height: 48px;
 
 		&.error-border {
 			border-color: var(--color--danger);
@@ -1640,11 +2139,16 @@
 	}
 
 	.available-categories {
+		margin-top: 0.75rem;
+
 		.section-label {
-			font-size: 0.875rem;
+			font-size: 0.75rem;
 			color: var(--color--text-shade);
 			margin-bottom: 0.5rem;
-			font-weight: 500;
+			font-weight: 600;
+			text-transform: uppercase;
+			letter-spacing: 0.02em;
+			opacity: 0.85;
 		}
 	}
 
@@ -1660,47 +2164,53 @@
 		gap: 0.5rem;
 		padding: 0.5rem 0.875rem;
 		border-radius: 20px;
-		font-size: 0.875rem;
+		font-size: 0.8125rem;
 		font-weight: 500;
 		border: 2px solid transparent;
 		cursor: pointer;
-		transition: all 0.2s ease;
+		transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 		font-family: var(--font--default);
+		position: relative;
 
 		&.selected {
 			color: white;
+			box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
 
 			&:hover:not(:disabled) {
-				transform: scale(1.05);
-				box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+				transform: translateY(-2px);
+				box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
 			}
 
 			&:active:not(:disabled) {
-				transform: scale(0.98);
+				transform: translateY(0);
+				box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
 			}
 
 			.category-remove {
 				font-size: 1.125rem;
 				font-weight: 700;
 				line-height: 1;
-				opacity: 0.8;
-				transition: opacity 0.2s;
+				opacity: 0.7;
+				transition: all 0.2s ease;
 			}
 
 			&:hover:not(:disabled) .category-remove {
 				opacity: 1;
+				transform: scale(1.1);
 			}
 		}
 
 		&.available {
-			background: var(--color--page-background);
+			background: var(--color--card-background);
 			color: var(--color--text);
 			border-width: 2px;
 			border-style: solid;
+			box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 
 			&:hover:not(:disabled) {
-				background: rgba(var(--color--primary-rgb), 0.1);
+				background: var(--color--page-background);
 				transform: translateY(-2px);
+				box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12);
 			}
 
 			&:active:not(:disabled) {
@@ -1711,24 +2221,27 @@
 				width: 10px;
 				height: 10px;
 				border-radius: 50%;
+				box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.5);
 			}
 
 			.category-add {
 				font-size: 1.125rem;
 				font-weight: 700;
 				line-height: 1;
-				opacity: 0.8;
-				transition: opacity 0.2s;
+				opacity: 0.6;
+				transition: all 0.2s ease;
 			}
 
 			&:hover:not(:disabled) .category-add {
 				opacity: 1;
+				transform: scale(1.2);
 			}
 		}
 
 		&:disabled {
 			opacity: 0.5;
 			cursor: not-allowed;
+			transform: none !important;
 		}
 
 		.category-name {
@@ -1739,16 +2252,23 @@
 	.publish-toggle {
 		display: flex;
 		align-items: center;
-		gap: 1rem;
-		padding: 1rem;
-		border: 1px solid rgba(var(--color--text-rgb), 0.15);
+		gap: 0.75rem;
+		padding: 0.875rem 1rem;
+		border: 1px solid rgba(var(--color--text-rgb), 0.12);
 		border-radius: 8px;
-		background: var(--color--page-background);
+		background: rgba(var(--color--text-rgb), 0.02);
 		cursor: pointer;
-		transition: all 0.2s;
+		transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 
 		&:hover {
-			background: rgba(var(--color--text-rgb), 0.03);
+			background: rgba(var(--color--text-rgb), 0.04);
+			border-color: rgba(var(--color--text-rgb), 0.2);
+			transform: translateY(-1px);
+			box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+		}
+
+		&:active {
+			transform: translateY(0);
 		}
 
 		input[type='checkbox'] {
@@ -1757,11 +2277,12 @@
 
 		.toggle-slider {
 			position: relative;
-			width: 48px;
+			width: 44px;
 			height: 24px;
 			background: rgba(var(--color--text-rgb), 0.2);
 			border-radius: 12px;
-			transition: all 0.3s;
+			transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+			box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
 
 			&::before {
 				content: '';
@@ -1769,20 +2290,22 @@
 				width: 20px;
 				height: 20px;
 				border-radius: 50%;
-				background: var(--color--surface);
-		color: var(--color--text);
+				background: white;
 				top: 2px;
 				left: 2px;
-				transition: all 0.3s;
-				box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+				transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+				box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
 			}
 		}
 
 		input[type='checkbox']:checked + .toggle-slider {
 			background: var(--color--primary);
+			box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.15),
+				0 0 0 3px rgba(var(--color--primary-rgb), 0.1);
 
 			&::before {
-				transform: translateX(24px);
+				transform: translateX(20px);
+				box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
 			}
 		}
 
@@ -1790,6 +2313,8 @@
 			flex: 1;
 			color: var(--color--text);
 			font-weight: 500;
+			font-size: 0.875rem;
+			font-size: 0.9375rem;
 		}
 	}
 
@@ -1948,5 +2473,128 @@
 			left: 1rem;
 			min-width: auto;
 		}
+	}
+
+	/* Creation Modals Styles */
+	.section-header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		margin-bottom: 0.5rem;
+	}
+
+	.btn-create-item {
+		background: var(--color--primary);
+		color: white;
+		border: none;
+		padding: 0.375rem 0.75rem;
+		border-radius: 6px;
+		font-size: 0.75rem;
+		font-weight: 500;
+		cursor: pointer;
+		transition: all 0.2s ease;
+		display: flex;
+		align-items: center;
+		gap: 0.25rem;
+	}
+
+	.btn-create-item:hover {
+		opacity: 0.9;
+		transform: translateY(-1px);
+	}
+
+	.create-item-form {
+		display: flex;
+		flex-direction: column;
+		gap: 1rem;
+	}
+
+	.create-item-form input[type='text'] {
+		width: 100%;
+		padding: 0.625rem 0.875rem;
+		border: 1.5px solid rgba(var(--color--text-rgb), 0.15);
+		border-radius: 8px;
+		font-size: 0.9375rem;
+		font-family: var(--font--primary);
+		transition: all 0.2s ease;
+	}
+
+	.create-item-form input[type='text']:focus {
+		outline: none;
+		border-color: var(--color--primary);
+		box-shadow: 0 0 0 3px rgba(var(--color--primary-rgb), 0.1);
+	}
+
+	.color-picker-wrapper {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+	}
+
+	.color-picker {
+		width: 48px;
+		height: 40px;
+		border: 1.5px solid rgba(var(--color--text-rgb), 0.15);
+		border-radius: 8px;
+		cursor: pointer;
+		transition: all 0.2s ease;
+	}
+
+	.color-picker:hover {
+		border-color: var(--color--primary);
+	}
+
+	.color-input {
+		flex: 1;
+		padding: 0.625rem 0.875rem;
+		border: 1.5px solid rgba(var(--color--text-rgb), 0.15);
+		border-radius: 8px;
+		font-family: 'Courier New', monospace;
+		font-size: 0.9375rem;
+		text-transform: uppercase;
+		transition: all 0.2s ease;
+	}
+
+	.color-input:focus {
+		outline: none;
+		border-color: var(--color--primary);
+		box-shadow: 0 0 0 3px rgba(var(--color--primary-rgb), 0.1);
+	}
+
+	.btn-random-color {
+		padding: 0.625rem 0.875rem;
+		border: 1.5px solid rgba(var(--color--text-rgb), 0.15);
+		border-radius: 8px;
+		background: white;
+		font-size: 1.25rem;
+		cursor: pointer;
+		transition: all 0.2s ease;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.btn-random-color:hover {
+		border-color: var(--color--primary);
+		transform: scale(1.1);
+	}
+
+	.color-preview {
+		padding: 0.75rem;
+		background: rgba(var(--color--text-rgb), 0.05);
+		border-radius: 8px;
+		display: flex;
+		justify-content: center;
+	}
+
+	.preview-pill {
+		padding: 0.5rem 0.875rem;
+		border-radius: 20px;
+		color: white;
+		font-size: 0.8125rem;
+		font-weight: 500;
+		display: inline-flex;
+		align-items: center;
+		gap: 0.25rem;
 	}
 </style>

@@ -10,7 +10,7 @@
 </script>
 
 <div class="container">
-	<ContentSection title="All Blog Posts">
+	<ContentSection title="Todos Los Artículos Del Blog">
 		<div class="grid">
 			{#each posts as post}
 				<BlogPostCard

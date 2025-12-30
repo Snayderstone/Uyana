@@ -16,7 +16,8 @@ export type BlogPostDetailDTO = {
 	resumen: string;
 	imagen_portada: string;
 	fecha_publicacion: string;
-	tags: string[];
+	categorias: { id: number; nombre: string; slug: string; color: string }[];
+	etiquetas: { id: number; nombre: string; slug: string; color: string }[];
 	tiempo_lectura?: string;
 	autor: {
 		nombre: string;

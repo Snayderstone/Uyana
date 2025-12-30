@@ -50,7 +50,7 @@ class BlogService {
 					imagen_portada: post.imagen_portada,
 					fecha_publicacion: post.fecha_publicacion,
 					tiempo_lectura: this.calculateReadingTime(post.contenido),
-					etiquetas: etiquetas.map((e) => e.nombre)
+					etiquetas: etiquetas.map((e) => e.slug)
 				};
 			})
 		);
@@ -66,9 +66,15 @@ class BlogService {
 			return null;
 		}
 
-		// Obtener las categorías del post
+		// Incrementar contador de vistas de forma asíncrona
+		// No esperamos el resultado para no ralentizar la carga
+		this.repository.incrementPostViews(post.id).catch((err) => {
+			console.error('Error al incrementar vistas:', err);
+		});
+
+		// Obtener las categorías y etiquetas del post
 		const categorias = await this.repository.getPostCategories(post.id);
-		const tags = categorias.map((cat) => cat.nombre);
+		const etiquetas = await this.repository.getPostTags(post.id);
 
 		// Transformar a DTO con toda la información necesaria
 		return {
@@ -78,7 +84,18 @@ class BlogService {
 			resumen: post.resumen || '',
 			imagen_portada: post.imagen_portada || '/images/posts/placeholder.jpg',
 			fecha_publicacion: post.fecha_publicacion || post.creado_en,
-			tags,
+			categorias: categorias.map((c) => ({
+				id: c.id,
+				nombre: c.nombre,
+				slug: c.slug,
+				color: c.color
+			})),
+			etiquetas: etiquetas.map((e) => ({
+				id: e.id,
+				nombre: e.nombre,
+				slug: e.slug,
+				color: e.color
+			})),
 			autor: {
 				nombre: 'Dirección de Investigación UCE',
 				avatar: null

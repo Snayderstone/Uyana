@@ -15,7 +15,7 @@
 	function mapGenderToDB(gender: string): string {
 		const genderMap: Record<string, string> = {
 			Masculino: 'm',
-			Femenino: 'f',
+			Femenino: 'f'
 		};
 		return genderMap[gender] || gender;
 	}
@@ -837,11 +837,6 @@
 		}
 	}
 
-	.required-note {
-		color: #fc8181;
-		font-weight: 500;
-	}
-
 	.section-content {
 		padding: 2rem;
 	}
@@ -907,8 +902,7 @@
 
 	input[type='text'],
 	input[type='email'],
-	select,
-	textarea {
+	select {
 		padding: 1rem;
 		background: var(--color--input-background, rgba(255, 255, 255, 0.05));
 		border: 2px solid rgba(var(--color--text-rgb), 0.15);
@@ -965,12 +959,6 @@
 		}
 	}
 
-	textarea {
-		min-height: 120px;
-		resize: vertical;
-		line-height: 1.5;
-	}
-
 	.error-message {
 		display: inline-flex;
 		align-items: center;
@@ -984,14 +972,6 @@
 			height: 16px;
 			flex-shrink: 0;
 		}
-	}
-
-	.form-help,
-	.help-text {
-		font-size: 0.8rem;
-		color: var(--color--text-shade, #a0aec0);
-		line-height: 1.4;
-		margin: 0;
 	}
 
 	// ==================== Photo Section ====================

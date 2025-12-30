@@ -7,7 +7,8 @@
 			resumen: string;
 			imagen_portada: string;
 			fecha_publicacion: string;
-			tags: string[];
+			categorias: { id: number; nombre: string; slug: string; color: string }[];
+			etiquetas: { id: number; nombre: string; slug: string; color: string }[];
 			autor: {
 				nombre: string;
 				avatar?: string;
@@ -28,14 +29,36 @@
 			<span class="author">{post.autor.nombre}</span>
 			<span class="date">{new Date(post.fecha_publicacion).toLocaleDateString('es-ES')}</span>
 		</div>
-		{#if post.tags?.length}
-			<div class="tags">
-				{#each post.tags as tag}
-					<span class="tag">{tag}</span>
-				{/each}
+
+		{#if post.categorias?.length || post.etiquetas?.length}
+			<div class="post-tags">
+				{#if post.categorias?.length}
+					{#each post.categorias as categoria}
+						<span class="tag category-tag" style:border-color={categoria.color}>
+							<span class="tag-name">{categoria.slug}</span>
+							<span class="tag-indicator" style:background-color={categoria.color} />
+						</span>
+					{/each}
+				{/if}
+
+				{#if post.etiquetas?.length}
+					{#each post.etiquetas as etiqueta}
+						<span class="tag etiqueta-tag" style:border-color={etiqueta.color}>
+							<span class="tag-name">{etiqueta.slug}</span>
+							<span class="tag-indicator" style:background-color={etiqueta.color} />
+						</span>
+					{/each}
+				{/if}
 			</div>
 		{/if}
 	</header>
+
+	{#if post.resumen}
+		<div class="lead-paragraph">
+			{@html post.resumen}
+		</div>
+	{/if}
+
 	<div class="content">
 		{@html post.contenido}
 	</div>
@@ -75,18 +98,83 @@
 		color: rgba(var(--color--text-rgb), 0.8);
 	}
 
-	.tags {
+	.post-tags {
 		display: flex;
-		gap: 0.5rem;
 		flex-wrap: wrap;
+		gap: 0.5rem;
+		margin-top: 1rem;
 	}
 
 	.tag {
-		background: var(--color--primary);
-		color: white;
-		padding: 0.25rem 0.75rem;
-		border-radius: 4px;
-		font-size: 0.85rem;
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.5rem 0.875rem;
+		border-radius: 20px;
+		font-size: 0.8125rem;
+		font-weight: 500;
+		border: 2px solid;
+		background: transparent;
+		color: var(--color--text);
+		transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+		font-family: var(--font--default);
+	}
+
+	.tag-name {
+		line-height: 1;
+	}
+
+	.tag-indicator {
+		width: 8px;
+		height: 8px;
+		border-radius: 50%;
+		flex-shrink: 0;
+	}
+
+	.lead-paragraph {
+		font-family: var(--font--default);
+		font-size: 1.25rem;
+		line-height: 1.7;
+		color: rgba(var(--color--text-rgb), 0.9);
+		background: rgba(var(--color--primary-rgb), 0.05);
+		border-left: 4px solid var(--color--primary);
+		padding: 1.5rem 2rem;
+		margin-bottom: 2.5rem;
+		border-radius: 0 8px 8px 0;
+		font-weight: 400;
+
+		:global(p) {
+			margin: 0.75rem 0;
+
+			&:first-child {
+				margin-top: 0;
+			}
+
+			&:last-child {
+				margin-bottom: 0;
+			}
+		}
+
+		:global(strong),
+		:global(b) {
+			font-weight: 600;
+			color: var(--color--text);
+		}
+
+		:global(em),
+		:global(i) {
+			font-style: italic;
+		}
+
+		:global(a) {
+			color: var(--color--primary);
+			text-decoration: underline;
+			transition: color 0.2s;
+
+			&:hover {
+				color: var(--color--primary-shade);
+			}
+		}
 	}
 
 	.content {

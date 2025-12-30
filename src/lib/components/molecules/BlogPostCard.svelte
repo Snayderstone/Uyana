@@ -31,9 +31,9 @@
 			<div class="note">{readingTime}</div>
 		{/if}
 		{#if excerpt}
-			<p class="text">
-				{excerpt}
-			</p>
+			<div class="text">
+				{@html excerpt}
+			</div>
 		{/if}
 	</div>
 	<div class="footer" slot="footer">
@@ -81,6 +81,57 @@
 		margin-top: 5px;
 		font-size: 0.9rem;
 		text-align: justify;
+		line-height: 1.5;
+
+		/* Limitar a 3 líneas */
+		display: -webkit-box;
+		-webkit-line-clamp: 3;
+		line-clamp: 3;
+		-webkit-box-orient: vertical;
+		overflow: hidden;
+
+		/* Estilos para contenido HTML anidado */
+		:global(p) {
+			margin: 0;
+			display: inline;
+		}
+
+		:global(strong),
+		:global(b) {
+			font-weight: 700;
+		}
+
+		:global(em),
+		:global(i) {
+			font-style: italic;
+		}
+
+		:global(a) {
+			color: var(--color--primary);
+			text-decoration: underline;
+		}
+
+		:global(h1),
+		:global(h2),
+		:global(h3),
+		:global(h4),
+		:global(h5),
+		:global(h6) {
+			margin: 0;
+			display: inline;
+			font-size: inherit;
+			font-weight: 600;
+		}
+
+		:global(ul),
+		:global(ol) {
+			margin: 0;
+			padding-left: 1.2rem;
+		}
+
+		:global(li) {
+			margin: 0;
+		}
 	}
 
 	.footer {

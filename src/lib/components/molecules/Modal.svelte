@@ -118,7 +118,7 @@
 		}
 
 		&.large {
-			max-width: 900px;
+			max-width: 1200px;
 		}
 
 		&.fullscreen {

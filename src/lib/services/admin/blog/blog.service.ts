@@ -221,7 +221,8 @@ export const AdminBlogService = {
 				.map((c) => ({
 					id: c!.id,
 					nombre: c!.nombre,
-					slug: c!.slug
+					slug: c!.slug,
+				color: c!.color
 				})),
 			etiquetas: etiquetas
 				.filter((t) => t !== null)
