@@ -42,7 +42,6 @@
 				{#each tags.slice(0, 2) as tag}
 					<span class="tag-pill" style:border-color={tag.color}>
 						<span class="tag-name">{tag.slug}</span>
-						<span class="tag-indicator" style:background-color={tag.color} />
 					</span>
 				{/each}
 			</div>
@@ -92,13 +91,6 @@
 
 	.tag-name {
 		line-height: 1;
-	}
-
-	.tag-indicator {
-		width: 7px;
-		height: 7px;
-		border-radius: 50%;
-		flex-shrink: 0;
 	}
 
 	.note {
