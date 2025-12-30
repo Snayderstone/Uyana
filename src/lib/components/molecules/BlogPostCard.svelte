@@ -40,8 +40,8 @@
 		{#if tags?.length}
 			<div class="tags">
 				{#each tags.slice(0, 2) as tag}
-					<span class="tag-pill" style:border-color={tag.color}>
-						<span class="tag-name">{tag.slug}</span>
+					<span class="tag-pill">
+						{tag.slug}
 					</span>
 				{/each}
 			</div>
@@ -77,20 +77,14 @@
 	.tag-pill {
 		display: inline-flex;
 		align-items: center;
-		gap: 0.4rem;
 		padding: 0.4rem 0.75rem;
 		border-radius: 20px;
 		font-size: 0.75rem;
 		font-weight: 500;
-		border: 2px solid;
 		background: transparent;
-		color: var(--color--text);
-		transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+		color: var(--color--primary);
+		transition: all 0.2s;
 		font-family: var(--font--default);
-	}
-
-	.tag-name {
-		line-height: 1;
 	}
 
 	.note {
