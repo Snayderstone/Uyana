@@ -20,6 +20,7 @@ export class AuthRepository {
 			email: data.email,
 			nombre: data.nombre,
 			contraseña_hash: data.contraseña_hash,
+			foto_perfil: data.foto_perfil || null,
 			creado_en: data.creado_en ? new Date(data.creado_en) : null,
 			actualizado_en: data.actualizado_en ? new Date(data.actualizado_en) : null
 		};
@@ -40,6 +41,7 @@ export class AuthRepository {
 			email: data.email,
 			nombre: data.nombre,
 			contraseña_hash: data.contraseña_hash,
+			foto_perfil: data.foto_perfil || null,
 			creado_en: data.creado_en ? new Date(data.creado_en) : null,
 			actualizado_en: data.actualizado_en ? new Date(data.actualizado_en) : null
 		};
@@ -75,6 +77,7 @@ export class AuthRepository {
 			email: data.email,
 			nombre: data.nombre,
 			contraseña_hash: data.contraseña_hash,
+			foto_perfil: data.foto_perfil || null,
 			creado_en: data.creado_en ? new Date(data.creado_en) : null,
 			actualizado_en: data.actualizado_en ? new Date(data.actualizado_en) : null
 		};

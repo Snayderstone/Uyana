@@ -25,9 +25,35 @@
 			<img src={post.imagen_portada} alt={post.titulo} class="cover-image" />
 		{/if}
 		<h1>{post.titulo}</h1>
-		<div class="meta">
-			<span class="author">{post.autor.nombre}</span>
-			<span class="date">{new Date(post.fecha_publicacion).toLocaleDateString('es-ES')}</span>
+
+		<div class="meta-section">
+			<div class="author-info">
+				{#if post.autor.avatar}
+					<img src={post.autor.avatar} alt={post.autor.nombre} class="author-avatar" />
+				{:else}
+					<div class="author-avatar-placeholder">
+						{post.autor.nombre.charAt(0).toUpperCase()}
+					</div>
+				{/if}
+				<div class="author-details">
+					<span class="author-name">{post.autor.nombre}</span>
+					<span class="post-date">
+						{(() => {
+							const fecha = new Date(post.fecha_publicacion);
+							const fechaFormateada = fecha.toLocaleDateString('es-ES', {
+								day: 'numeric',
+								month: 'long',
+								year: 'numeric'
+							});
+							const horaFormateada = fecha.toLocaleTimeString('es-ES', {
+								hour: '2-digit',
+								minute: '2-digit'
+							});
+							return `${fechaFormateada}, ${horaFormateada}`;
+						})()}
+					</span>
+				</div>
+			</div>
 		</div>
 
 		{#if post.categorias?.length || post.etiquetas?.length}
@@ -86,16 +112,63 @@
 	h1 {
 		font-family: var(--font--title);
 		font-size: 2.5rem;
-		margin-bottom: 1rem;
+		margin-bottom: 1.5rem;
+		color: var(--color--text);
+		line-height: 1.2;
+	}
+
+	.meta-section {
+		margin-bottom: 2rem;
+		padding-bottom: 1.5rem;
+		border-bottom: 2px solid rgba(var(--color--text-rgb), 0.1);
+	}
+
+	.author-info {
+		display: flex;
+		align-items: center;
+		gap: 1rem;
+	}
+
+	.author-avatar {
+		width: 56px;
+		height: 56px;
+		border-radius: 50%;
+		object-fit: cover;
+		border: 3px solid var(--color--primary);
+		box-shadow: 0 4px 12px rgba(110, 41, 231, 0.2);
+	}
+
+	.author-avatar-placeholder {
+		width: 56px;
+		height: 56px;
+		border-radius: 50%;
+		background: linear-gradient(135deg, var(--color--primary) 0%, #8b5cf6 100%);
+		color: white;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-size: 1.5rem;
+		font-weight: 700;
+		box-shadow: 0 4px 12px rgba(110, 41, 231, 0.2);
+	}
+
+	.author-details {
+		display: flex;
+		flex-direction: column;
+		gap: 0.25rem;
+	}
+
+	.author-name {
+		font-family: var(--font--default);
+		font-size: 1.1rem;
+		font-weight: 600;
 		color: var(--color--text);
 	}
 
-	.meta {
-		display: flex;
-		gap: 1rem;
-		margin-bottom: 1rem;
+	.post-date {
+		font-family: var(--font--default);
 		font-size: 0.9rem;
-		color: rgba(var(--color--text-rgb), 0.8);
+		color: rgba(var(--color--text-rgb), 0.7);
 	}
 
 	.post-tags {
@@ -387,6 +460,26 @@
 			font-size: 2rem;
 		}
 
+		.author-avatar,
+		.author-avatar-placeholder {
+			width: 48px;
+			height: 48px;
+			font-size: 1.25rem;
+		}
+
+		.author-name {
+			font-size: 1rem;
+		}
+
+		.post-date {
+			font-size: 0.85rem;
+		}
+
+		.lead-paragraph {
+			font-size: 1.125rem;
+			padding: 1rem 1.5rem;
+		}
+
 		.content {
 			padding: 1.5rem;
 			font-size: 1rem;
@@ -402,6 +495,10 @@
 
 		.content :global(h3) {
 			font-size: 1.25rem;
+		}
+
+		.content :global(p:first-of-type) {
+			font-size: 1.0625rem;
 		}
 	}
 </style>

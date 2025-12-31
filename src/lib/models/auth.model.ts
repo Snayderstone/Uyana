@@ -10,6 +10,7 @@ export interface Usuario {
 	email: string;
 	nombre: string;
 	contraseña_hash: string;
+	foto_perfil?: string | null;
 	creado_en: Date | null;
 	actualizado_en: Date | null;
 }
@@ -21,6 +22,7 @@ export interface UsuarioSinPassword {
 	id: number;
 	email: string;
 	nombre: string;
+	foto_perfil?: string | null;
 	creado_en: Date | null;
 	actualizado_en: Date | null;
 }
@@ -101,6 +103,7 @@ export interface UsuarioAutenticado {
 	id: number;
 	email: string;
 	nombre: string;
+	foto_perfil?: string | null;
 	roles: string[];
 }
 

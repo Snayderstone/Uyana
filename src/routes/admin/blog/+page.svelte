@@ -639,11 +639,13 @@
 	});
 
 	function formatDate(dateString: string) {
-		return new Date(dateString).toLocaleDateString('es-ES', {
-			year: 'numeric',
-			month: 'long',
-			day: 'numeric'
-		});
+		const fecha = new Date(dateString);
+		const dia = fecha.getDate().toString().padStart(2, '0');
+		const mes = (fecha.getMonth() + 1).toString().padStart(2, '0');
+		const año = fecha.getFullYear();
+		const horas = fecha.getHours().toString().padStart(2, '0');
+		const minutos = fecha.getMinutes().toString().padStart(2, '0');
+		return `${dia}/${mes}/${año} ${horas}:${minutos}`;
 	}
 </script>
 
@@ -780,26 +782,11 @@
 						{/if}
 
 						<div class="post-meta">
-							{#if post.autor_nombre}
-								<span class="meta-item">
-									<svg
-										width="16"
-										height="16"
-										viewBox="0 0 24 24"
-										fill="none"
-										stroke="currentColor"
-										stroke-width="2"
-									>
-										<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-										<circle cx="12" cy="7" r="4" />
-									</svg>
-									{post.autor_nombre}
-								</span>
-							{/if}
+
 							<span class="meta-item">
 								<svg
-									width="16"
-									height="16"
+									width="14"
+									height="14"
 									viewBox="0 0 24 24"
 									fill="none"
 									stroke="currentColor"
@@ -810,22 +797,24 @@
 									<line x1="8" y1="2" x2="8" y2="6" />
 									<line x1="3" y1="10" x2="21" y2="10" />
 								</svg>
-								Actualizado: {formatDate(post.fecha_publicacion)}
-								<span class="meta-item">
-									<svg
-										width="16"
-										height="16"
-										viewBox="0 0 24 24"
-										fill="none"
-										stroke="currentColor"
-										stroke-width="2"
-									>
-										<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-										<circle cx="12" cy="12" r="3" />
-									</svg>
-									{post.vistas || 0} vistas
-								</span>
+								{formatDate(post.fecha_publicacion)}
 							</span>
+
+								<span class="meta-item">
+								<svg
+									width="14"
+									height="14"
+									viewBox="0 0 24 24"
+									fill="none"
+									stroke="currentColor"
+									stroke-width="2"
+								>
+									<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+									<circle cx="12" cy="12" r="3" />
+								</svg>
+								{post.vistas || 0} vistas
+							</span>
+
 						</div>
 
 						{#if post.categorias?.length > 0}
@@ -834,7 +823,6 @@
 								{#each post.categorias.slice(0, 3) as cat}
 									<span class="tag category-tag" style:border-color={cat.color}>
 										<span class="tag-name">{cat.slug}</span>
-										<span class="tag-indicator" style:background-color={cat.color} />
 									</span>
 								{/each}
 							</div>
@@ -846,7 +834,6 @@
 								{#each post.etiquetas.slice(0, 3) as etiq}
 									<span class="tag etiqueta-tag" style:border-color={etiq.color}>
 										<span class="tag-name">{etiq.slug}</span>
-										<span class="tag-indicator" style:background-color={etiq.color} />
 									</span>
 								{/each}
 							</div>
@@ -1672,7 +1659,7 @@
 
 	.post-card {
 		background: var(--color--card-background);
-		border-radius: 12px;
+		border-radius: 8px;
 		box-shadow: var(--card-shadow);
 		overflow: hidden;
 		transition: all 0.3s ease;
@@ -1680,7 +1667,7 @@
 		flex-direction: column;
 
 		&:hover {
-			transform: translateY(-4px);
+			transform: translateY(-2px);
 			box-shadow: var(--card-shadow-hover);
 		}
 	}
@@ -1688,7 +1675,7 @@
 	.post-image {
 		position: relative;
 		width: 100%;
-		height: 200px;
+		height: 160px;
 		overflow: hidden;
 
 		img {
@@ -1699,11 +1686,11 @@
 
 		.status-badge {
 			position: absolute;
-			top: 0.75rem;
-			right: 0.75rem;
-			padding: 0.375rem 0.875rem;
-			border-radius: 20px;
-			font-size: 0.8125rem;
+			top: 0.5rem;
+			right: 0.5rem;
+			padding: 0.25rem 0.625rem;
+			border-radius: 16px;
+			font-size: 0.75rem;
 			font-weight: 600;
 			border: none;
 			cursor: pointer;
@@ -1731,16 +1718,16 @@
 	}
 
 	.post-content {
-		padding: 1.25rem;
+		padding: 0.875rem;
 		flex: 1;
 		display: flex;
 		flex-direction: column;
-		gap: 0.75rem;
+		gap: 0.5rem;
 	}
 
 	.post-title {
 		margin: 0;
-		font-size: 1.25rem;
+		font-size: 1.05rem;
 		font-family: var(--font--title);
 		font-weight: 600;
 		color: var(--color--text);
@@ -1755,8 +1742,8 @@
 	.post-excerpt {
 		margin: 0;
 		color: var(--color--text-shade);
-		font-size: 0.875rem;
-		line-height: 1.5;
+		font-size: 0.8rem;
+		line-height: 1.4;
 		display: -webkit-box;
 		-webkit-line-clamp: 2;
 		line-clamp: 2;
@@ -1800,19 +1787,20 @@
 	.post-meta {
 		display: flex;
 		align-items: center;
-		gap: 1rem;
-		font-size: 0.8125rem;
+		justify-content: space-between;
+		gap: 0.75rem;
+		font-size: 0.75rem;
 		color: var(--color--text-shade);
 		flex-wrap: wrap;
 
 		.meta-item {
 			display: flex;
 			align-items: center;
-			gap: 0.375rem;
+			gap: 0.3rem;
 
 			svg {
-				width: 14px;
-				height: 14px;
+				width: 13px;
+				height: 13px;
 			}
 		}
 	}
@@ -1821,25 +1809,25 @@
 		display: flex;
 		flex-wrap: wrap;
 		align-items: center;
-		gap: 0.5rem;
-		margin-top: 0.5rem;
+		gap: 0.375rem;
+		margin-top: 0.375rem;
 
 		.tag-section-label {
-			font-size: 0.7rem;
+			font-size: 0.65rem;
 			font-weight: 600;
 			color: rgba(var(--color--text-rgb), 0.6);
 			text-transform: uppercase;
 			letter-spacing: 0.5px;
-			margin-right: 0.25rem;
+			margin-right: 0.2rem;
 		}
 
 		.tag {
 			display: inline-flex;
 			align-items: center;
-			gap: 0.4rem;
-			padding: 0.4rem 0.75rem;
-			border-radius: 20px;
-			font-size: 0.75rem;
+			gap: 0.3rem;
+			padding: 0.3rem 0.6rem;
+			border-radius: 16px;
+			font-size: 0.7rem;
 			font-weight: 500;
 			border: 2px solid;
 			background: transparent;
@@ -1851,24 +1839,17 @@
 		.tag-name {
 			line-height: 1;
 		}
-
-		.tag-indicator {
-			width: 7px;
-			height: 7px;
-			border-radius: 50%;
-			flex-shrink: 0;
-		}
 	}
 
 	.post-actions {
 		display: flex;
-		gap: 0.5rem;
-		padding: 0.75rem 1.25rem;
+		gap: 0.375rem;
+		padding: 0.625rem 0.875rem;
 		border-top: 1px solid rgba(var(--color--text-rgb), 0.08);
 	}
 
 	.btn-icon {
-		padding: 0.5rem;
+		padding: 0.4rem;
 		border: none;
 		background: transparent;
 		color: var(--color--text);

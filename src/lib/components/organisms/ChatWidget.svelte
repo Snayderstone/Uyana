@@ -281,7 +281,13 @@
 			>
 				<!-- Header del chat expandido -->
 				<div class="chat-expanded__header">
-					<Button variant="ghost" size="small" on:click={closeChat} aria-label="Cerrar chat">
+					<Button
+						variant="ghost"
+						size="small"
+						on:click={closeChat}
+						aria-label="Cerrar chat"
+						additionalClass="btn-close-circular"
+					>
 						<svg width="18" height="18" viewBox="0 0 24 24" fill="none">
 							<path
 								d="M18 6L6 18M6 6L18 18"
@@ -306,6 +312,7 @@
 						on:click={handleNewChat}
 						aria-label="Nueva conversación"
 						title="Nueva conversación"
+						additionalClass="btn-new-chat-rounded"
 					>
 						<svg width="18" height="18" viewBox="0 0 24 24" fill="none">
 							<path
@@ -590,5 +597,25 @@
 		clip: rect(0, 0, 0, 0);
 		white-space: nowrap;
 		border: 0;
+	}
+
+	// Estilos personalizados para botones del header
+	:global(.btn-close-circular) {
+		border-radius: 50% !important;
+		width: 32px;
+		height: 32px;
+		min-width: 32px;
+		padding: 0 !important;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	:global(.btn-new-chat-rounded) {
+		border-radius: 10px !important;
+		padding: 0.5rem !important;
+		display: flex;
+		align-items: center;
+		justify-content: center;
 	}
 </style>

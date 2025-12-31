@@ -38,7 +38,12 @@ export class BlogRepository {
 	async getPostBySlug(slug: string): Promise<BlogPost | null> {
 		const { data, error } = await this.supabase
 			.from('blog_posts')
-			.select('*')
+			.select(
+				`
+				*,
+				autor:usuarios(nombre, foto_perfil)
+			`
+			)
 			.eq('slug', slug)
 			.eq('publicado', true)
 			.single();

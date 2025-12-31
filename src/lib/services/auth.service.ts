@@ -74,6 +74,7 @@ export class AuthService {
 				id: usuario.id,
 				email: usuario.email,
 				nombre: usuario.nombre,
+				foto_perfil: usuario.foto_perfil,
 				creado_en: usuario.creado_en,
 				actualizado_en: usuario.actualizado_en
 			};
@@ -143,6 +144,7 @@ export class AuthService {
 				id: usuario.id,
 				email: usuario.email,
 				nombre: usuario.nombre,
+				foto_perfil: usuario.foto_perfil,
 				roles
 			};
 		} catch (error) {

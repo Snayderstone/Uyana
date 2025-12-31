@@ -1,15 +1,45 @@
 <script lang="ts">
 	import { usuarioStore } from '$lib/stores/auth.store';
 	import { goto } from '$app/navigation';
+	import { onMount } from 'svelte';
+
+	export let data;
 
 	let activeTab: 'perfil' | 'seguridad' = 'perfil';
 
+	// Usuario combinado (servidor + store)
+	$: usuario = data.usuario || $usuarioStore;
+
 	// Perfil
-	let nombre = $usuarioStore?.nombre || '';
-	let email = $usuarioStore?.email || '';
+	let nombre = '';
+	let email = '';
+	let fotoPerfil = '';
+	let fotoFile: File | null = null;
+	let fotoPreview: string | null = null;
 	let perfilLoading = false;
 	let perfilMessage = '';
 	let perfilMessageType: 'success' | 'error' = 'success';
+	let fotoLoading = false;
+
+	// Cargar datos del usuario al montar el componente
+	onMount(() => {
+		if (usuario) {
+			nombre = usuario.nombre || '';
+			email = usuario.email || '';
+			fotoPerfil = usuario.foto_perfil || '';
+			fotoPreview = usuario.foto_perfil || null;
+		}
+	});
+
+	// Reaccionar a cambios en el usuario
+	$: if (usuario) {
+		nombre = usuario.nombre || '';
+		email = usuario.email || '';
+		fotoPerfil = usuario.foto_perfil || '';
+		if (!fotoFile) {
+			fotoPreview = usuario.foto_perfil || null;
+		}
+	}
 
 	// Contraseña
 	let currentPassword = '';
@@ -19,11 +49,153 @@
 	let passwordMessage = '';
 	let passwordMessageType: 'success' | 'error' = 'success';
 
+	// Manejar selección de archivo
+	function handleFileSelect(event: Event) {
+		const input = event.target as HTMLInputElement;
+		const file = input.files?.[0];
+
+		if (!file) return;
+
+		// Validar tipo
+		const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
+		if (!allowedTypes.includes(file.type)) {
+			perfilMessage = 'Formato no permitido. Use JPG, PNG, WEBP o GIF';
+			perfilMessageType = 'error';
+			return;
+		}
+
+		// Validar tamaño (2MB)
+		if (file.size > 2 * 1024 * 1024) {
+			perfilMessage = 'La imagen es muy grande. Máximo 2MB';
+			perfilMessageType = 'error';
+			return;
+		}
+
+		fotoFile = file;
+
+		// Crear preview
+		const reader = new FileReader();
+		reader.onload = (e) => {
+			fotoPreview = e.target?.result as string;
+		};
+		reader.readAsDataURL(file);
+
+		perfilMessage = '';
+	}
+
+	// Subir foto de perfil
+	async function handleUploadFoto() {
+		if (!fotoFile) return;
+
+		fotoLoading = true;
+		perfilMessage = '';
+
+		try {
+			const formData = new FormData();
+			formData.append('foto', fotoFile);
+
+			const response = await fetch('/api/admin/configuracion/foto', {
+				method: 'POST',
+				body: formData
+			});
+
+			const data = await response.json();
+
+			if (response.ok && data.success) {
+				perfilMessage = 'Foto actualizada correctamente';
+				perfilMessageType = 'success';
+				fotoPerfil = data.foto_perfil;
+				fotoPreview = data.foto_perfil;
+				fotoFile = null;
+
+				// Actualizar store
+				usuarioStore.set({
+					...$usuarioStore,
+					foto_perfil: data.foto_perfil
+				});
+			} else {
+				perfilMessage = data.error || 'Error al subir foto';
+				perfilMessageType = 'error';
+			}
+		} catch (error) {
+			perfilMessage = 'Error de conexión al subir foto';
+			perfilMessageType = 'error';
+		} finally {
+			fotoLoading = false;
+		}
+	}
+
+	// Eliminar foto de perfil
+	async function handleDeleteFoto() {
+		if (!confirm('¿Estás seguro de eliminar tu foto de perfil?')) return;
+
+		fotoLoading = true;
+		perfilMessage = '';
+
+		try {
+			const response = await fetch('/api/admin/configuracion/foto', {
+				method: 'DELETE'
+			});
+
+			const data = await response.json();
+
+			if (response.ok && data.success) {
+				perfilMessage = 'Foto eliminada correctamente';
+				perfilMessageType = 'success';
+				fotoPerfil = '';
+				fotoPreview = null;
+				fotoFile = null;
+
+				// Actualizar store
+				usuarioStore.set({
+					...$usuarioStore,
+					foto_perfil: null
+				});
+			} else {
+				perfilMessage = data.error || 'Error al eliminar foto';
+				perfilMessageType = 'error';
+			}
+		} catch (error) {
+			perfilMessage = 'Error de conexión al eliminar foto';
+			perfilMessageType = 'error';
+		} finally {
+			fotoLoading = false;
+		}
+	}
+
 	async function handleUpdatePerfil() {
 		perfilMessage = '';
 
+		// Validar nombre
 		if (!nombre.trim()) {
 			perfilMessage = 'El nombre es requerido';
+			perfilMessageType = 'error';
+			return;
+		}
+
+		if (nombre.trim().length < 2) {
+			perfilMessage = 'El nombre debe tener al menos 2 caracteres';
+			perfilMessageType = 'error';
+			return;
+		}
+
+		// Validar email
+		if (!email.trim()) {
+			perfilMessage = 'El correo electrónico es requerido';
+			perfilMessageType = 'error';
+			return;
+		}
+
+		const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+		if (!emailRegex.test(email.trim())) {
+			perfilMessage = 'El correo electrónico no es válido';
+			perfilMessageType = 'error';
+			return;
+		}
+
+		// Verificar si hay cambios
+		if (nombre.trim() === usuario?.nombre && email.trim() === usuario?.email) {
+			perfilMessage = 'No hay cambios para guardar';
 			perfilMessageType = 'error';
 			return;
 		}
@@ -36,7 +208,10 @@
 				headers: {
 					'Content-Type': 'application/json'
 				},
-				body: JSON.stringify({ nombre, email })
+				body: JSON.stringify({
+					nombre: nombre.trim(),
+					email: email.trim()
+				})
 			});
 
 			const data = await response.json();
@@ -61,6 +236,7 @@
 		} catch (error) {
 			perfilMessage = 'Error de conexión. Por favor intente nuevamente.';
 			perfilMessageType = 'error';
+			console.error('Error al actualizar perfil:', error);
 		} finally {
 			perfilLoading = false;
 		}
@@ -204,6 +380,95 @@
 			<div class="section">
 				<h2>Información del Perfil</h2>
 				<p class="section-description">Actualiza tu información personal</p>
+
+				<!-- Foto de Perfil -->
+				<div class="foto-perfil-section">
+					<div class="foto-preview">
+						{#if fotoPreview}
+							<img src={fotoPreview} alt="Foto de perfil" class="avatar-image" />
+						{:else}
+							<div class="avatar-placeholder">
+								<svg width="48" height="48" viewBox="0 0 24 24" fill="none">
+									<path
+										d="M20 21V19C20 17.9391 19.5786 16.9217 18.8284 16.1716C18.0783 15.4214 17.0609 15 16 15H8C6.93913 15 5.92172 15.4214 5.17157 16.1716C4.42143 16.9217 4 17.9391 4 19V21"
+										stroke="currentColor"
+										stroke-width="2"
+										stroke-linecap="round"
+										stroke-linejoin="round"
+									/>
+									<path
+										d="M12 11C14.2091 11 16 9.20914 16 7C16 4.79086 14.2091 3 12 3C9.79086 3 8 4.79086 8 7C8 9.20914 9.79086 11 12 11Z"
+										stroke="currentColor"
+										stroke-width="2"
+										stroke-linecap="round"
+										stroke-linejoin="round"
+									/>
+								</svg>
+							</div>
+						{/if}
+					</div>
+
+					<div class="foto-actions">
+						<label for="foto-input" class="btn-secondary" class:disabled={fotoLoading}>
+							<svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+								<path
+									d="M21 15V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V15"
+									stroke="currentColor"
+									stroke-width="2"
+									stroke-linecap="round"
+									stroke-linejoin="round"
+								/>
+								<path
+									d="M17 8L12 3L7 8"
+									stroke="currentColor"
+									stroke-width="2"
+									stroke-linecap="round"
+									stroke-linejoin="round"
+								/>
+								<path
+									d="M12 3V15"
+									stroke="currentColor"
+									stroke-width="2"
+									stroke-linecap="round"
+									stroke-linejoin="round"
+								/>
+							</svg>
+							{fotoLoading ? 'Subiendo...' : 'Seleccionar foto'}
+						</label>
+						<input
+							id="foto-input"
+							type="file"
+							accept="image/jpeg,image/jpg,image/png,image/webp,image/gif"
+							on:change={handleFileSelect}
+							disabled={fotoLoading}
+							style="display: none;"
+						/>
+
+						{#if fotoFile}
+							<button
+								type="button"
+								class="btn-primary"
+								on:click={handleUploadFoto}
+								disabled={fotoLoading}
+							>
+								{fotoLoading ? 'Subiendo...' : 'Guardar foto'}
+							</button>
+						{/if}
+
+						{#if fotoPerfil && !fotoFile}
+							<button
+								type="button"
+								class="btn-danger"
+								on:click={handleDeleteFoto}
+								disabled={fotoLoading}
+							>
+								Eliminar foto
+							</button>
+						{/if}
+					</div>
+
+					<p class="foto-hint">JPG, PNG, WEBP o GIF. Máximo 2MB.</p>
+				</div>
 
 				<form on:submit|preventDefault={handleUpdatePerfil}>
 					<div class="form-group">
@@ -625,6 +890,113 @@
 		}
 	}
 
+	.foto-perfil-section {
+		margin-bottom: 2rem;
+		padding-bottom: 2rem;
+		border-bottom: 2px solid rgba(var(--color--text-rgb), 0.08);
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 1rem;
+
+		.foto-preview {
+			width: 120px;
+			height: 120px;
+			border-radius: 50%;
+			overflow: hidden;
+			box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+			background: var(--color--surface);
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			border: 4px solid var(--color--card-background);
+
+			.avatar-image {
+				width: 100%;
+				height: 100%;
+				object-fit: cover;
+			}
+
+			.avatar-placeholder {
+				width: 100%;
+				height: 100%;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				background: linear-gradient(135deg, var(--color--primary) 0%, #8b5cf6 100%);
+				color: white;
+
+				svg {
+					width: 48px;
+					height: 48px;
+				}
+			}
+		}
+
+		.foto-actions {
+			display: flex;
+			gap: 0.75rem;
+			flex-wrap: wrap;
+			justify-content: center;
+		}
+
+		.foto-hint {
+			font-size: 0.85rem;
+			color: var(--color--text-muted);
+			text-align: center;
+			margin: 0;
+		}
+	}
+
+	.btn-secondary {
+		padding: 0.65rem 1.25rem;
+		background: var(--color--surface);
+		color: var(--color--text);
+		border: 2px solid rgba(var(--color--text-rgb), 0.12);
+		border-radius: 8px;
+		font-size: 0.95rem;
+		font-weight: 600;
+		cursor: pointer;
+		transition: all 0.2s ease;
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
+
+		&:hover:not(.disabled) {
+			border-color: var(--color--primary);
+			transform: translateY(-2px);
+			box-shadow: 0 4px 12px rgba(110, 41, 231, 0.2);
+		}
+
+		&.disabled {
+			opacity: 0.5;
+			cursor: not-allowed;
+		}
+	}
+
+	.btn-danger {
+		padding: 0.65rem 1.25rem;
+		background: rgba(239, 68, 68, 0.1);
+		color: #dc2626;
+		border: 2px solid rgba(239, 68, 68, 0.3);
+		border-radius: 8px;
+		font-size: 0.95rem;
+		font-weight: 600;
+		cursor: pointer;
+		transition: all 0.2s ease;
+
+		&:hover:not(:disabled) {
+			background: rgba(239, 68, 68, 0.2);
+			transform: translateY(-2px);
+			box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+		}
+
+		&:disabled {
+			opacity: 0.5;
+			cursor: not-allowed;
+		}
+	}
+
 	@media (max-width: 768px) {
 		.configuracion-page {
 			padding: 1.5rem;
@@ -662,6 +1034,24 @@
 
 			.info-icon {
 				align-self: flex-start;
+			}
+		}
+
+		.foto-perfil-section {
+			.foto-preview {
+				width: 100px;
+				height: 100px;
+			}
+
+			.foto-actions {
+				flex-direction: column;
+				width: 100%;
+
+				button,
+				label {
+					width: 100%;
+					justify-content: center;
+				}
 			}
 		}
 	}

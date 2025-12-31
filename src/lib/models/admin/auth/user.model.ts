@@ -14,6 +14,7 @@ export interface Usuario {
 	email: string;
 	nombre: string;
 	contraseña_hash: string;
+	foto_perfil?: string | null;
 	creado_en?: Date;
 	actualizado_en?: Date;
 }

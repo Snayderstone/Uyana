@@ -231,8 +231,8 @@
 				{#if user}
 					<div class="user-profile">
 						<button class="user-avatar-btn" on:click={toggleUserMenu} aria-label="Menú de usuario">
-							{#if user.avatar}
-								<img src={user.avatar} alt={user.nombre} class="avatar" />
+							{#if user.foto_perfil}
+								<img src={user.foto_perfil} alt={user.nombre} class="avatar" />
 							{:else}
 								<div class="avatar-placeholder">
 									{user.nombre?.charAt(0).toUpperCase() || 'A'}

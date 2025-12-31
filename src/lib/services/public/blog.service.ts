@@ -99,8 +99,9 @@ class BlogService {
 				color: e.color
 			})),
 			autor: {
-				nombre: post.autor_nombre || 'Dirección de Investigación UCE',
-				avatar: null
+				nombre:
+					(post as any).autor?.nombre || post.autor_nombre || 'Dirección de Investigación UCE',
+				avatar: (post as any).autor?.foto_perfil || null
 			}
 		};
 	}
