@@ -782,7 +782,6 @@
 						{/if}
 
 						<div class="post-meta">
-
 							<span class="meta-item">
 								<svg
 									width="14"
@@ -800,7 +799,7 @@
 								{formatDate(post.fecha_publicacion)}
 							</span>
 
-								<span class="meta-item">
+							<span class="meta-item">
 								<svg
 									width="14"
 									height="14"
@@ -814,7 +813,6 @@
 								</svg>
 								{post.vistas || 0} vistas
 							</span>
-
 						</div>
 
 						{#if post.categorias?.length > 0}
