@@ -57,8 +57,8 @@ export async function login(
 		const data = await response.json();
 
 		if (data.success) {
-			// Actualizar el store con el usuario
-			usuarioStore.set(data.usuario);
+			// Actualizar el store: preferimos confirmar con /api/auth/me
+			await verificarAuth();
 			return { success: true };
 		} else {
 			return { success: false, error: data.error };

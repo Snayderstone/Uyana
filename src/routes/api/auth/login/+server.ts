@@ -32,6 +32,16 @@ export async function POST(event: RequestEvent) {
 		// Establecer cookie con el token
 		setAuthCookie(event, result.token);
 
+		// Logging mínimo para depuración en producción (NO imprimir tokens)
+		try {
+			const host = event.request.headers.get('host');
+			console.log(`POST /api/auth/login - success - userId=${(result as any).usuario?.id} host=${host} roles=${JSON.stringify(
+				(result as any).roles || []
+			)}`);
+		} catch (e) {
+			// no-op
+		}
+
 		// Retornar respuesta exitosa (sin el token en el body por seguridad)
 		return json({
 			success: true,
