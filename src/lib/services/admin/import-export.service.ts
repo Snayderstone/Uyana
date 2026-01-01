@@ -5,8 +5,8 @@
  */
 
 import type { ImportProyectoRowDTO, ImportResultDTO } from '$lib/models/admin';
-import { AdminProjectsService } from '/home/snayderstone/Descargas/Uyana/src/lib/services/admin/projects/projects.service';
-import { AdminParticipantsService } from '/home/snayderstone/Descargas/Uyana/src/lib/services/admin/participants/participants.service';
+import { AdminProjectsService } from '$lib/services/admin/projects/projects.service';
+import { AdminParticipantsService } from '$lib/services/admin/participants/participants.service';
 import {
 	AdminEstadosRepository,
 	AdminTiposRepository,
