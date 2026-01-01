@@ -8,7 +8,8 @@
 	onMount(() => {
 		const unsubscribe = usuarioStore.subscribe((usuario) => {
 			if (usuario) {
-				goto('/admin/resumen');
+				// Usar navegación completa para evitar inconsistencias con cookies httpOnly
+				location.assign('/admin/resumen');
 			}
 		});
 

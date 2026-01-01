@@ -29,8 +29,9 @@
 			const result = await login(email, password);
 
 			if (result.success) {
-				// Redirigir al dashboard admin
-				goto('/admin/resumen');
+				// Redirigir al dashboard admin usando navegación completa
+				// para asegurar que la cookie httpOnly esté presente en la siguiente petición
+				location.assign('/admin/resumen');
 			} else {
 				error = result.error || 'Error al iniciar sesión';
 			}
