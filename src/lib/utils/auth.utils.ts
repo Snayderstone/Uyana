@@ -6,11 +6,10 @@ import type { UsuarioAutenticado } from '$lib/models/auth.model';
  * Configuración de cookies
  */
 const COOKIE_OPTIONS = {
-	httpOnly: true,
-	secure: true, // Solo HTTPS en producción
-	sameSite: 'lax' as const,
-	path: '/',
-	maxAge: 60 * 60 * 24 * 7 // 7 días
+  httpOnly: true,
+  // `secure` and `sameSite` will be adjusted at set time depending on environment
+  path: '/',
+  maxAge: 60 * 60 * 24 * 7 // 7 días
 };
 
 /**
@@ -27,10 +26,15 @@ export function getAuthToken(event: RequestEvent): string | null {
 export function setAuthCookie(event: RequestEvent, token: string): void {
 	const config = authService.getAuthConfig();
 
-	event.cookies.set(config.cookieName, token, {
+	// Para entornos de producción donde el frontend puede estar en un dominio distinto
+	// necesitamos `SameSite=None` y `secure=true` para que el navegador acepte cookies cross-site.
+	const runtimeOptions: any = {
 		...COOKIE_OPTIONS,
-		secure: !config.isDevelopment // Solo secure en producción
-	});
+		secure: !config.isDevelopment,
+		sameSite: config.isDevelopment ? 'lax' : 'none'
+	};
+
+	event.cookies.set(config.cookieName, token, runtimeOptions);
 }
 
 /**
@@ -39,6 +43,7 @@ export function setAuthCookie(event: RequestEvent, token: string): void {
 export function removeAuthCookie(event: RequestEvent): void {
 	const config = authService.getAuthConfig();
 
+	// Borrar cookie usando path y (si aplica) sameSite/secure opciones
 	event.cookies.delete(config.cookieName, {
 		path: '/'
 	});
