@@ -16,8 +16,13 @@ const SESSION_ID_HEADER = 'mcp-session-id';
  */
 export const POST: RequestHandler = async (event) => {
 	try {
-		const usuario = await requireAdmin(event);
-		const { request, getClientAddress } = event;
+		await requireAdmin(event);
+	} catch (error: any) {
+		// Error en requireAdmin
+		return jsonError(error?.message || 'No autorizado', 401);
+	}
+
+	const { request, getClientAddress } = event;
 	const startTime = Date.now();
 	const requestId = `api-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
 
@@ -154,12 +159,6 @@ export const POST: RequestHandler = async (event) => {
 			}
 		});
 	} catch (error: any) {
-		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
-			return jsonError('No autorizado', 401);
-		}
-		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
-			return jsonError('No autorizado', 401);
-		}
 		if (error.message === 'No autenticado' || error.message === 'Permisos insuficientes') {
 			return jsonError('No autorizado', 401);
 		}

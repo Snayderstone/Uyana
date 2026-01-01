@@ -10,11 +10,11 @@ const extensions = ['.svelte', '.md'];
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
 	kit: {
-		adapter: adapter(),
-		prerender: {
-			handleHttpError: 'warn',
-			handleMissingId: 'warn'
-		}
+		adapter: adapter({
+			external: [],
+			polyfill: false,
+			precompress: false
+		})
 	},
 	preprocess: [
 		vitePreprocess(),
