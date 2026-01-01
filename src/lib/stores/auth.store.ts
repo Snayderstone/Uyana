@@ -50,6 +50,7 @@ export async function login(
 			headers: {
 				'Content-Type': 'application/json'
 			},
+			credentials: 'include',
 			body: JSON.stringify({ email, password })
 		});
 
@@ -74,7 +75,8 @@ export async function login(
 export async function logout(): Promise<void> {
 	try {
 		await fetch('/api/auth/logout', {
-			method: 'POST'
+			method: 'POST',
+			credentials: 'include'
 		});
 
 		// Limpiar el store
@@ -89,7 +91,7 @@ export async function logout(): Promise<void> {
  */
 export async function verificarAuth(): Promise<void> {
 	try {
-		const response = await fetch('/api/auth/me');
+		const response = await fetch('/api/auth/me', { credentials: 'include' });
 		const data = await response.json();
 
 		if (data.success) {
