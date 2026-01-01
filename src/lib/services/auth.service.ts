@@ -15,7 +15,7 @@ import { authRepository } from '$lib/db/auth.repository';
  * Configuración de autenticación
  */
 const AUTH_CONFIG = {
-	jwtSecret: process.env.JWT_SECRET || 'uyana-secret-key-change-in-production',
+	jwtSecret: process.env.JWT_SECRET,
 	jwtExpiresIn: '7d', // 7 días
 	cookieName: 'auth_token',
 	cookieMaxAge: 7 * 24 * 60 * 60, // 7 días en segundos

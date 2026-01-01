@@ -2,6 +2,10 @@ import { redirect } from '@sveltejs/kit';
 import { verifyAuth } from '$lib/utils/auth.utils';
 import type { LayoutServerLoad } from './$types';
 
+// Necesitamos ejecutar esta ruta en el servidor en cada request para leer cookies
+// y no prerenderarla durante el build (si se prerenderaba siempre redirigía al login)
+export const prerender = false;
+
 /**
  * Hook de protección para rutas de administración
  * Se ejecuta en cada carga de página bajo /admin
