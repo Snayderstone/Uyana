@@ -36,7 +36,14 @@ function formatRFC2822(dateString: string): string {
 
 export async function GET() {
   // Obtener todos los posts publicados desde el servicio
-  const posts = await blogService.getPublishedPosts();
+  let posts = [];
+  try {
+    posts = await blogService.getPublishedPosts();
+  } catch (err) {
+    // No queremos que un fallo en el servicio rompa la prerenderización
+    console.error('Error obteniendo posts para RSS:', err);
+    posts = [];
+  }
 
   const body = xml(posts);
   const headers = {
