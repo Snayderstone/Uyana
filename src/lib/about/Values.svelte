@@ -105,8 +105,7 @@
 			transform: translateX(-50%);
 			width: 60px;
 			height: 3px;
-			background: var(--color--primary);
-			border-radius: 2px;
+			border-radius: 10px;
 		}
 	}
 
@@ -121,7 +120,7 @@
 
 	.value-card {
 		background: var(--color--card-background);
-		border-radius: 1rem;
+		border-radius: 10px;
 		overflow: hidden;
 		transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 		border: 1px solid var(--color--border);
@@ -158,7 +157,7 @@
 		flex-shrink: 0;
 		width: 60px;
 		height: 60px;
-		border-radius: 1rem;
+		border-radius: 10px;
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -206,8 +205,7 @@
 				left: 0;
 				width: 2.5rem;
 				height: 2px;
-				background: var(--value-color, var(--color--primary));
-				border-radius: 2px;
+				border-radius: 10px;
 				opacity: 0.7;
 			}
 		}

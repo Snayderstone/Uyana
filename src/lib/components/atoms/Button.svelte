@@ -56,7 +56,7 @@
 		gap: 5px;
 
 		border: none;
-		border-radius: 20px;
+		border-radius: 10px;
 		font-weight: 700;
 
 		.icon {

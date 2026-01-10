@@ -14,23 +14,6 @@
 	</div>
 </section>
 
-<section id="about">
-	<div class="info">
-		<h2>
-			Explorando las Investigaciones de la UCE a través de 
-			<SparklingHighlight color="secondary">UYANA</SparklingHighlight>
-		</h2>
-		<p>
-			UYANA es una plataforma innovadora que permite visualizar en un mapa interactivo las investigaciones
-			desarrolladas por la Universidad Central del Ecuador. Facilitando el acceso y la difusión del
-			conocimiento científico producido por nuestra comunidad universitaria.
-		</p>
-		<div class="socials">
-			<span>Síguenos:</span>
-			<Socials />
-		</div>
-	</div>
-</section>
 
 <style lang="scss">
 	@import '$lib/scss/breakpoints.scss';
@@ -72,7 +55,7 @@
 				
 				h1 {
 					font-size: 2.5rem;
-					margin-bottom: 10px;
+					margin-bottom: 40px;
 					background: linear-gradient(
 						90deg, 
 						rgb(var(--color--primary-rgb)) 0%, 
@@ -85,7 +68,7 @@
 				}
 				
 				p {
-					font-size: 1.2rem;
+					font-size: 32px;
 					color: var(--color--text-shade);
 					font-weight: 500;
 				}
@@ -103,63 +86,7 @@
 		}
 	}
 
-	#about {
-		position: relative;
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		padding: 30px 20px 50px;
+	
 		
-		.info {
-			display: flex;
-			flex-direction: column;
-			gap: 20px;
-			width: 100%;
-			max-width: 800px;
-			
-			h2 {
-				text-align: center;
-				font-size: 1.8rem;
-				
-				@include for-phone-only {
-					font-size: 1.5rem;
-				}
-			}
-
-			p {
-				text-align: center;
-				font-size: 1.1rem;
-				line-height: 1.6;
-				
-				@include for-phone-only {
-					text-align: justify;
-					font-size: 1rem;
-				}
-			}
-
-			@include for-phone-only {
-				gap: 20px;
-			}
-		}
-
-		.socials {
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			gap: 15px;
-			margin-top: 20px;
-			
-			span {
-				font-weight: 600;
-				color: var(--color--text-shade);
-			}
-
-			@include for-phone-only {
-				margin-bottom: 10px;
-				span {
-					display: none;
-				}
-			}
-		}
-	}
+	
 </style>

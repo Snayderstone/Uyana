@@ -1,0 +1,29 @@
+<svg
+	xmlns="http://www.w3.org/2000/svg"
+	x="0px"
+	y="0px"
+	width="26px"
+	height="26px"
+	viewBox="0 0 24 24"
+	><polyline
+		points="2 8 12 13 22 8"
+		fill="none"
+		stroke="currentColor"
+		stroke-miterlimit="10"
+		stroke-width="2"
+		data-color="color-2"
+		data-cap="butt"
+	></polyline><rect
+		x="2"
+		y="4"
+		width="20"
+		height="16"
+		rx="2"
+		ry="2"
+		fill="none"
+		stroke="currentColor"
+		stroke-linecap="square"
+		stroke-miterlimit="10"
+		stroke-width="2"
+	></rect></svg
+>

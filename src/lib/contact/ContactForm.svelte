@@ -2,6 +2,12 @@
     import { fade, fly } from 'svelte/transition';
     import Button from '$lib/components/atoms/Button.svelte';
     import Sparkles from '$lib/components/atoms/Sparkles.svelte';
+    import SendMessage from '$lib/icons/send-message.svelte';
+    import Calendar from '$lib/icons/calendar.svelte';
+    import EmailIcon from '$lib/icons/email.svelte';
+    import PhoneIcon from '$lib/icons/phone.svelte';
+    import MapIcon from '$lib/icons/map.svelte';
+    import YoutubeIcon from '$lib/icons/youtube.svelte';
   
     let formData = {
       nombre: '',
@@ -26,29 +32,24 @@
   </script>
   
   <div class="contact-container" in:fade>
-    <p>Si tienes alguna pregunta o inquietud, no dudes en ponerte en contacto con nosotros a través del siguiente formulario.</p>
-    <p>Estaremos encantados de ayudarte.</p>
     <div class="contact-info" in:fly={{ y: 20, duration: 600 }}>
-      <h2>Contáctanos</h2>
+      <h2>Contácto</h2>
       <p>
-        Promover, formar, fortalecer y vigilar el desarrollo de la investigación científica y tecnológica a través
-         de convocatorias anuales obteniendo un mejor aprovechamiento de los recursos naturales que correspondan a las 
-         necesidades de generación de conocimiento, desarrollo tecnológico y solución de problemas de la sociedad 
-         ecuatoriana potenciando a la Universidad Central del Ecuador en el desarrollo de la <b>ciencia</b> y el <b>conocimiento</b>
+        Si tienes alguna pregunta o inquietud, no dudes en ponerte en contacto con nosotros a través del siguiente formulario.
+        Estaremos encantados de ayudarte.
       </p>
       
       <div class="info-details">
         <div class="info-item">
-          <span class="icon">📍</span>
+          <span class="icon"><MapIcon /></span>
           <div>
             <h3>Ubicación</h3>
             <p>Ciudadela Universitaria, en la calle Jerónimo Leyton y Gatto Sobral, dentro del Edificio Azul, detrás del Hospital del Día</p>
             <p>Ciudadela Universitaria, Quito - Ecuador</p>
           </div>
         </div>
-  
         <div class="info-item">
-          <span class="icon">📧</span>
+          <span class="icon"><EmailIcon /></span>
           <div>
             <h3>Email</h3>
             <p>investigacion@uce.edu.ec.</p>
@@ -56,7 +57,7 @@
         </div>
 
         <div class="info-item">
-          <span class="icon">📲</span>
+          <span class="icon"><PhoneIcon /></span>
           <div>
             <h3>Telefono</h3>
             <p>022904796</p>
@@ -64,21 +65,21 @@
         </div>
 
         <div class="info-item">
-          <span class="icon">⏱️</span>
+          <span class="icon"><Calendar /></span>
           <div>
             <h3>Horarios de Atención</h3>
             <p>Administrativo: 8h00-16h00</p>
           </div>
+
         </div>
-  
-        <div class="info-item">
-          <span class="icon">🎓</span>
+          <div class="info-item">
+          <span class="icon"><YoutubeIcon /></span>
           <div>
-            <h3>Repositorio de Noticias</h3>
-            <p>Dirección de Investigación</p>
-            <p><a href="https://investigacion.uce.edu.ec/" target="_blank" rel="noopener noreferrer">Enlace</a></p>
+            <h3>Noticiero</h3>
+            <p><a href="https://www.youtube.com/@lacentralec" target="_blank" rel="noopener noreferrer">UCE Informa</a></p>
           </div>
         </div>
+
       </div>
     </div>
   
@@ -130,6 +131,7 @@
       <div class="button-group">
         <Sparkles>
           <Button type="submit" color="primary">
+              <span slot="icon"><SendMessage /></span>
             Enviar Mensaje
           </Button>
         </Sparkles>
@@ -190,11 +192,13 @@
       align-items: flex-start;
   
       .icon {
+        flex-shrink: 0;
         font-size: 1.5rem;
         background: var(--color--background);
         padding: 0.5rem;
-        border-radius: 0.5rem;
+        border-radius: 10px;
         border: 1px solid var(--color--border);
+        color: var(--color--text);
       }
   
       h3 {
@@ -212,7 +216,7 @@
     .contact-form {
       background: var(--color--card-background);
       padding: 2rem;
-      border-radius: 1rem;
+      border-radius: 10px;
       border: 2px solid var(--color--text);
       box-shadow: var(--card-shadow);
     }
@@ -231,7 +235,7 @@
         width: 100%;
         padding: 0.75rem;
         border: 2px solid var(--color--text);
-        border-radius: 0.5rem;
+        border-radius: 10px;
         background: var(--color--background);
         color: var(--color--text);
         font-size: 1rem;
@@ -245,15 +249,20 @@
       }
     }
   
-    .button-group {
-      display: flex;
-      justify-content: flex-end;
-    }
+.button-group {
+  width: 100%;
+}
+.button-group :global(*) {
+  width: 100%;
+}
+.button-group :global(.button) {
+  width: 100%;
+}
   
     .message {
       margin-top: 1rem;
       padding: 0.75rem;
-      border-radius: 0.5rem;
+      border-radius: 10px;
       text-align: center;
   
       &.success {

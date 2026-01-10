@@ -86,7 +86,7 @@
 		width: 100%;
 		height: 100%;
 		backface-visibility: hidden;
-		border-radius: 1rem;
+		border-radius: 10px;
 		padding: 2rem;
 		display: flex;
 		flex-direction: column;
@@ -113,7 +113,9 @@
 		.icon {
 			font-size: 4.5rem;
 			margin: 0.5rem 0 1.5rem;
-			transition: transform 0.3s ease, opacity 0.3s ease;
+			transition:
+				transform 0.3s ease,
+				opacity 0.3s ease;
 			position: relative;
 
 			&::after {
@@ -128,9 +130,11 @@
 				);
 				bottom: -20px;
 				left: 0;
-				border-radius: 50%;
+				border-radius: 10px;
 				opacity: 0.6;
-				transition: transform 0.3s ease, opacity 0.3s ease;
+				transition:
+					transform 0.3s ease,
+					opacity 0.3s ease;
 			}
 		}
 	}
@@ -190,10 +194,9 @@
 			position: absolute;
 			width: 40%;
 			height: 3px;
-			background: var(--color--primary);
 			bottom: -0.5rem;
 			left: 30%;
-			border-radius: 2px;
+			border-radius: 10px;
 		}
 	}
 

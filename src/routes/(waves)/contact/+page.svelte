@@ -1,30 +1,78 @@
 <script lang="ts">
-	import ContentSection from '$lib/components/organisms/ContentSection.svelte';
 	import ContactForm from '$lib/contact/ContactForm.svelte';
-	import SparklingHighlight from '$lib/components/molecules/SparklingHighlight.svelte';
 </script>
 
-<div class="container">
-	<ContentSection title="Contacto">
-		<br />
-		<br />
+<div class="contacto-page">
+	<div class="page-header">
+		<div class="header-content">
+			<h1>Contáctanos</h1>
+			<p class="description">
+			Comunícate con la Dirección de Investigación de la Universidad Central del Ecuador.
+			Tu opinión y tus consultas son fundamentales para fortalecer la visibilidad y mejora continua de la producción científica institucional.
+			</p>
+		</div>
 		<div class="card-overlay">
-			<div class="header">
-				<h2>
-					¿Tienes alguna pregunta sobre
-					<SparklingHighlight color="primary">UYANA!</SparklingHighlight>?
-				</h2>
-				<p>Estamos aquí para ayudarte. Contáctanos y te responderemos lo antes posible.</p>
-				<img src="/images/sample-image.png" alt="Contact Us" width="700" style="display: block; margin: 0 auto;" />
-			</div>
 			<ContactForm />
 		</div>
-	</ContentSection>
+	</div>
 </div>
 
 <style lang="scss">
 	@import '$lib/scss/breakpoints.scss';
+	.contacto-page {
+		width: 100%;
+		max-width: 1400px;
+		margin: 0 auto;
+		padding: 0 20px 40px;
+	}
 
+	.page-header {
+		margin-bottom: 30px;
+		position: relative;
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: space-between;
+		align-items: flex-start;
+		gap: 20px;
+		padding-top: 20px;
+
+		.header-content {
+			flex: 1;
+			min-width: 300px;
+			margin: 0 auto
+		}
+
+		h1 {
+			font-size: 2.5rem;
+			color: var(--color--text);
+			margin-bottom: 10px;
+
+			background: linear-gradient(
+				90deg,
+				rgb(var(--color--primary-rgb)) 0%,
+				rgb(var(--color--secondary-rgb)) 100%
+			);
+			background-clip: text;
+			-webkit-background-clip: text;
+			-webkit-text-fill-color: transparent;
+			display: inline-block;
+
+			@include for-phone-only {
+				font-size: 2rem;
+			}
+		}
+
+		.description {
+			font-size: 1.1rem;
+			color: var(--color--text-shade);
+			max-width: 800px;
+			margin-bottom: 10px;
+
+			@include for-phone-only {
+				font-size: 1rem;
+			}
+		}
+	}
 	.card-overlay {
 		position: relative;
 		z-index: 10;
@@ -46,22 +94,6 @@
 		animation: float 6s ease-in-out infinite;
 	}
 
-	.header {
-		text-align: center;
-		margin-bottom: 2rem;
-
-		h2 {
-			font-family: var(--font--title);
-			font-size: 1.8rem;
-			margin-bottom: 1rem;
-			color: var(--color--text);
-		}
-
-		p {
-			color: var(--color--text-shade);
-			font-size: 1.1rem;
-		}
-	}
 
 	@keyframes float {
 		0% {

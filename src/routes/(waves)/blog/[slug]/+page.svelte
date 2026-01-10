@@ -92,9 +92,9 @@
 
 <style lang="scss">
 	.blog-post {
-		max-width: 800px;
+		max-width: 1200px;
 		margin: 0 auto;
-		padding: 2rem 1rem;
+		padding: 2rem 2rem;
 		color: var(--color--text);
 	}
 

@@ -24,8 +24,6 @@
 		</div>
 		<div class="socials">
 			<Socials />
-			<RssLink />
-			<ThemeToggle />
 		</div>
 	</div>
 </footer>
@@ -46,17 +44,25 @@
 			gap: 15px;
 			font-weight: 600;
 			text-align: center;
+			
+			.copyright {
+				font-size: 100%;
+				color: var(--color--text);
+				margin-bottom: 20px;
+			}
 
 			.credits {
 				font-weight: 300;
 				font-size: 90%;
 				color: var(--color--text-shade);
+				margin-bottom: 20px;
 			}
 
 			.socials {
 				display: flex;
 				align-items: center;
 				gap: 20px;
+				margin-bottom: 20px;
 			}
 		}
 
