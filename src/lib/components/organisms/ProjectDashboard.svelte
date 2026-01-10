@@ -17,6 +17,8 @@
 	let data: any = {};
 	let publicCharts: string[] = [];
 	let chartConfigs: ChartConfig[] = [];
+	let refreshInterval: ReturnType<typeof setInterval> | null = null;
+	let lastUpdate: Date | null = null;
 
 	// Ordenar chartConfigs para que el resumen ejecutivo aparezca primero
 	$: sortedChartConfigs = [...chartConfigs].sort((a, b) => {
@@ -55,7 +57,9 @@
 			loading = true;
 			error = null;
 
-			const response = await fetch('/api/public/proyectos/charts');
+			const response = await fetch('/api/public/proyectos/charts', {
+				cache: 'no-store'
+			});
 			const result = await response.json();
 
 			if (!result.success) {
@@ -66,11 +70,26 @@
 			data = result.data;
 			publicCharts = result.publicCharts || [];
 			chartConfigs = result.chartConfigs || [];
+			lastUpdate = new Date();
 		} catch (err) {
 			error = 'Error al conectar con el servidor';
 			console.error(err);
 		} finally {
 			loading = false;
+		}
+	}
+
+	// Refrescar datos manualmente
+	async function refrescarDatos() {
+		await cargarDatos();
+		// Re-renderizar todos los gráficos después de actualizar
+		if (publicCharts && publicCharts.length > 0) {
+			publicCharts.forEach((chartName: string) => {
+				const canvasId = `chart-${chartName}`;
+				if (document.getElementById(canvasId)) {
+					renderChart(chartName, canvasId);
+				}
+			});
 		}
 	}
 
@@ -189,10 +208,18 @@
 			}
 		});
 
+		// Polling periódico cada 30 segundos para actualizaciones
+		refreshInterval = setInterval(async () => {
+			await refrescarDatos();
+		}, 30000);
+
 		// Cleanup on destroy
 		return () => {
 			observer.disconnect();
 			Object.values(chartInstances).forEach((chart) => chart.destroy());
+			if (refreshInterval) {
+				clearInterval(refreshInterval);
+			}
 		};
 	});
 </script>
@@ -215,6 +242,40 @@
 			<p>No hay estadísticas disponibles en este momento</p>
 		</div>
 	{:else}
+		<!-- Header con botón de refrescar -->
+		<div class="dashboard-header">
+			<div class="header-info">
+				<h2>📈 Dashboard de Proyectos</h2>
+				{#if lastUpdate}
+					<p class="last-update">
+						Última actualización: {lastUpdate.toLocaleTimeString('es-ES', {
+							hour: '2-digit',
+							minute: '2-digit'
+						})}
+					</p>
+				{/if}
+			</div>
+			<button class="refresh-button" on:click={refrescarDatos} disabled={loading}>
+				<svg
+					xmlns="http://www.w3.org/2000/svg"
+					width="18"
+					height="18"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="2"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+				>
+					<path d="M21 2v6h-6" />
+					<path d="M3 12a9 9 0 0 1 15-6.7L21 8" />
+					<path d="M3 22v-6h6" />
+					<path d="M21 12a9 9 0 0 1-15 6.7L3 16" />
+				</svg>
+				Refrescar
+			</button>
+		</div>
+
 		<div class="charts-grid">
 			{#each sortedChartConfigs as config}
 				<div class="chart-card">
@@ -251,6 +312,70 @@
 		min-height: 400px;
 	}
 
+	.dashboard-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin-bottom: 2rem;
+		padding: 1.5rem;
+		background: var(--color--card-background, rgba(255, 255, 255, 0.05));
+		border-radius: 12px;
+		border: 1px solid rgba(var(--color--text-rgb), 0.1);
+		flex-wrap: wrap;
+		gap: 1rem;
+
+		.header-info {
+			flex: 1;
+			min-width: 200px;
+
+			h2 {
+				margin: 0 0 0.5rem 0;
+				font-size: 1.5rem;
+				color: var(--color--text);
+			}
+
+			.last-update {
+				margin: 0;
+				font-size: 0.9rem;
+				color: var(--color--text-shade);
+				opacity: 0.8;
+			}
+		}
+	}
+
+	.refresh-button {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.75rem 1.5rem;
+		background: var(--color--primary);
+		color: white;
+		border: none;
+		border-radius: 8px;
+		font-weight: 600;
+		cursor: pointer;
+		transition: all 0.3s ease;
+		font-size: 1rem;
+
+		svg {
+			transition: transform 0.3s ease;
+		}
+
+		&:hover:not(:disabled) {
+			filter: brightness(1.1);
+			transform: translateY(-2px);
+
+			svg {
+				transform: rotate(180deg);
+			}
+		}
+
+		&:disabled {
+			opacity: 0.6;
+			cursor: not-allowed;
+		}
+	}
+
 	.loading-container,
 	.error-message,
 	.empty-message {
@@ -259,7 +384,6 @@
 		padding: 3rem;
 		text-align: center;
 		border: 1px solid rgba(var(--color--text-rgb), 0.1);
-
 
 		p {
 			color: var(--color--text-shade);

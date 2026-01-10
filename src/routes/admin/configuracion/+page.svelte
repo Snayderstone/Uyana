@@ -2,8 +2,8 @@
 	import { usuarioStore } from '$lib/stores/auth.store';
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
-	import EyeOpen from '$lib/icons/eye-open.svelte';
-	import EyeClosed from '$lib/icons/eye-closed.svelte';
+	import EyeOpen from '$lib/icons/admin/eye-open.svelte';
+	import EyeClosed from '$lib/icons/admin/eye-closed.svelte';
 
 	export let data;
 

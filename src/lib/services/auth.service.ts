@@ -19,7 +19,9 @@ const AUTH_CONFIG = {
 	jwtExpiresIn: '7d', // 7 días
 	cookieName: 'auth_token',
 	cookieMaxAge: 7 * 24 * 60 * 60, // 7 días en segundos
-	bcryptRounds: 12
+	bcryptRounds: 12,
+	maxFailedAttempts: 5,
+	lockoutHours: 2
 };
 
 /**
@@ -41,15 +43,63 @@ export class AuthService {
 				};
 			}
 
+			// Verificar si la cuenta está bloqueada
+			const lockStatus = await authRepository.isAccountLocked(usuario.id);
+			if (lockStatus.locked && lockStatus.until) {
+				const milisegundosRestantes = lockStatus.until.getTime() - new Date().getTime();
+				const minutosRestantes = Math.ceil(milisegundosRestantes / 60000);
+				
+				// Formatear mensaje con horas y minutos si es más de 60 minutos
+				let mensajeTiempo: string;
+				if (minutosRestantes >= 60) {
+					const horas = Math.floor(minutosRestantes / 60);
+					const minutos = minutosRestantes % 60;
+					mensajeTiempo = minutos > 0 
+						? `${horas} hora${horas > 1 ? 's' : ''} y ${minutos} minuto${minutos > 1 ? 's' : ''}`
+						: `${horas} hora${horas > 1 ? 's' : ''}`;
+				} else {
+					mensajeTiempo = `${minutosRestantes} minuto${minutosRestantes > 1 ? 's' : ''}`;
+				}
+				
+				return {
+					success: false,
+					error: `Cuenta bloqueada temporalmente. Inténtelo nuevamente en ${mensajeTiempo}.`,
+					codigo: 'ACCOUNT_LOCKED',
+					bloqueado_hasta: lockStatus.until
+				};
+			}
+
 			// Verificar contraseña
 			const passwordMatch = await bcrypt.compare(credentials.password, usuario.contraseña_hash);
 
 			if (!passwordMatch) {
+				// Incrementar intentos fallidos
+				await authRepository.incrementFailedAttempts(usuario.id);
+
+				// Obtener usuario actualizado para verificar intentos
+				const usuarioActualizado = await authRepository.findUserById(usuario.id);
+				const intentosFallidos = usuarioActualizado?.intentos_fallidos || 0;
+				const intentosRestantes = AUTH_CONFIG.maxFailedAttempts - intentosFallidos;
+
+				// Si alcanzó el máximo de intentos, bloquear la cuenta
+				if (intentosFallidos >= AUTH_CONFIG.maxFailedAttempts) {
+					await authRepository.lockAccount(usuario.id, AUTH_CONFIG.lockoutHours);
+					return {
+						success: false,
+						error: `Cuenta bloqueada temporalmente por ${AUTH_CONFIG.lockoutHours} horas debido a múltiples intentos fallidos.`,
+						codigo: 'ACCOUNT_LOCKED'
+					};
+				}
+
 				return {
 					success: false,
-					error: 'Credenciales inválidas'
+					error: `Credenciales inválidas. Intentos restantes: ${intentosRestantes}`,
+					intentos_restantes: intentosRestantes
 				};
 			}
+
+			// Login exitoso - resetear intentos fallidos
+			await authRepository.resetFailedAttempts(usuario.id);
 
 			// Obtener roles del usuario
 			const roles = await authRepository.getUserRoles(usuario.id);

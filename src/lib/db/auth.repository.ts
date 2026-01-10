@@ -42,6 +42,9 @@ export class AuthRepository {
 			nombre: data.nombre,
 			contraseña_hash: data.contraseña_hash,
 			foto_perfil: data.foto_perfil || null,
+			intentos_fallidos: data.intentos_fallidos || 0,
+			fecha_ultimo_intento: data.fecha_ultimo_intento ? new Date(data.fecha_ultimo_intento) : null,
+			bloqueado_hasta: data.bloqueado_hasta ? new Date(data.bloqueado_hasta) : null,
 			creado_en: data.creado_en ? new Date(data.creado_en) : null,
 			actualizado_en: data.actualizado_en ? new Date(data.actualizado_en) : null
 		};
@@ -61,6 +64,7 @@ export class AuthRepository {
 				email,
 				nombre,
 				contraseña_hash,
+				intentos_fallidos: 0,
 				creado_en: new Date().toISOString(),
 				actualizado_en: new Date().toISOString()
 			})
@@ -78,6 +82,9 @@ export class AuthRepository {
 			nombre: data.nombre,
 			contraseña_hash: data.contraseña_hash,
 			foto_perfil: data.foto_perfil || null,
+			intentos_fallidos: data.intentos_fallidos || 0,
+			fecha_ultimo_intento: data.fecha_ultimo_intento ? new Date(data.fecha_ultimo_intento) : null,
+			bloqueado_hasta: data.bloqueado_hasta ? new Date(data.bloqueado_hasta) : null,
 			creado_en: data.creado_en ? new Date(data.creado_en) : null,
 			actualizado_en: data.actualizado_en ? new Date(data.actualizado_en) : null
 		};
@@ -235,6 +242,89 @@ export class AuthRepository {
 	async userHasRole(userId: number, roleName: string): Promise<boolean> {
 		const roles = await this.getUserRoles(userId);
 		return roles.includes(roleName);
+	}
+
+	/**
+	 * Incrementar intentos fallidos de login
+	 */
+	async incrementFailedAttempts(userId: number): Promise<boolean> {
+		// Primero obtenemos el usuario actual
+		const usuario = await this.findUserById(userId);
+		if (!usuario) return false;
+
+		const intentosActuales = usuario.intentos_fallidos || 0;
+
+		const { error } = await supabase
+			.from('usuarios')
+			.update({
+				intentos_fallidos: intentosActuales + 1,
+				fecha_ultimo_intento: new Date().toISOString(),
+				actualizado_en: new Date().toISOString()
+			})
+			.eq('id', userId);
+
+		return !error;
+	}
+
+	/**
+	 * Bloquear cuenta de usuario temporalmente
+	 */
+	async lockAccount(userId: number, hoursLocked: number = 2): Promise<boolean> {
+		const bloqueadoHasta = new Date();
+		bloqueadoHasta.setHours(bloqueadoHasta.getHours() + hoursLocked);
+
+		const { error } = await supabase
+			.from('usuarios')
+			.update({
+				bloqueado_hasta: bloqueadoHasta.toISOString(),
+				actualizado_en: new Date().toISOString()
+			})
+			.eq('id', userId);
+
+		return !error;
+	}
+
+	/**
+	 * Resetear intentos fallidos (después de login exitoso)
+	 */
+	async resetFailedAttempts(userId: number): Promise<boolean> {
+		const { error } = await supabase
+			.from('usuarios')
+			.update({
+				intentos_fallidos: 0,
+				fecha_ultimo_intento: null,
+				bloqueado_hasta: null,
+				actualizado_en: new Date().toISOString()
+			})
+			.eq('id', userId);
+
+		return !error;
+	}
+
+	/**
+	 * Verificar si una cuenta está bloqueada
+	 * 
+	 * IMPORTANTE: Si el bloqueo expiró, se resetean automáticamente los intentos fallidos
+	 * dando al usuario los 5 intentos completos nuevamente.
+	 */
+	async isAccountLocked(userId: number): Promise<{ locked: boolean; until?: Date }> {
+		const usuario = await this.findUserById(userId);
+
+		if (!usuario || !usuario.bloqueado_hasta) {
+			return { locked: false };
+		}
+
+		const ahora = new Date();
+		const bloqueadoHasta = new Date(usuario.bloqueado_hasta);
+
+		if (ahora < bloqueadoHasta) {
+			return { locked: true, until: bloqueadoHasta };
+		}
+
+		// Si el bloqueo ya expiró, limpiarlo y resetear intentos fallidos a 0
+		// Esto le da al usuario 5 intentos completos nuevamente
+		await this.resetFailedAttempts(userId);
+		return { locked: false };
 	}
 }
 

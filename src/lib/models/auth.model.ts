@@ -11,6 +11,9 @@ export interface Usuario {
 	nombre: string;
 	contraseña_hash: string;
 	foto_perfil?: string | null;
+	intentos_fallidos?: number;
+	fecha_ultimo_intento?: Date | null;
+	bloqueado_hasta?: Date | null;
 	creado_en: Date | null;
 	actualizado_en: Date | null;
 }
@@ -82,6 +85,8 @@ export interface AuthError {
 	success: false;
 	error: string;
 	codigo?: string;
+	bloqueado_hasta?: Date;
+	intentos_restantes?: number;
 }
 
 /**

@@ -1,8 +1,16 @@
 import { json } from '@sveltejs/kit';
 import { AnalyticsRepository } from '$lib/db/admin/projects/dashboardProjects.repository';
 import { AdminChartsRepository } from '$lib/db/admin/graficosConfig/chart.repository';
+import type { RequestEvent } from '@sveltejs/kit';
 
-export async function GET() {
+export async function GET({ setHeaders }: RequestEvent) {
+	// Configurar headers para evitar cache en producción
+	setHeaders({
+		'Cache-Control': 'no-cache, no-store, must-revalidate',
+		'Pragma': 'no-cache',
+		'Expires': '0'
+	});
+
 	// 1. Obtener configuraciones públicas SOLO de proyectos
 	const allPublicCharts = await AdminChartsRepository.getPublicChartConfigs();
 	const publicProjectsCharts = allPublicCharts.filter((c) =>

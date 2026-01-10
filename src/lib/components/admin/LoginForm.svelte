@@ -33,7 +33,19 @@
 				// para asegurar que la cookie httpOnly esté presente en la siguiente petición
 				location.assign('/admin/resumen');
 			} else {
-				error = result.error || 'Error al iniciar sesión';
+				// Verificar si hay código de error específico
+				const errorData = result as any;
+
+				if (errorData.codigo === 'ACCOUNT_LOCKED') {
+					// Error de cuenta bloqueada
+					error = errorData.error;
+				} else if (errorData.intentos_restantes !== undefined) {
+					// Mostrar intentos restantes
+					error = errorData.error;
+				} else {
+					// Error genérico
+					error = result.error || 'Error al iniciar sesión';
+				}
 			}
 		} catch (e) {
 			error = 'Error de conexión. Por favor intente nuevamente.';
@@ -155,13 +167,14 @@
 			border-radius: 10px;
 			font-size: 1rem;
 			transition: all 0.2s;
-			background: #f9fafb;
+			background: white !important;
 			color: #1c1e26;
 
 			&:focus {
 				outline: none;
 				border-color: #667eea;
 				box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+				background: white !important;
 			}
 
 			&:disabled {
@@ -171,6 +184,16 @@
 
 			&::placeholder {
 				color: #9095a1;
+			}
+
+			// Eliminar color de fondo del autocompletado del navegador
+			&:-webkit-autofill,
+			&:-webkit-autofill:hover,
+			&:-webkit-autofill:focus,
+			&:-webkit-autofill:active {
+				-webkit-box-shadow: 0 0 0 30px white inset !important;
+				-webkit-text-fill-color: #1c1e26 !important;
+				transition: background-color 5000s ease-in-out 0s;
 			}
 		}
 	}
