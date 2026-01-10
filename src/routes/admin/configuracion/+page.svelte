@@ -2,6 +2,8 @@
 	import { usuarioStore } from '$lib/stores/auth.store';
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
+	import EyeOpen from '$lib/icons/eye-open.svelte';
+	import EyeClosed from '$lib/icons/eye-closed.svelte';
 
 	export let data;
 
@@ -31,16 +33,6 @@
 		}
 	});
 
-	// Reaccionar a cambios en el usuario
-	$: if (usuario) {
-		nombre = usuario.nombre || '';
-		email = usuario.email || '';
-		fotoPerfil = usuario.foto_perfil || '';
-		if (!fotoFile) {
-			fotoPreview = usuario.foto_perfil || null;
-		}
-	}
-
 	// Contraseña
 	let currentPassword = '';
 	let newPassword = '';
@@ -48,6 +40,9 @@
 	let passwordLoading = false;
 	let passwordMessage = '';
 	let passwordMessageType: 'success' | 'error' = 'success';
+	let showCurrentPassword = false;
+	let showNewPassword = false;
+	let showConfirmPassword = false;
 
 	// Manejar selección de archivo
 	function handleFileSelect(event: Event) {
@@ -252,8 +247,36 @@
 			return;
 		}
 
-		if (newPassword.length < 8) {
-			passwordMessage = 'La nueva contraseña debe tener al menos 8 caracteres';
+		if (newPassword.length < 12) {
+			passwordMessage = 'La nueva contraseña debe tener al menos 12 caracteres';
+			passwordMessageType = 'error';
+			return;
+		}
+
+		// Validar mayúscula
+		if (!/[A-Z]/.test(newPassword)) {
+			passwordMessage = 'La contraseña debe contener al menos una letra mayúscula';
+			passwordMessageType = 'error';
+			return;
+		}
+
+		// Validar minúscula
+		if (!/[a-z]/.test(newPassword)) {
+			passwordMessage = 'La contraseña debe contener al menos una letra minúscula';
+			passwordMessageType = 'error';
+			return;
+		}
+
+		// Validar número
+		if (!/[0-9]/.test(newPassword)) {
+			passwordMessage = 'La contraseña debe contener al menos un número';
+			passwordMessageType = 'error';
+			return;
+		}
+
+		// Validar símbolo
+		if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(newPassword)) {
+			passwordMessage = 'La contraseña debe contener al menos un símbolo especial';
 			passwordMessageType = 'error';
 			return;
 		}
@@ -516,38 +539,113 @@
 				<form on:submit|preventDefault={handleUpdatePassword}>
 					<div class="form-group">
 						<label for="current-password">Contraseña actual</label>
-						<input
-							id="current-password"
-							type="password"
-							bind:value={currentPassword}
-							placeholder="Tu contraseña actual"
-							disabled={passwordLoading}
-							autocomplete="current-password"
-						/>
+						<div class="password-input-wrapper">
+							{#if showCurrentPassword}
+								<input
+									id="current-password"
+									type="text"
+									bind:value={currentPassword}
+									placeholder="Tu contraseña actual"
+									disabled={passwordLoading}
+									autocomplete="current-password"
+								/>
+							{:else}
+								<input
+									id="current-password"
+									type="password"
+									bind:value={currentPassword}
+									placeholder="Tu contraseña actual"
+									disabled={passwordLoading}
+									autocomplete="current-password"
+								/>
+							{/if}
+							<button
+								type="button"
+								class="toggle-password"
+								on:click={() => (showCurrentPassword = !showCurrentPassword)}
+								aria-label={showCurrentPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+							>
+								{#if showCurrentPassword}
+									<EyeOpen />
+								{:else}
+									<EyeClosed />
+								{/if}
+							</button>
+						</div>
 					</div>
 
 					<div class="form-group">
 						<label for="new-password">Nueva contraseña</label>
-						<input
-							id="new-password"
-							type="password"
-							bind:value={newPassword}
-							placeholder="Mínimo 8 caracteres"
-							disabled={passwordLoading}
-							autocomplete="new-password"
-						/>
+						<div class="password-input-wrapper">
+							{#if showNewPassword}
+								<input
+									id="new-password"
+									type="text"
+									bind:value={newPassword}
+									placeholder="Mínimo 12 caracteres"
+									disabled={passwordLoading}
+									autocomplete="new-password"
+								/>
+							{:else}
+								<input
+									id="new-password"
+									type="password"
+									bind:value={newPassword}
+									placeholder="Mínimo 12 caracteres"
+									disabled={passwordLoading}
+									autocomplete="new-password"
+								/>
+							{/if}
+							<button
+								type="button"
+								class="toggle-password"
+								on:click={() => (showNewPassword = !showNewPassword)}
+								aria-label={showNewPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+							>
+								{#if showNewPassword}
+									<EyeOpen />
+								{:else}
+									<EyeClosed />
+								{/if}
+							</button>
+						</div>
 					</div>
 
 					<div class="form-group">
 						<label for="confirm-password">Confirmar nueva contraseña</label>
-						<input
-							id="confirm-password"
-							type="password"
-							bind:value={confirmPassword}
-							placeholder="Repite la nueva contraseña"
-							disabled={passwordLoading}
-							autocomplete="new-password"
-						/>
+						<div class="password-input-wrapper">
+							{#if showConfirmPassword}
+								<input
+									id="confirm-password"
+									type="text"
+									bind:value={confirmPassword}
+									placeholder="Repite la nueva contraseña"
+									disabled={passwordLoading}
+									autocomplete="new-password"
+								/>
+							{:else}
+								<input
+									id="confirm-password"
+									type="password"
+									bind:value={confirmPassword}
+									placeholder="Repite la nueva contraseña"
+									disabled={passwordLoading}
+									autocomplete="new-password"
+								/>
+							{/if}
+							<button
+								type="button"
+								class="toggle-password"
+								on:click={() => (showConfirmPassword = !showConfirmPassword)}
+								aria-label={showConfirmPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+							>
+								{#if showConfirmPassword}
+									<EyeOpen />
+								{:else}
+									<EyeClosed />
+								{/if}
+							</button>
+						</div>
 					</div>
 
 					{#if passwordMessage}
@@ -578,11 +676,13 @@
 						</svg>
 					</div>
 					<div>
-						<strong>Recomendaciones de seguridad:</strong>
+						<strong>Requisitos de seguridad:</strong>
 						<ul>
-							<li>Use al menos 8 caracteres</li>
-							<li>Combine letras mayúsculas y minúsculas</li>
-							<li>Incluya números y símbolos</li>
+							<li>Mínimo 12 caracteres</li>
+							<li>Al menos una letra mayúscula (A-Z)</li>
+							<li>Al menos una letra minúscula (a-z)</li>
+							<li>Al menos un número (0-9)</li>
+							<li>Al menos un símbolo especial (!@#$%^&*...)</li>
 							<li>No use información personal</li>
 						</ul>
 					</div>
@@ -777,6 +877,48 @@
 
 			&::placeholder {
 				color: var(--color--text-muted);
+			}
+		}
+	}
+
+	.password-input-wrapper {
+		position: relative;
+		display: flex;
+		align-items: center;
+
+		input {
+			padding-right: 3rem;
+		}
+
+		.toggle-password {
+			position: absolute;
+			right: 0.75rem;
+			top: 50%;
+			transform: translateY(-50%);
+			background: transparent;
+			border: none;
+			cursor: pointer;
+			padding: 0.25rem;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			color: var(--color--text-muted);
+			transition: all 0.2s ease;
+			border-radius: 6px;
+
+			&:hover {
+				color: var(--color--primary);
+				background: rgba(var(--color--primary-rgb), 0.1);
+			}
+
+			&:focus {
+				outline: none;
+				box-shadow: 0 0 0 3px rgba(110, 41, 231, 0.2);
+			}
+
+			:global(svg) {
+				width: 22px;
+				height: 22px;
 			}
 		}
 	}

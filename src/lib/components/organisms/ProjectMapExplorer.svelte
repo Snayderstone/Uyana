@@ -87,7 +87,7 @@
 	// Estado de paneles
 	let showFiltersPanel = false;
 	let showResultsPanel = false;
-	let showStatsPanel = false; // Mostrar estadísticas por defecto
+	let showStatsPanel = true; // Mostrar estadísticas por defecto
 	let activePanelTab: 'filters' | 'results' | 'network' | 'timeline' = 'filters';
 
 	// Estadísticas para la leyenda
@@ -711,32 +711,32 @@
 					</button>
 				</div>
 				<!-- Botón para filtros -->
-				<Sparkles>
-					<button
-						class="map-control-btn"
-						class:active={activePanelTab === 'filters' && showFiltersPanel}
-						on:click={toggleFiltersPanel}
-						aria-label="Mostrar filtros"
-						title="Mostrar filtros"
+
+				<button
+					class="map-control-btn"
+					class:active={activePanelTab === 'filters' && showFiltersPanel}
+					on:click={toggleFiltersPanel}
+					aria-label="Mostrar filtros"
+					title="Mostrar filtros"
+				>
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="20"
+						height="20"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+						stroke-linecap="round"
+						stroke-linejoin="round"
 					>
-						<svg
-							xmlns="http://www.w3.org/2000/svg"
-							width="20"
-							height="20"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="2"
-							stroke-linecap="round"
-							stroke-linejoin="round"
-						>
-							<polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
-						</svg>
-						{#if filteredProyectos.length < proyectos.length}
-							<span class="control-badge">{proyectos.length - filteredProyectos.length}</span>
-						{/if}
-					</button>
-				</Sparkles>
+						<polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+					</svg>
+					{#if filteredProyectos.length < proyectos.length}
+						<span class="control-badge">{proyectos.length - filteredProyectos.length}</span>
+					{/if}
+				</button>
+
 				<!-- Botón para resultados -->
 				<button
 					class="map-control-btn"
@@ -1090,11 +1090,14 @@
 		display: flex;
 		flex-direction: column;
 		width: 100%;
+		max-width: 1400px;
 		height: 100%;
 		position: relative;
+		margin: 0 auto;
 		transition: all 0.3s ease-in-out;
 
 		&.fullscreen {
+			max-width: none;
 			position: fixed;
 			top: 0;
 			left: 0;
@@ -1223,12 +1226,15 @@
 		min-height: 550px;
 		border-radius: 12px;
 		overflow: hidden;
-		box-shadow: var(--card-shadow), 0 8px 20px rgba(0, 0, 0, 0.08);
+		box-shadow:
+			var(--card-shadow),
+			0 8px 20px rgba(0, 0, 0, 0.08);
 		transition: all 0.3s ease-in-out;
 
 		@include for-phone-only {
-			height: 70vh;
-			min-height: 450px;
+			height: calc(100vh - 100px);
+			min-height: 500px;
+			border-radius: 8px;
 		}
 	}
 
@@ -1240,8 +1246,7 @@
 		transition: all 0.3s ease;
 
 		@include for-phone-only {
-			bottom: 60px;
-			right: 10px;
+			display: none;
 		}
 	}
 
@@ -1253,6 +1258,12 @@
 		display: flex;
 		flex-direction: column;
 		gap: 10px;
+
+		@include for-phone-only {
+			top: 10px;
+			left: 10px;
+			gap: 6px;
+		}
 	}
 
 	.zoom-controls {
@@ -1264,6 +1275,11 @@
 		.zoom-btn {
 			height: 35px;
 			width: 35px;
+
+			@include for-phone-only {
+				height: 32px;
+				width: 32px;
+			}
 		}
 	}
 
@@ -1281,6 +1297,17 @@
 		color: var(--color--text);
 		transition: all 0.2s ease;
 		position: relative;
+
+		@include for-phone-only {
+			width: 36px;
+			height: 36px;
+			border-radius: 6px;
+
+			svg {
+				width: 18px;
+				height: 18px;
+			}
+		}
 
 		&:hover {
 			transform: translateY(-2px);
@@ -1333,15 +1360,23 @@
 		right: -5px;
 		background: var(--color--primary);
 		color: white;
-		font-size: 0.7rem;
-		font-weight: 700;
-		width: 18px;
-		height: 18px;
+		font-size: 0.5rem;
+		font-weight: 300;
+		width: 20px;
+		height: 20px;
 		border-radius: 50%;
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+
+		@include for-phone-only {
+			width: 18px;
+			height: 18px;
+			font-size: 0.45rem;
+			top: -4px;
+			right: -4px;
+		}
 	}
 
 	.map-side-panel {
@@ -1367,12 +1402,13 @@
 		}
 
 		@include for-phone-only {
-			left: 15px;
-			width: 90%; // ocupa casi toda la pantalla en móviles
-			max-width: calc(100% - 30px);
+			left: 10px;
+			width: calc(100% - 20px);
+			max-width: calc(100% - 20px);
 			top: auto;
-			bottom: 15px;
-			max-height: 70%;
+			bottom: 10px;
+			max-height: 65vh;
+			border-radius: 16px;
 			transform: translateY(120%);
 
 			&.visible {
@@ -1387,6 +1423,10 @@
 			justify-content: space-between;
 			align-items: center;
 
+			@include for-phone-only {
+				padding: 12px 15px;
+			}
+
 			h2 {
 				margin: 0;
 				font-size: 1.2rem;
@@ -1395,6 +1435,11 @@
 				display: flex;
 				align-items: center;
 				gap: 8px;
+
+				@include for-phone-only {
+					font-size: 1rem;
+					gap: 6px;
+				}
 			}
 
 			.close-panel-btn {
@@ -1472,8 +1517,10 @@
 
 		@include for-phone-only {
 			flex-direction: column;
-			gap: 6px;
-			max-width: 60%;
+			gap: 4px;
+			max-width: calc(100% - 60px);
+			top: 10px;
+			right: 10px;
 		}
 
 		.stat-group {
@@ -1497,6 +1544,11 @@
 			transition: all 0.2s ease;
 			border: 1px solid transparent;
 
+			@include for-phone-only {
+				padding: 4px 8px;
+				border-radius: 4px;
+			}
+
 			&:hover {
 				transform: translateY(-2px);
 				box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
@@ -1505,15 +1557,23 @@
 
 			.stat-value {
 				font-weight: 700;
-				font-size: 0.95rem;
+				font-size: 0.7rem;
 				color: var(--color--primary);
 				text-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+
+				@include for-phone-only {
+					font-size: 0.65rem;
+				}
 			}
 
 			.stat-label {
 				font-size: 0.7rem;
 				color: var(--color--text-shade);
 				white-space: nowrap;
+
+				@include for-phone-only {
+					font-size: 0.6rem;
+				}
 			}
 
 			&.stat-faculty {
@@ -1595,13 +1655,13 @@
 	}
 	.map-level-toggle {
 		display: flex;
-		flex-direction: column; /* o row si lo prefieres */
+		flex-direction: column;
 		gap: 4px;
 		margin-top: 8px;
 
-		
-
-
+		@include for-phone-only {
+			gap: 3px;
+			margin-top: 6px;
+		}
 	}
-
 </style>

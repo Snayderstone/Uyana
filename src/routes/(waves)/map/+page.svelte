@@ -188,7 +188,7 @@
 		border: 2px solid var(--color--primary);
 		background: transparent;
 		color: var(--color--primary);
-		border-radius: 8px;
+		border-radius: 10px;
 		font-weight: 600;
 		cursor: pointer;
 		transition: all 0.3s ease;
@@ -218,7 +218,7 @@
 		min-height: 500px;
 		position: relative;
 		margin-bottom: 40px;
-		border-radius: 12px;
+		border-radius: 10px;
 		overflow: hidden;
 		box-shadow: var(--card-shadow);
 	}

@@ -6,6 +6,22 @@
 	import ThemeToggle from '$lib/components/molecules/ThemeToggle.svelte';
 	import Logo from '$lib/components/atoms/Logo.svelte';
 	import { usuarioStore, logout } from '$lib/stores/auth.store';
+	// Iconos principales del sidebar
+	import FolderIcon from '$lib/icons/admin/folder.svelte';
+	import MicroscopeIcon from '$lib/icons/admin/microscope.svelte';
+	import UsersIcon from '$lib/icons/admin/users.svelte';
+	import FileContentIcon from '$lib/icons/admin/file-content.svelte';
+	import BookmarkIcon from '$lib/icons/admin/bookmark.svelte';
+	import MapIcon from '$lib/icons/map.svelte';
+	import ServerIcon from '$lib/icons/admin/server.svelte';
+	import MsgSmileIcon from '$lib/icons/admin/msg-smile.svelte';
+	// Iconos de menú de usuario
+	import SlidersIcon from '$lib/icons/admin/sliders.svelte';
+	import LogoutIcon from '$lib/icons/admin/logout.svelte';
+	// Iconos de submenús
+	import BarChartIcon from '$lib/icons/admin/BarChart.svelte';
+	import BookOpenIcon from '$lib/icons/admin/BookOpen.svelte';
+	import UserPlusIcon from '$lib/icons/admin/UserPlus.svelte';
 
 	export let data;
 
@@ -89,7 +105,7 @@
 			<ul>
 				<li class:active={$page.url.pathname === '/admin/resumen'}>
 					<a href="/admin/resumen">
-						<span class="icon">📊</span>
+						<span class="icon"><FolderIcon /></span>
 						<span class="nav-text">Resumen</span>
 					</a>
 				</li>
@@ -101,7 +117,7 @@
 					class:expanded={proyectosExpanded}
 				>
 					<button type="button" class="nav-button" on:click={toggleProyectosSubmenu}>
-						<span class="icon">🔬</span>
+						<span class="icon"><MicroscopeIcon /></span>
 						<span class="nav-text">Proyectos</span>
 						<span class="submenu-arrow" class:rotated={proyectosExpanded}>▼</span>
 					</button>
@@ -112,19 +128,19 @@
 								$page.url.pathname === '/admin/proyectos/dashboard'}
 						>
 							<a href="/admin/proyectos/dashboard">
-								<span class="icon">📊</span>
+								<span class="icon"><BarChartIcon /></span>
 								<span class="nav-text">Dashboard</span>
 							</a>
 						</li>
 						<li class:active={$page.url.pathname === '/admin/proyectos/tabla'}>
 							<a href="/admin/proyectos/tabla">
-								<span class="icon">📋</span>
+								<span class="icon"><BookOpenIcon /></span>
 								<span class="nav-text">Tabla</span>
 							</a>
 						</li>
 						<li class:active={$page.url.pathname === '/admin/proyectos/nuevo'}>
 							<a href="/admin/proyectos/nuevo">
-								<span class="icon">➕</span>
+								<span class="icon">+</span>
 								<span class="nav-text">Nuevo Proyecto</span>
 							</a>
 						</li>
@@ -136,7 +152,7 @@
 					class:expanded={participantesExpanded}
 				>
 					<button type="button" class="nav-button" on:click={toggleParticipantesSubmenu}>
-						<span class="icon">👥</span>
+						<span class="icon"><UsersIcon /></span>
 						<span class="nav-text">Participantes</span>
 						<span class="submenu-arrow" class:rotated={participantesExpanded}>▼</span>
 					</button>
@@ -147,21 +163,21 @@
 								$page.url.pathname === '/admin/participantes/dashboard'}
 						>
 							<a href="/admin/participantes/dashboard">
-								<span class="icon">📊</span>
+								<span class="icon"><BarChartIcon /></span>
 								<span class="nav-text">Dashboard</span>
 							</a>
 						</li>
 
 						<li class:active={$page.url.pathname === '/admin/participantes/tabla'}>
 							<a href="/admin/participantes">
-								<span class="icon">📋</span>
+								<span class="icon"><BookOpenIcon /></span>
 								<span class="nav-text">Tabla</span>
 							</a>
 						</li>
 
 						<li class:active={$page.url.pathname === '/admin/participantes/nuevo'}>
 							<a href="/admin/participantes/nuevo">
-								<span class="icon">➕</span>
+								<span class="icon"><UserPlusIcon /></span>
 								<span class="nav-text">Nuevo Participante</span>
 							</a>
 						</li>
@@ -170,7 +186,7 @@
 
 				<li class:active={$page.url.pathname.includes('/admin/blog')}>
 					<a href="/admin/blog">
-						<span class="icon">📝</span>
+						<span class="icon"><FileContentIcon /></span>
 						<span class="nav-text">Blog</span>
 					</a>
 				</li>
@@ -179,7 +195,7 @@
 
 				<li class:active={$page.url.pathname.includes('/admin/catalogos')}>
 					<a href="/admin/catalogos">
-						<span class="icon">📚</span>
+						<span class="icon"><BookmarkIcon /></span>
 						<span class="nav-text">Catálogos</span>
 					</a>
 				</li>
@@ -188,7 +204,7 @@
 
 				<li class:active={$page.url.pathname.includes('/admin/geoespacial')}>
 					<a href="/admin/geoespacial">
-						<span class="icon">🗺️</span>
+						<span class="icon"><MapIcon /></span>
 						<span class="nav-text">Mapa</span>
 					</a>
 				</li>
@@ -197,13 +213,13 @@
 
 				<li class:active={$page.url.pathname.includes('/admin/database-status')}>
 					<a href="/admin/database-status">
-						<span class="icon">🗄️</span>
+						<span class="icon"><ServerIcon /></span>
 						<span class="nav-text">Estado de BD</span>
 					</a>
 				</li>
 				<li class:active={$page.url.pathname.includes('/admin/mcp-logs')}>
 					<a href="/admin/mcp-logs">
-						<span class="icon">📋</span>
+						<span class="icon"><MsgSmileIcon /></span>
 						<span class="nav-text">MCP Logs</span>
 					</a>
 				</li>
@@ -247,11 +263,11 @@
 									<div class="user-email">{user.email}</div>
 								</div>
 								<button class="user-menu-item" on:click={handleSettings}>
-									<span class="icon">⚙️</span>
+									<span class="icon"><SlidersIcon /></span>
 									Configuración
 								</button>
 								<button class="user-menu-item logout" on:click={handleLogout}>
-									<span class="icon">🚪</span>
+									<span class="icon"><LogoutIcon /></span>
 									Cerrar sesión
 								</button>
 							</div>
@@ -402,7 +418,18 @@
 	.sidebar-nav li a .icon {
 		font-size: 1.25rem;
 		width: 24px;
+		height: 24px;
 		text-align: center;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		flex-shrink: 0;
+	}
+
+	.sidebar-nav li a .icon :global(svg) {
+		width: 22px;
+		height: 22px;
+		transition: all 0.3s var(--ease-out-3);
 	}
 
 	.sidebar-nav li a .nav-text {
@@ -436,7 +463,10 @@
 		max-height: 0;
 		overflow: hidden;
 		opacity: 0;
-		transition: max-height 0.3s ease-out, opacity 0.3s ease-out, margin 0.3s ease-out;
+		transition:
+			max-height 0.3s ease-out,
+			opacity 0.3s ease-out,
+			margin 0.3s ease-out;
 		margin-top: 0;
 		margin-bottom: 0;
 	}
@@ -456,6 +486,16 @@
 	.submenu li a .icon {
 		font-size: 1rem;
 		width: 20px;
+		height: 20px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		flex-shrink: 0;
+	}
+
+	.submenu li a .icon :global(svg) {
+		width: 18px;
+		height: 18px;
 	}
 
 	.submenu li a:hover {
@@ -584,6 +624,20 @@
 		font-size: 0.875rem;
 		font-family: var(--font--default);
 		color: var(--color--text-shade);
+	}
+
+	.user-menu-item .icon {
+		width: 20px;
+		height: 20px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		flex-shrink: 0;
+	}
+
+	.user-menu-item .icon :global(svg) {
+		width: 18px;
+		height: 18px;
 	}
 
 	.user-menu-item {

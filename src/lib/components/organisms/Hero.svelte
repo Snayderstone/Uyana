@@ -1,9 +1,5 @@
 <script>
-	import FeaturesIcon from '$lib/icons/features.svelte';
 	import SparklingHighlight from '$lib/components/molecules/SparklingHighlight.svelte';
-	import GitHubIcon from '$lib/icons/socials/github.svelte';
-	import Button from '$lib/components/atoms/Button.svelte';
-	import Sparkles from '../atoms/Sparkles.svelte';
 </script>
 
 <section id="hero">

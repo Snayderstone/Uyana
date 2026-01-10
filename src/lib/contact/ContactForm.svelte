@@ -1,7 +1,6 @@
 <script lang="ts">
     import { fade, fly } from 'svelte/transition';
     import Button from '$lib/components/atoms/Button.svelte';
-    import Sparkles from '$lib/components/atoms/Sparkles.svelte';
     import SendMessage from '$lib/icons/send-message.svelte';
     import Calendar from '$lib/icons/calendar.svelte';
     import EmailIcon from '$lib/icons/email.svelte';
@@ -129,12 +128,10 @@
       </div>
   
       <div class="button-group">
-        <Sparkles>
           <Button type="submit" color="primary">
               <span slot="icon"><SendMessage /></span>
             Enviar Mensaje
           </Button>
-        </Sparkles>
       </div>
   
       {#if enviado}
