@@ -678,8 +678,12 @@
 							stroke-linecap="round"
 							stroke-linejoin="round"
 						>
-							<path d="M4 22V4" />
-							<path d="M4 4h12l-2 4 2 4H4" />
+							<path d="M3 21h18" />
+							<path d="M5 21V8l7-4 7 4v13" />
+							<path d="M9 21v-6h6v6" />
+							<path d="M9 10h.01" />
+							<path d="M12 10h.01" />
+							<path d="M15 10h.01" />
 						</svg>
 					</button>
 					<button
@@ -692,8 +696,8 @@
 						<!-- Ícono: edificio/academia -->
 						<svg
 							xmlns="http://www.w3.org/2000/svg"
-							width="20"
-							height="20"
+							width="24"
+							height="24"
 							viewBox="0 0 24 24"
 							fill="none"
 							stroke="currentColor"
@@ -701,12 +705,12 @@
 							stroke-linecap="round"
 							stroke-linejoin="round"
 						>
-							<path d="M3 21h18" />
-							<path d="M5 21V8l7-4 7 4v13" />
-							<path d="M9 21v-6h6v6" />
-							<path d="M9 10h.01" />
-							<path d="M12 10h.01" />
-							<path d="M15 10h.01" />
+							<path d="M3 20h18" />
+							<path d="M4 20V10c0-.6.4-1 1-1h2c.6 0 1 .4 1 1v10" />
+							<path d="M9 20V7c0-.6.4-1 1-1h5c.6 0 1 .4 1 1v13" />
+							<path d="M6 13h.01" />
+							<path d="M12 10h1.5" />
+							<path d="M12 13h1.5" />
 						</svg>
 					</button>
 				</div>
@@ -1332,18 +1336,7 @@
 		}
 
 		&.reset-btn {
-			background: color-mix(
-				in srgb,
-				var(--color--callout-accent--warning) 20%,
-				var(--color--card-background)
-			);
-
 			&:hover {
-				background: color-mix(
-					in srgb,
-					var(--color--callout-accent--warning) 40%,
-					var(--color--card-background)
-				);
 				color: var(--color--text);
 				transform: translateY(-2px) rotate(45deg);
 			}

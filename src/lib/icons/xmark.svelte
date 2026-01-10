@@ -1,0 +1,30 @@
+<svg
+	xmlns="http://www.w3.org/2000/svg"
+	x="0px"
+	y="0px"
+	width="20px"
+	height="20px"
+	viewBox="0 0 24 24"
+	><line
+		x1="19"
+		y1="19"
+		x2="5"
+		y2="5"
+		fill="none"
+		stroke="currentColor"
+		stroke-linecap="square"
+		stroke-miterlimit="10"
+		stroke-width="2"
+		data-color="color-2"
+	></line><line
+		x1="19"
+		y1="5"
+		x2="5"
+		y2="19"
+		fill="none"
+		stroke="currentColor"
+		stroke-linecap="square"
+		stroke-miterlimit="10"
+		stroke-width="2"
+	></line></svg
+>

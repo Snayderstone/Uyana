@@ -547,7 +547,7 @@
 		<div class="search-container">
 			<input
 				type="text"
-				placeholder="Buscar proyectos por título, coordinador, objetivo, facultad o institución..."
+				placeholder="Buscar proyectos..."
 				class="search-input"
 				bind:value={filtroTexto}
 				on:keydown={handleSearchEnter}
