@@ -15,7 +15,14 @@
 			loading = true;
 			error = null;
 
-			const response = await fetch('/api/public/participantes/charts');
+			// Añadir timestamp para evitar cache de Vercel CDN
+			const cacheBuster = `t=${Date.now()}`;
+			const response = await fetch(`/api/public/participantes/charts?${cacheBuster}`, {
+				cache: 'no-store',
+				headers: {
+					'Cache-Control': 'no-cache'
+				}
+			});
 			const result = await response.json();
 
 			if (result.success && result.data.topParticipantes) {

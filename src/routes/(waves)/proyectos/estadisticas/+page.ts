@@ -1,5 +1,9 @@
 import type { PageLoad } from './$types';
 
+// Deshabilitar prerendering para evitar fetch durante build
+export const prerender = false;
+export const ssr = false;
+
 interface ChartConfig {
 	nombre: string;
 	titulo: string;
