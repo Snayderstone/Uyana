@@ -3,12 +3,15 @@ import { AnalyticsRepository } from '$lib/db/admin/projects/dashboardProjects.re
 import { AdminChartsRepository } from '$lib/db/admin/graficosConfig/chart.repository';
 import type { RequestEvent } from '@sveltejs/kit';
 
+// Deshabilitar prerendering y usar Node.js runtime para Supabase
+export const prerender = false;
+
 export async function GET({ setHeaders }: RequestEvent) {
-	// Configurar headers para evitar cache en producción
+	// Configurar headers para evitar cache tanto en navegador como en Vercel CDN
 	setHeaders({
-		'Cache-Control': 'no-cache, no-store, must-revalidate',
-		'Pragma': 'no-cache',
-		'Expires': '0'
+		'Cache-Control': 'public, s-maxage=0, max-age=0, must-revalidate',
+		'CDN-Cache-Control': 'no-store',
+		'Vercel-CDN-Cache-Control': 'no-store'
 	});
 
 	// 1. Obtener configuraciones públicas SOLO de proyectos
