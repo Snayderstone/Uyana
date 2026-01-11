@@ -159,18 +159,32 @@
 	$: if (map && (fullscreenEditMode !== undefined || showSidebarPanel !== undefined)) {
 		setTimeout(() => {
 			map.invalidateSize();
-		}, 200);
+		}, 300);
 	}
 
 	async function initMap() {
 		try {
 			// Importar Leaflet primero
 			L = await import('leaflet');
-			await import('leaflet/dist/leaflet.css');
+
+			// Asegurar que el CSS de Leaflet esté cargado
+			if (!document.querySelector('link[href*="leaflet.css"]')) {
+				const link = document.createElement('link');
+				link.rel = 'stylesheet';
+				link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+				document.head.appendChild(link);
+			}
 
 			// Importar Leaflet Draw y asignarlo manualmente
 			await import('leaflet-draw');
-			await import('leaflet-draw/dist/leaflet.draw.css');
+
+			// Asegurar que el CSS de Leaflet Draw esté cargado
+			if (!document.querySelector('link[href*="leaflet.draw.css"]')) {
+				const drawLink = document.createElement('link');
+				drawLink.rel = 'stylesheet';
+				drawLink.href = 'https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css';
+				document.head.appendChild(drawLink);
+			}
 
 			// Forzar la extensión de L si no se auto-asignó
 			if (!L.Draw && (window as any).L?.Draw) {
@@ -197,10 +211,14 @@
 
 			// Inicializar mapa
 			map = L.map(mapContainer, {
-				attributionControl: false
-			}).setView([0, 0], 2);
+				attributionControl: true
+			}).setView([-16.5, -68.15], 13); // La Paz, Bolivia
 
-			L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+			L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+				attribution:
+					'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+				maxZoom: 19
+			}).addTo(map);
 
 			// Inicializar capas
 			institucionesLayer = L.layerGroup().addTo(map);
@@ -210,6 +228,11 @@
 			// Inicializar capa de dibujo
 			drawnItems = new L.FeatureGroup();
 			map.addLayer(drawnItems);
+
+			// Asegurar que el mapa se ajuste al contenedor
+			setTimeout(() => {
+				map.invalidateSize();
+			}, 100);
 		} catch (err) {
 			console.error('Error inicializando mapa:', err);
 			error = 'Error al cargar el mapa';
@@ -236,11 +259,37 @@
 					error = 'Error al cargar los datos';
 				}
 			}
+
+			// Ajustar vista del mapa a todos los datos cargados
+			fitMapToAllData();
 		} catch (err) {
 			console.error('Error cargando datos:', err);
 			error = 'Error al cargar los datos';
 		} finally {
 			loading = false;
+		}
+	}
+
+	function fitMapToAllData() {
+		if (!map || !L) return;
+
+		try {
+			const allLayers: any[] = [];
+
+			// Recolectar todas las capas con geometría
+			institucionesLayer?.eachLayer((layer: any) => allLayers.push(layer));
+			facultadesLayer?.eachLayer((layer: any) => allLayers.push(layer));
+			carrerasLayer?.eachLayer((layer: any) => allLayers.push(layer));
+
+			if (allLayers.length > 0) {
+				const group = L.featureGroup(allLayers);
+				map.fitBounds(group.getBounds(), {
+					padding: [50, 50],
+					maxZoom: 15
+				});
+			}
+		} catch (err) {
+			console.log('No se pudo ajustar la vista del mapa:', err);
 		}
 	}
 
@@ -913,8 +962,8 @@
 				selectedType === 'institucion'
 					? 'instituciones'
 					: selectedType === 'facultad'
-					? 'facultades'
-					: 'carreras'
+						? 'facultades'
+						: 'carreras'
 			}/${selectedEntity.id}`;
 
 			const response = await fetch(endpoint, {
@@ -997,8 +1046,8 @@
 				selectedType === 'institucion'
 					? 'instituciones'
 					: selectedType === 'facultad'
-					? 'facultades'
-					: 'carreras'
+						? 'facultades'
+						: 'carreras'
 			}/${selectedEntity.id}`;
 
 			const response = await fetch(endpoint, { method: 'DELETE' });
@@ -1183,7 +1232,7 @@
 							metric: false,
 							feet: false,
 							nautic: false
-					  },
+						},
 				marker: isCarrera ? {} : false,
 				circle: false,
 				rectangle: false,
@@ -1245,8 +1294,8 @@
 				selectedType === 'institucion'
 					? 'instituciones'
 					: selectedType === 'facultad'
-					? 'facultades'
-					: 'carreras'
+						? 'facultades'
+						: 'carreras'
 			}`;
 
 			const response = await fetch(endpoint, {
@@ -1354,14 +1403,14 @@
 						➕ Nueva {selectedType === 'institucion'
 							? 'Institución'
 							: selectedType === 'facultad'
-							? 'Facultad'
-							: 'Carrera'}
+								? 'Facultad'
+								: 'Carrera'}
 					{:else}
 						✏️ Editando {selectedType === 'institucion'
 							? 'Institución'
 							: selectedType === 'facultad'
-							? 'Facultad'
-							: 'Carrera'}
+								? 'Facultad'
+								: 'Carrera'}
 					{/if}
 				</h3>
 				<button class="btn-close" on:click={cancelEdit}>×</button>
@@ -1465,8 +1514,8 @@
 						Nueva {createType === 'institucion'
 							? 'Institución'
 							: createType === 'facultad'
-							? 'Facultad'
-							: 'Carrera'}
+								? 'Facultad'
+								: 'Carrera'}
 					</h3>
 					<button class="btn-close-panel" on:click={closeCreateModal}>×</button>
 				</div>
@@ -1631,6 +1680,8 @@
 	.mapa-crud {
 		position: relative;
 		width: 100%;
+		height: 100%;
+		min-height: 400px;
 		overflow: hidden;
 		border-radius: 0.5rem;
 		background: var(--color--page-background, #f9fafb);
@@ -1653,7 +1704,9 @@
 	.map-container {
 		width: 100%;
 		height: 100%;
+		min-height: 400px;
 		z-index: 1;
+		background: #e5e7eb;
 	}
 
 	/* Ocultar controles de zoom siempre */
