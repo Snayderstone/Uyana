@@ -36,8 +36,11 @@
 
 	onMount(async () => {
 		// Cargar Leaflet dinámicamente
-		L = await import('leaflet');
+		await import('leaflet');
 		await import('leaflet-draw');
+
+		// Usar el objeto global de Leaflet (window.L)
+		L = (window as any).L;
 
 		// Importar CSS de Leaflet
 		const link = document.createElement('link');
@@ -432,7 +435,9 @@
 		align-items: center;
 		background: white;
 		border-radius: 0.5rem;
-		box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+		box-shadow:
+			0 4px 6px -1px rgba(0, 0, 0, 0.1),
+			0 2px 4px -1px rgba(0, 0, 0, 0.06);
 	}
 
 	.search-icon {
@@ -504,7 +509,9 @@
 		margin-top: 0.5rem;
 		background: white;
 		border-radius: 0.5rem;
-		box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+		box-shadow:
+			0 4px 6px -1px rgba(0, 0, 0, 0.1),
+			0 2px 4px -1px rgba(0, 0, 0, 0.06);
 		max-height: 300px;
 		overflow-y: auto;
 	}

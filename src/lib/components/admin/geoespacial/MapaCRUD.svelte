@@ -165,7 +165,10 @@
 	async function initMap() {
 		try {
 			// Importar Leaflet primero
-			L = await import('leaflet');
+			await import('leaflet');
+
+			// Usar el objeto global de Leaflet (window.L)
+			L = (window as any).L;
 
 			// Asegurar que el CSS de Leaflet esté cargado
 			if (!document.querySelector('link[href*="leaflet.css"]')) {
@@ -175,7 +178,7 @@
 				document.head.appendChild(link);
 			}
 
-			// Importar Leaflet Draw y asignarlo manualmente
+			// Importar Leaflet Draw (se auto-registra en window.L)
 			await import('leaflet-draw');
 
 			// Asegurar que el CSS de Leaflet Draw esté cargado
@@ -186,17 +189,10 @@
 				document.head.appendChild(drawLink);
 			}
 
-			// Forzar la extensión de L si no se auto-asignó
-			if (!L.Draw && (window as any).L?.Draw) {
-				L.Draw = (window as any).L.Draw;
-				L.Control.Draw = (window as any).L.Control.Draw;
-			}
-
 			// Verificar que se haya cargado correctamente
 			if (!L.Draw) {
 				console.error('⚠️ Leaflet Draw no se cargó correctamente');
 				console.log('L:', L);
-				console.log('window.L:', (window as any).L);
 			} else {
 				console.log('✅ Leaflet Draw cargado correctamente');
 			}
