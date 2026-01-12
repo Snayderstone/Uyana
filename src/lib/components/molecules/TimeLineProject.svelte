@@ -39,7 +39,7 @@
 	let maxProjects = 1;
 	let maxBudget = 1;
 
-	let hasStarted = false; // ✅ solo true cuando Play o slider
+	let hasStarted = false; // solo true cuando Play o slider
 	let periodType: 'year' | 'month' = 'year';
 	let selectedYear: string | null = null;
 	let availableYears: string[] = [];
@@ -134,7 +134,7 @@
 	// SERIES (AÑOS / MESES)
 	// =========================
 	$: {
-		// ✅ estas 3 líneas fuerzan la dependencia reactiva
+		// estas 3 líneas fuerzan la dependencia reactiva
 		proyectos;
 		periodType;
 		selectedYear;
@@ -152,7 +152,7 @@
 
 		const prevKey = series[currentIndex]?.key ?? null;
 
-		// ✅ aquí decides cuál construir
+		// aquí decides cuál construir
 		const arr =
 			periodType === 'year'
 				? buildYearSeries()
@@ -211,10 +211,10 @@
 			const ym = parseYearMonth(p.fecha_inicio ?? null);
 			if (!ym) continue;
 
-			// ✅ filtro por año seleccionado
+			// filtro por año seleccionado
 			if (String(ym.y) !== year) continue;
 
-			// ✅ key mensual SIEMPRE "YYYY-MM"
+			// key mensual SIEMPRE "YYYY-MM"
 			const key = `${ym.y}-${String(ym.m).padStart(2, '0')}`;
 			const label = monthLabel(key);
 
@@ -257,10 +257,10 @@
 
 		stop();
 
-		// ✅ volver al estado “no dibujado”
+		// volver al estado “no dibujado”
 		hasStarted = false;
 
-		// ✅ avisa al padre para que quite el externalValueById del mapa
+		// avisa al padre para que quite el externalValueById del mapa
 		dispatch('reset');
 	}
 
@@ -410,12 +410,12 @@
 						x2="100"
 						y1={height * (1 - g)}
 						y2={height * (1 - g)}
-						stroke="rgba(255,255,255,0.1)"
+						stroke="var(--color--text-inverse-shade)"
 					/>
 				{/each}
 			</g>
-			<line x1="0" x2="100" y1="20" y2="20" stroke="rgba(255,255,255,0.08)" />
-			<!-- ✅ Solo dibuja cuando el usuario empezó -->
+			<line x1="0" x2="100" y1="20" y2="20" stroke="var(--color--text-inverse-shade)" />
+			<!-- Solo dibuja cuando el usuario empezó -->
 			{#if hasStarted}
 				<!-- PROYECTOS -->
 				<polyline
@@ -448,7 +448,7 @@
 							cx={x(i)}
 							cy={yProjects(p.proyectos)}
 							r="2.2"
-							fill="white"
+							fill="var(--timeline-point)"
 							on:mouseenter={() => {
 								hoverPoint = p;
 								hoverType = 'proyectos';
@@ -478,7 +478,7 @@
 							cx={x(i)}
 							cy={yBudget(p.presupuesto)}
 							r="2.2"
-							fill="white"
+							fill="var(--timeline-point)"
 							on:mouseenter={() => {
 								hoverPoint = p;
 								hoverType = 'presupuesto';
@@ -556,7 +556,7 @@
 
 	.period-toggle button.active {
 		background: var(--color--primary);
-		color: white;
+		color: rgb(255, 255, 255);
 	}
 
 	input[type='range'] {
@@ -576,7 +576,7 @@
 		border-radius: 8px;
 		cursor: pointer;
 		font-weight: 600;
-		background: color-mix(in srgb, var(--color--primary) 25%, transparent);
+		background: color-mix(in srgb, var(--color--primary) 65%, transparent);
 	}
 
 	.speed {
@@ -586,7 +586,7 @@
 
 	.speed button.active {
 		background: var(--color--primary);
-		color: white;
+		color: rgb(255, 255, 255);
 	}
 
 	.chart {

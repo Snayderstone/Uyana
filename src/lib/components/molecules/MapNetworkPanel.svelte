@@ -85,15 +85,8 @@
 
 		<label class="pill">
 			<input type="radio" name="nettype" bind:group={selectedNetworkType} value="participants" />
-			<span>Co-autoría por participantes (real)</span>
+			<span>Co-autoría por participantes</span>
 		</label>
-
-		{#if mapLevel === 'institution'}
-			<label class="pill">
-				<input type="radio" name="nettype" bind:group={selectedNetworkType} value="international" />
-				<span>Colaboración internacional (por país) (base)</span>
-			</label>
-		{/if}
 
 		<label class="pill">
 			<input type="radio" name="nettype" bind:group={selectedNetworkType} value="area" />
@@ -145,13 +138,6 @@
 			<input type="radio" name="targetlvl" bind:group={targetLevel} value="institution" />
 			<span>Instituciones</span>
 		</label>
-
-		{#if mapLevel === 'institution'}
-			<label class="pill">
-				<input type="radio" name="targetlvl" bind:group={targetLevel} value="country" />
-				<span>País (luego ponemos coordenadas)</span>
-			</label>
-		{/if}
 
 		<label class="pill">
 			<input type="radio" name="targetmode" bind:group={targetMode} value="all" />
