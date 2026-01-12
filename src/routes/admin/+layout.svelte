@@ -42,6 +42,10 @@
 		showUserMenu = !showUserMenu;
 	}
 
+	function closeUserMenu() {
+		showUserMenu = false;
+	}
+
 	async function handleLogout() {
 		showUserMenu = false;
 		await logout();
@@ -51,6 +55,15 @@
 	function handleSettings() {
 		showUserMenu = false;
 		goto('/admin/configuracion');
+	}
+
+	function handleClickOutside(event) {
+		if (showUserMenu) {
+			const userProfile = event.target.closest('.user-profile');
+			if (!userProfile) {
+				showUserMenu = false;
+			}
+		}
 	}
 
 	function toggleProyectosSubmenu() {
@@ -70,6 +83,7 @@
 
 	onMount(() => {
 		window.addEventListener('resize', checkMobile);
+		window.addEventListener('click', handleClickOutside);
 		checkMobile();
 
 		// Expandir submenu de proyectos si estamos en una ruta de proyectos
@@ -84,6 +98,7 @@
 
 		return () => {
 			window.removeEventListener('resize', checkMobile);
+			window.removeEventListener('click', handleClickOutside);
 		};
 	});
 </script>

@@ -68,15 +68,23 @@
 		await initializeInterface();
 		await loadAvailableTools();
 
-		// Activar automáticamente las herramientas
-		toggleTool('fecha-tiempo-ecuador');
-		toggleTool('estadisticas-uyana');
+		// Activar automáticamente las herramientas solo si no están ya activas
+		// Esto previene reactivar herramientas cada vez que se abre el chat
+		if (!$activeTools.has('fecha-tiempo-ecuador')) {
+			toggleTool('fecha-tiempo-ecuador');
+		}
+		if (!$activeTools.has('estadisticas-uyana')) {
+			toggleTool('estadisticas-uyana');
+		}
 
-		mcpLogger.info(
-			'CHAT_INTERFACE',
-			'TOOL_AUTO_ACTIVATED',
-			'Herramientas automáticas activadas: fecha-tiempo-ecuador, estadisticas-uyana'
-		);
+		// Log solo si se activaron herramientas
+		if (!$activeTools.has('fecha-tiempo-ecuador') || !$activeTools.has('estadisticas-uyana')) {
+			mcpLogger.info(
+				'CHAT_INTERFACE',
+				'TOOL_AUTO_ACTIVATED',
+				'Herramientas automáticas activadas (si no estaban activas)'
+			);
+		}
 
 		// Listener global para atajos de teclado
 		function handleGlobalKeydown(event: KeyboardEvent) {
@@ -181,27 +189,46 @@
 			return;
 		}
 
-		// Auto-activar herramientas basadas en el mensaje
+		// Preservar herramientas activas y auto-activar si es necesario
 		const shouldActivateFechaTiempo = detectFechaTiempoEcuadorQuery(message) !== null;
 		const shouldActivateEstadisticas = detectProyectosUceQuery(message) !== null;
 
-		// Si debemos activar alguna herramienta, actualizar las herramientas activas
-		if (shouldActivateFechaTiempo || shouldActivateEstadisticas) {
-			const newActiveTools = new Set($activeTools);
+		// Crear un nuevo Set preservando las herramientas ya activas
+		const newActiveTools = new Set($activeTools);
+		let toolsChanged = false;
 
-			if (shouldActivateFechaTiempo && !newActiveTools.has('fecha-tiempo-ecuador')) {
-				newActiveTools.add('fecha-tiempo-ecuador');
-			}
-
-			if (shouldActivateEstadisticas && !newActiveTools.has('estadisticas-uyana')) {
-				newActiveTools.add('estadisticas-uyana');
-			}
-
-			// Solo actualizar si hay cambios
-			if (newActiveTools.size !== $activeTools.size) {
-				setActiveTools(Array.from(newActiveTools));
-			}
+		if (shouldActivateFechaTiempo && !newActiveTools.has('fecha-tiempo-ecuador')) {
+			newActiveTools.add('fecha-tiempo-ecuador');
+			toolsChanged = true;
+			mcpLogger.info(
+				'CHAT_INTERFACE',
+				'TOOL_AUTO_ACTIVATED',
+				'Auto-activada herramienta: fecha-tiempo-ecuador'
+			);
 		}
+
+		if (shouldActivateEstadisticas && !newActiveTools.has('estadisticas-uyana')) {
+			newActiveTools.add('estadisticas-uyana');
+			toolsChanged = true;
+			mcpLogger.info(
+				'CHAT_INTERFACE',
+				'TOOL_AUTO_ACTIVATED',
+				'Auto-activada herramienta: estadisticas-uyana'
+			);
+		}
+
+		// Solo actualizar si hubo cambios
+		if (toolsChanged) {
+			setActiveTools(Array.from(newActiveTools));
+		}
+
+		// Log de herramientas activas para debugging
+		mcpLogger.debug(
+			'CHAT_INTERFACE',
+			'ACTIVE_TOOLS',
+			'Herramientas activas antes de procesar mensaje',
+			{ activeTools: Array.from(newActiveTools) }
+		);
 
 		// Agregar mensaje del usuario
 		const userMessageId = addUserMessage(message);
@@ -563,7 +590,7 @@
 			/cuántos proyectos/i,
 			/cuantos proyectos/i,
 			/facultad(es)? (con )?(más |mas )?proyectos/i,
-			/(cuáles|cuales) son las facultad(es)?/i,
+			/(cuáles|cuales) son las? facultad(es)?/i,
 			/qué facultad(es)?/i,
 			/que facultad(es)?/i,
 			/proyectos por facultad/i,
@@ -583,13 +610,15 @@
 			/proyectos de/i,
 			/ranking (de )?facultad/i,
 			/top .? (de )?facultad/i,
-			/(primeras?|mejores) .? facultad/i,
+			/(primeras?|primeros?|mejores?) .? facultad/i,
+			/\d+ facultad(es)? (con )?(más|mas)/i,
 			/muéstra(me)? (el )?ranking/i,
 			/muestra(me)? (el )?ranking/i,
 			/muéstra(me)? (las?|los?) top/i,
 			/muestra(me)? (las?|los?) top/i,
 			/ranking (de )?(las?|los?) \d+/i,
 			/top \d+ (de )?facultad/i,
+			/\d+ (de las )?facultad(es)? con más/i,
 			/investigaciones sobre/i,
 			/investigaciones de/i,
 			/buscar proyectos/i
@@ -615,7 +644,7 @@
 			lowerMessage.includes('central del ecuador');
 
 		// Si tiene alguno de los patrones o menciona proyectos y UCE
-		if (tienePatronProyectosUce || (mencionaProyectos && mencionaUCE)) {
+		if (tienePatronProyectosUce || (mencionaProyectos && mencionaUCE) || mencionaProyectos) {
 			mcpLogger.debug(
 				'CHAT_INTERFACE',
 				'PROYECTOS_DETECTED',

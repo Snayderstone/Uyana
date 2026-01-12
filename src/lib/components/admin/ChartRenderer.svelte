@@ -51,8 +51,46 @@
 		themeObserver = new MutationObserver((mutations) => {
 			mutations.forEach((mutation) => {
 				if (mutation.type === 'attributes' && mutation.attributeName === 'data-theme') {
-					// El tema cambió, re-renderizar el gráfico
-					if (isVisible) {
+					// El tema cambió, forzar colores correctos
+					if (isVisible && config) {
+						// Detectar tema actual
+						const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+						const textColor = isDark ? '#ffffff' : '#1a1a1a';
+						const gridColor = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+
+						// Actualizar colores en la configuración
+						if (config.options) {
+							// Actualizar colores de plugins
+							if (config.options.plugins) {
+								if (config.options.plugins.legend?.labels) {
+									config.options.plugins.legend.labels.color = textColor;
+								}
+								if (config.options.plugins.tooltip) {
+									config.options.plugins.tooltip.backgroundColor = isDark
+										? 'rgba(0, 0, 0, 0.8)'
+										: 'rgba(255, 255, 255, 0.95)';
+									config.options.plugins.tooltip.titleColor = textColor;
+									config.options.plugins.tooltip.bodyColor = textColor;
+								}
+							}
+
+							// Actualizar colores de escalas
+							if (config.options.scales) {
+								Object.keys(config.options.scales).forEach((key) => {
+									const scale = config.options.scales![key];
+									if (scale) {
+										if (scale.ticks) {
+											scale.ticks.color = textColor;
+										}
+										if (scale.grid) {
+											scale.grid.color = gridColor;
+										}
+									}
+								});
+							}
+						}
+
+						// Re-renderizar con nueva configuración
 						setTimeout(() => {
 							destroyChart();
 							initChart();

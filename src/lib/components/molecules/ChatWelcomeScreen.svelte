@@ -13,7 +13,7 @@
 
 	// Sugerencias dinámicas basadas en estadísticas reales de Uyana
 	const suggestions = [
-		'¿Cuáles son las 5 facultades con más proyectos activos?',
+		'¿Qué instituciones colaboradoras tienen más proyectos?',
 		'¿Cuántos proyectos hay en estado aprobado vs en ejecución?'
 	];
 

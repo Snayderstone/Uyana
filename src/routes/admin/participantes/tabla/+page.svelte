@@ -39,7 +39,6 @@
 	let generos: Array<{ id: string; nombre: string }> = [
 		{ id: 'm', nombre: 'Masculino' },
 		{ id: 'f', nombre: 'Femenino' }
-
 	];
 	let facultades: Array<{ id: number; nombre: string }> = [];
 
@@ -131,17 +130,6 @@
 				participantes = result.data.data;
 				totalItems = result.data.pagination.total;
 				totalPages = result.data.pagination.total_pages;
-
-				// Auto-select all filtered results when any filter is applied
-				if (hasActiveFilters()) {
-					// Get all filtered participant IDs (across all pages)
-					await selectAllFilteredParticipants();
-				} else {
-					// Clear selections when no filters are active
-					selectedParticipants.clear();
-					selectedParticipants = selectedParticipants;
-					selectAll = false;
-				}
 
 				// Update selectAll state based on current page
 				updateSelectAllState();
@@ -1263,53 +1251,63 @@
 		<!-- svelte-ignore a11y-no-static-element-interactions -->
 		<div class="modal modal-delete" on:click|stopPropagation>
 			<div class="modal-header modal-header-danger">
-				<div class="modal-title">
-					{@html icons.error}
-					<span>Confirmar Eliminación</span>
-				</div>
+				<div class="modal-icon-warning">⚠️</div>
+				<h3>Confirmar Eliminación</h3>
 				<button class="modal-close" on:click={() => (showDeleteModal = false)}>
-					{@html icons.close}
+					<span>{@html icons.close}</span>
 				</button>
 			</div>
 
 			<div class="modal-body">
-				<div class="delete-confirmation">
-					<div class="participant-preview">
-						{#if participanteToDelete.url_foto || participanteToDelete.foto}
-							<img
-								src={participanteToDelete.url_foto || participanteToDelete.foto}
-								alt={participanteToDelete.nombre}
-								class="preview-avatar"
-							/>
-						{:else}
-							<div class="preview-avatar-placeholder">
-								{participanteToDelete.nombre.charAt(0).toUpperCase()}
-							</div>
-						{/if}
-						<div class="preview-details">
-							<h4>{participanteToDelete.nombre}</h4>
-							<p class="preview-meta">ID: #{participanteToDelete.id}</p>
-							{#if participanteToDelete.email}
-								<p class="preview-meta">{participanteToDelete.email}</p>
-							{/if}
-						</div>
-					</div>
+				<div class="warning-box">
+					<p class="warning-title">
+						Estás a punto de eliminar <strong>este participante</strong>
+					</p>
+					<p class="warning-message">Esta acción es permanente y no se puede deshacer.</p>
+				</div>
 
-					<div class="delete-warning">
-						<p>
-							¿Estás seguro de que deseas eliminar permanentemente a este participante del sistema?
-						</p>
-						<div class="warning-list">
-							<div class="warning-item">
-								{@html icons.error}
-								<span>Se eliminará toda la información personal del participante</span>
-							</div>
-							<div class="warning-item">
-								{@html icons.error}
-								<span>Esta acción no se puede deshacer</span>
+				<div class="projects-preview">
+					<p class="preview-title">Participante a eliminar:</p>
+					<div class="preview-list">
+						<div class="preview-item">
+							{#if participanteToDelete.url_foto || participanteToDelete.foto}
+								<img
+									src={participanteToDelete.url_foto || participanteToDelete.foto}
+									alt={participanteToDelete.nombre}
+									class="preview-avatar"
+								/>
+							{:else}
+								<div class="preview-avatar">
+									{participanteToDelete.nombre.charAt(0).toUpperCase()}
+								</div>
+							{/if}
+							<div class="preview-info">
+								<span class="preview-name">{participanteToDelete.nombre}</span>
+								<span class="preview-details"
+									>ID: #{participanteToDelete.id}{#if participanteToDelete.email}
+										• {participanteToDelete.email}{/if}</span
+								>
 							</div>
 						</div>
 					</div>
+				</div>
+
+				<div class="deletion-details">
+					<p class="details-intro">Se eliminarán:</p>
+					<ul class="detail-list">
+						<li>
+							<span class="detail-icon">👤</span>
+							<span>Toda la información personal del participante</span>
+						</li>
+						<li>
+							<span class="detail-icon">📋</span>
+							<span>Roles y participaciones en proyectos</span>
+						</li>
+						<li>
+							<span class="detail-icon">📄</span>
+							<span>Documentos y actividades asociadas</span>
+						</li>
+					</ul>
 				</div>
 			</div>
 
@@ -1322,10 +1320,11 @@
 				>
 					{#if loading}
 						<div class="spinner-sm" />
+						<span>Eliminando...</span>
 					{:else}
 						{@html icons.delete}
+						<span>Sí, Eliminar Participante</span>
 					{/if}
-					Eliminar Participante
 				</button>
 			</div>
 		</div>
@@ -2600,26 +2599,39 @@
 			justify-content: space-between;
 			align-items: center;
 			padding: 1.5rem;
-			border-bottom: 1px solid rgba(var(--color--text-rgb), 0.08);
+			border-bottom: 1px solid rgba(var(--color--text-rgb), 0.15);
 
-			&.modal-header-danger {
-				background: linear-gradient(90deg, rgba(239, 68, 68, 0.1) 0%, transparent 100%);
-				border-bottom-color: rgba(239, 68, 68, 0.2);
-			}
-
-			.modal-title {
-				display: flex;
-				align-items: center;
-				gap: 0.75rem;
+			h3 {
 				font-size: 1.25rem;
 				font-weight: 600;
 				color: var(--color--text);
 				margin: 0;
+			}
 
-				:global(svg) {
-					width: 20px;
-					height: 20px;
-					color: #10b981;
+			&.modal-header-danger {
+				background: rgba(239, 68, 68, 0.05);
+				border-bottom-color: rgba(239, 68, 68, 0.2);
+				flex-direction: column;
+				gap: 0.5rem;
+				align-items: center;
+				text-align: center;
+				padding: 1rem 1.5rem;
+
+				.modal-icon-warning {
+					font-size: 2rem;
+					line-height: 1;
+					filter: drop-shadow(0 2px 8px rgba(239, 68, 68, 0.3));
+				}
+
+				h3 {
+					color: #ef4444;
+					font-size: 1.125rem;
+				}
+
+				.modal-close {
+					position: absolute;
+					right: 0.75rem;
+					top: 0.75rem;
 				}
 			}
 
@@ -2628,32 +2640,155 @@
 				border: none;
 				color: var(--color--text-shade);
 				cursor: pointer;
-				padding: 0.5rem;
-				border-radius: 6px;
-				transition: all 0.15s ease;
+				padding: 4px;
+				display: flex;
+				align-items: center;
+				font-size: 1.25rem;
 
 				&:hover {
-					background: rgba(var(--color--text-rgb), 0.08);
 					color: var(--color--text);
-				}
-
-				:global(svg) {
-					width: 18px;
-					height: 18px;
 				}
 			}
 		}
 
 		.modal-body {
-			padding: 1.5rem;
-			color: var(--color--text);
+			padding: 1rem 1.25rem;
 
-			p {
-				margin: 0 0 1rem 0;
-				line-height: 1.6;
+			.warning-box {
+				padding: 0.75rem 1rem;
+				background: rgba(239, 68, 68, 0.1);
+				border: 1px solid rgba(239, 68, 68, 0.3);
+				border-radius: 6px;
+				margin-bottom: 1rem;
 
-				&:last-child {
-					margin-bottom: 0;
+				.warning-title {
+					font-size: 0.9375rem;
+					color: var(--color--text);
+					margin: 0 0 0.375rem 0;
+					font-weight: 600;
+
+					strong {
+						color: #ef4444;
+					}
+				}
+
+				.warning-message {
+					font-size: 0.8125rem;
+					color: var(--color--text-shade);
+					margin: 0;
+				}
+			}
+
+			.deletion-details {
+				margin-bottom: 1rem;
+
+				.details-intro {
+					font-size: 0.8125rem;
+					font-weight: 600;
+					color: var(--color--text-shade);
+					margin: 0 0 0.5rem 0;
+				}
+
+				.detail-list {
+					list-style: none;
+					padding: 0;
+					margin: 0;
+
+					li {
+						display: flex;
+						align-items: flex-start;
+						gap: 0.625rem;
+						padding: 0.5rem 0.75rem;
+						background: rgba(var(--color--text-rgb), 0.03);
+						border: 1px solid rgba(var(--color--text-rgb), 0.15);
+						border-radius: 4px;
+						margin-bottom: 0.375rem;
+						font-size: 0.8125rem;
+						color: var(--color--text-shade);
+
+						&:last-child {
+							margin-bottom: 0;
+						}
+
+						.detail-icon {
+							font-size: 1rem;
+							line-height: 1;
+							flex-shrink: 0;
+						}
+
+						span:last-child {
+							flex: 1;
+						}
+					}
+				}
+			}
+
+			.projects-preview {
+				margin-bottom: 1rem;
+
+				.preview-title {
+					font-size: 0.8125rem;
+					font-weight: 600;
+					color: var(--color--text);
+					margin: 0 0 0.5rem 0;
+				}
+
+				.preview-list {
+					background: rgba(var(--color--text-rgb), 0.03);
+					border: 1px solid rgba(var(--color--text-rgb), 0.15);
+					border-radius: 6px;
+					overflow: hidden;
+
+					.preview-item {
+						display: flex;
+						align-items: center;
+						gap: 0.75rem;
+						padding: 0.625rem 0.875rem;
+						border-bottom: 1px solid rgba(var(--color--text-rgb), 0.1);
+
+						&:last-child {
+							border-bottom: none;
+						}
+
+						.preview-avatar {
+							width: 40px;
+							height: 40px;
+							border-radius: 50%;
+							object-fit: cover;
+							flex-shrink: 0;
+							background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+							color: white;
+							display: flex;
+							align-items: center;
+							justify-content: center;
+							font-weight: 600;
+							font-size: 1rem;
+						}
+
+						.preview-info {
+							flex: 1;
+							min-width: 0;
+
+							.preview-name {
+								display: block;
+								font-size: 0.875rem;
+								font-weight: 500;
+								color: var(--color--text);
+								white-space: nowrap;
+								overflow: hidden;
+								text-overflow: ellipsis;
+							}
+
+							.preview-details {
+								display: block;
+								font-size: 0.75rem;
+								color: var(--color--text-shade);
+								white-space: nowrap;
+								overflow: hidden;
+								text-overflow: ellipsis;
+							}
+						}
+					}
 				}
 			}
 		}
@@ -2662,86 +2797,11 @@
 			display: flex;
 			justify-content: flex-end;
 			gap: 0.75rem;
-			padding: 1.5rem;
-			border-top: 1px solid rgba(var(--color--text-rgb), 0.08);
+			padding: 1rem 1.25rem;
+			border-top: 1px solid rgba(var(--color--text-rgb), 0.15);
 		}
 	}
 
-	// Delete Modal Specific Styles
-	.delete-confirmation {
-		.participant-preview {
-			display: flex;
-			align-items: center;
-			gap: 1rem;
-			padding: 1rem;
-			background: rgba(var(--color--text-rgb), 0.03);
-			border: 1px solid rgba(var(--color--text-rgb), 0.08);
-			border-radius: 8px;
-			margin-bottom: 1.5rem;
-
-			.preview-avatar,
-			.preview-avatar-placeholder {
-				width: 48px;
-				height: 48px;
-				border-radius: 50%;
-				object-fit: cover;
-				flex-shrink: 0;
-			}
-
-			.preview-avatar-placeholder {
-				background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-				color: white;
-				display: flex;
-				align-items: center;
-				justify-content: center;
-				font-weight: 700;
-				font-size: 1.25rem;
-			}
-
-			.preview-details {
-				min-width: 0;
-
-				h4 {
-					margin: 0 0 0.25rem 0;
-					font-size: 1.125rem;
-					font-weight: 600;
-					color: var(--color--text);
-				}
-
-				.preview-meta {
-					margin: 0.125rem 0;
-					font-size: 0.8125rem;
-					color: var(--color--text-shade);
-				}
-			}
-		}
-
-		.delete-warning {
-			.warning-list {
-				margin-top: 1rem;
-
-				.warning-item {
-					display: flex;
-					align-items: flex-start;
-					gap: 0.5rem;
-					margin-bottom: 0.75rem;
-					color: #fbbf24;
-
-					:global(svg) {
-						width: 16px;
-						height: 16px;
-						margin-top: 2px;
-						flex-shrink: 0;
-					}
-
-					span {
-						font-size: 0.875rem;
-						line-height: 1.4;
-					}
-				}
-			}
-		}
-	}
 
 	// Bulk Delete Modal Specific Styles
 	.bulk-delete-confirmation {

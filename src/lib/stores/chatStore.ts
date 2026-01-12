@@ -1,4 +1,5 @@
 import { writable, derived, get } from 'svelte/store';
+import { browser } from '$app/environment';
 import type { McpToolType } from '$lib/mcp-core/shared/types';
 
 /**
@@ -21,6 +22,7 @@ export interface ChatMessage {
 			totalTokens?: number;
 		};
 		source?: string;
+		alreadyRendered?: boolean; // Para evitar efecto de escritura en mensajes cargados
 	};
 }
 
@@ -46,9 +48,93 @@ const initialState: ChatState = {
 };
 
 /**
- * Store principal del chat
+ * Clave para localStorage
  */
-export const chatStore = writable<ChatState>(initialState);
+const STORAGE_KEY = 'uyana-chat-state';
+
+/**
+ * Carga el estado desde localStorage
+ */
+function loadStateFromStorage(): ChatState {
+	if (!browser) return initialState;
+	
+	try {
+		const stored = localStorage.getItem(STORAGE_KEY);
+		if (!stored) return initialState;
+		
+		const parsed = JSON.parse(stored);
+		// Convertir activeTools de array a Set
+		if (parsed.activeTools && Array.isArray(parsed.activeTools)) {
+			parsed.activeTools = new Set(parsed.activeTools);
+		} else {
+			parsed.activeTools = new Set();
+		}
+		
+		// Limpiar estado de mensajes pendientes/errores
+		// Los mensajes guardados ya fueron completados
+		if (parsed.messages && Array.isArray(parsed.messages)) {
+			parsed.messages = parsed.messages.map((msg: ChatMessage) => ({
+				...msg,
+				pending: false, // Nunca mostrar como pendiente al cargar
+				error: false, // Limpiar errores al cargar
+				metadata: {
+					...msg.metadata,
+					// Marcar como ya renderizado para evitar efecto de escritura
+					alreadyRendered: true
+				}
+			}));
+		}
+		
+		// No persistir estado de carga ni errores
+		parsed.isLoading = false;
+		parsed.error = null;
+		parsed.connectionStatus = 'disconnected';
+		
+		return { ...initialState, ...parsed };
+	} catch (error) {
+		console.error('Error cargando estado del chat:', error);
+		return initialState;
+	}
+}
+
+/**
+ * Guarda el estado en localStorage
+ */
+function saveStateToStorage(state: ChatState): void {
+	if (!browser) return;
+	
+	try {
+		// Convertir Set a Array para serialización
+		const toSave = {
+			...state,
+			activeTools: Array.from(state.activeTools),
+			// No guardar estado temporal
+			isLoading: false,
+			error: null
+		};
+		localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
+	} catch (error) {
+		console.error('Error guardando estado del chat:', error);
+	}
+}
+
+/**
+ * Store principal del chat con persistencia
+ */
+export const chatStore = writable<ChatState>(loadStateFromStorage());
+
+// Suscribirse a cambios y guardar en localStorage con debounce
+if (browser) {
+	let saveTimeout: ReturnType<typeof setTimeout>;
+	
+	chatStore.subscribe((state) => {
+		// Debounce para evitar escrituras excesivas
+		clearTimeout(saveTimeout);
+		saveTimeout = setTimeout(() => {
+			saveStateToStorage(state);
+		}, 300); // Guardar después de 300ms de inactividad
+	});
+}
 
 /**
  * Stores derivados para acceso conveniente
@@ -261,7 +347,7 @@ export const chatActions = {
 	},
 
 	/**
-	 * Limpia el historial del chat
+	 * Limpia el historial del chat PRESERVANDO las herramientas activas
 	 */
 	clearChat(): void {
 		chatStore.update((state) => ({
@@ -269,14 +355,22 @@ export const chatActions = {
 			messages: [],
 			error: null,
 			isLoading: false
+			// NO tocar activeTools - mantenerlas activas
 		}));
 	},
 
 	/**
-	 * Reinicia completamente el estado del chat
+	 * Reinicia completamente el estado del chat y limpia localStorage
 	 */
 	resetChat(): void {
 		chatStore.set(initialState);
+		if (browser) {
+			try {
+				localStorage.removeItem(STORAGE_KEY);
+			} catch (error) {
+				console.error('Error limpiando localStorage del chat:', error);
+			}
+		}
 	},
 
 	/**

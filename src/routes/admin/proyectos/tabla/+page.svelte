@@ -2104,6 +2104,48 @@
 		}
 	}
 
+	// ==================== Checkbox Styles ====================
+	input[type='checkbox'] {
+		appearance: none;
+		-webkit-appearance: none;
+		-moz-appearance: none;
+		width: 18px;
+		height: 18px;
+		border: 2px solid rgba(var(--color--text-rgb), 0.3);
+		border-radius: 4px;
+		background: var(--color--card-background);
+		cursor: pointer;
+		position: relative;
+		transition: all 0.2s ease;
+		margin: 0;
+
+		&:hover {
+			border-color: var(--color--primary);
+		}
+
+		&:checked {
+			background: var(--color--primary);
+			border-color: var(--color--primary);
+
+			&::after {
+				content: '';
+				position: absolute;
+				left: 5px;
+				top: 2px;
+				width: 4px;
+				height: 8px;
+				border: solid white;
+				border-width: 0 2px 2px 0;
+				transform: rotate(45deg);
+			}
+		}
+
+		&:focus {
+			outline: none;
+			box-shadow: 0 0 0 3px rgba(var(--color--primary-rgb), 0.1);
+		}
+	}
+
 	.progress-container {
 		display: flex;
 		align-items: center;

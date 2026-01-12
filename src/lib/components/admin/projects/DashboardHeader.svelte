@@ -77,14 +77,14 @@
 	}
 
 	.export-btn {
-		background: var(--color--primary);
-		color: white;
-		border: 1px solid var(--color--primary);
+		background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+		color: #ffffff;
+		border: none;
 	}
 
 	.export-btn:hover:not(:disabled) {
 		transform: translateY(-2px);
-		box-shadow: 0 8px 16px rgba(var(--color--primary-rgb), 0.4);
+		box-shadow: 0 8px 16px rgba(102, 126, 234, 0.4);
 	}
 
 	.action-btn:disabled {

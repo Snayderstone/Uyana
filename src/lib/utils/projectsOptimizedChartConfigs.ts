@@ -29,7 +29,18 @@ const COLORS_ARRAY = Object.values(CHART_COLORS);
 // Detectar si estamos en modo oscuro
 function isDarkMode(): boolean {
 	if (typeof document !== 'undefined') {
-		return document.documentElement.getAttribute('data-theme') === 'dark';
+		const themeAttr = document.documentElement.getAttribute('data-theme');
+		
+		if (themeAttr === 'dark') {
+			return true;
+		} else if (themeAttr === 'light') {
+			return false;
+		} else {
+			// Modo 'auto' - usar preferencia del sistema
+			if (typeof window !== 'undefined' && window.matchMedia) {
+				return window.matchMedia('(prefers-color-scheme: dark)').matches;
+			}
+		}
 	}
 	return false;
 }

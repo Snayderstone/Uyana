@@ -30,7 +30,16 @@
 
 	function detectTheme() {
 		if (typeof window !== 'undefined') {
-			isDarkTheme = document.documentElement.getAttribute('data-theme') === 'dark';
+			const themeAttr = document.documentElement.getAttribute('data-theme');
+
+			if (themeAttr === 'dark') {
+				isDarkTheme = true;
+			} else if (themeAttr === 'light') {
+				isDarkTheme = false;
+			} else {
+				// Modo 'auto' - usar preferencia del sistema
+				isDarkTheme = window.matchMedia('(prefers-color-scheme: dark)').matches;
+			}
 		}
 	}
 
@@ -94,6 +103,7 @@
 		// Cleanup existing chart
 		if (chartInstances[canvasId]) {
 			chartInstances[canvasId].destroy();
+			delete chartInstances[canvasId];
 		}
 
 		const canvas = document.getElementById(canvasId) as HTMLCanvasElement;
@@ -111,6 +121,9 @@
 		if (config === null) {
 			return;
 		}
+
+		// Detectar tema actual antes de aplicar colores
+		detectTheme();
 
 		// Aplicar colores según el tema
 		const colors = getChartColors();
@@ -194,18 +207,22 @@
 	onMount(() => {
 		detectTheme();
 
-		// Observar cambios de tema
+		// Observar cambios de tema y recargar toda la sección
 		const observer = new MutationObserver(() => {
-			const newTheme = document.documentElement.getAttribute('data-theme') === 'dark';
-			if (newTheme !== isDarkTheme) {
-				isDarkTheme = newTheme;
-				// Re-renderizar gráficos con el nuevo tema
-				if (publicCharts && publicCharts.length > 0) {
-					publicCharts.forEach((chartName: string) => {
-						const canvasId = `chart-${chartName}`;
-						renderChart(chartName, canvasId);
-					});
-				}
+			const previousTheme = isDarkTheme;
+			detectTheme();
+
+			// Solo recargar si el tema cambió
+			if (previousTheme !== isDarkTheme) {
+				// Recargar toda la sección desde cero
+				cargarDatos().then(() => {
+					if (publicCharts && publicCharts.length > 0) {
+						publicCharts.forEach((chartName: string) => {
+							const canvasId = `chart-${chartName}`;
+							renderChart(chartName, canvasId);
+						});
+					}
+				});
 			}
 		});
 

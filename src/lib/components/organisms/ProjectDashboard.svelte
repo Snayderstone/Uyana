@@ -38,7 +38,16 @@
 
 	function detectTheme() {
 		if (typeof window !== 'undefined') {
-			isDarkTheme = document.documentElement.getAttribute('data-theme') === 'dark';
+			const themeAttr = document.documentElement.getAttribute('data-theme');
+
+			if (themeAttr === 'dark') {
+				isDarkTheme = true;
+			} else if (themeAttr === 'light') {
+				isDarkTheme = false;
+			} else {
+				// Modo 'auto' - usar preferencia del sistema
+				isDarkTheme = window.matchMedia('(prefers-color-scheme: dark)').matches;
+			}
 		}
 	}
 
@@ -88,20 +97,37 @@
 	async function refrescarDatos() {
 		await cargarDatos();
 		// Re-renderizar todos los gráficos después de actualizar
-		if (publicCharts && publicCharts.length > 0) {
+		renderAllCharts();
+	}
+
+	// Función para renderizar todos los gráficos
+	function renderAllCharts() {
+		if (!publicCharts || publicCharts.length === 0) return;
+
+		// Primero destruir todos los gráficos existentes
+		Object.keys(chartInstances).forEach((key) => {
+			if (chartInstances[key]) {
+				chartInstances[key].destroy();
+				delete chartInstances[key];
+			}
+		});
+
+		// Luego usar requestAnimationFrame para renderizar con el nuevo tema
+		requestAnimationFrame(() => {
 			publicCharts.forEach((chartName: string) => {
 				const canvasId = `chart-${chartName}`;
 				if (document.getElementById(canvasId)) {
 					renderChart(chartName, canvasId);
 				}
 			});
-		}
+		});
 	}
 
 	function renderChart(chartName: string, canvasId: string) {
 		// Cleanup existing chart
 		if (chartInstances[canvasId]) {
 			chartInstances[canvasId].destroy();
+			delete chartInstances[canvasId];
 		}
 
 		const canvas = document.getElementById(canvasId) as HTMLCanvasElement;
@@ -124,6 +150,9 @@
 		if (config === null) {
 			return;
 		}
+
+		// Detectar tema actual antes de aplicar colores
+		detectTheme();
 
 		// Aplicar colores según el tema
 		const colors = getChartColors();
@@ -181,49 +210,52 @@
 	onMount(() => {
 		detectTheme();
 
-		// Observar cambios de tema
-		const observer = new MutationObserver(() => {
-			const newTheme = document.documentElement.getAttribute('data-theme') === 'dark';
-			if (newTheme !== isDarkTheme) {
-				isDarkTheme = newTheme;
-				// Re-renderizar gráficos con el nuevo tema
-				if (publicCharts && publicCharts.length > 0) {
-					publicCharts.forEach((chartName: string) => {
-						const canvasId = `chart-${chartName}`;
-						renderChart(chartName, canvasId);
+		// Observar cambios de tema y recargar toda la sección
+		const themeObserver = new MutationObserver((mutations) => {
+			for (const mutation of mutations) {
+				if (mutation.type === 'attributes' && mutation.attributeName === 'data-theme') {
+					// Detectar el nuevo tema
+					detectTheme();
+
+					// Recargar toda la sección desde cero
+					cargarDatos().then(() => {
+						renderAllCharts();
 					});
 				}
 			}
 		});
 
-		observer.observe(document.documentElement, {
+		themeObserver.observe(document.documentElement, {
 			attributes: true,
 			attributeFilter: ['data-theme']
 		});
 
+		// Cargar datos iniciales
 		cargarDatos().then(() => {
 			// Renderizar gráficos solo después de cargar los datos
-			if (publicCharts && publicCharts.length > 0) {
-				setTimeout(() => {
-					publicCharts.forEach((chartName: string) => {
-						const canvasId = `chart-${chartName}`;
-						renderChart(chartName, canvasId);
-					});
-				}, 100);
-			}
+			renderAllCharts();
 		});
 
 		// Polling periódico cada 30 segundos para actualizaciones
-		refreshInterval = setInterval(async () => {
-			await refrescarDatos();
+		refreshInterval = setInterval(() => {
+			refrescarDatos();
 		}, 30000);
 
 		// Cleanup on destroy
 		return () => {
-			observer.disconnect();
-			Object.values(chartInstances).forEach((chart) => chart.destroy());
+			themeObserver.disconnect();
+
+			// Destruir todos los gráficos
+			Object.keys(chartInstances).forEach((key) => {
+				if (chartInstances[key]) {
+					chartInstances[key].destroy();
+					delete chartInstances[key];
+				}
+			});
+
 			if (refreshInterval) {
 				clearInterval(refreshInterval);
+				refreshInterval = null;
 			}
 		};
 	});

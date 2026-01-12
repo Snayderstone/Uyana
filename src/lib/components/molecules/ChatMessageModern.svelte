@@ -17,13 +17,15 @@
 
 	// Determinar si debe mostrar el efecto de escritura
 	// Solo se activa en el último mensaje del asistente y solo una vez
+	// NO se activa en mensajes cargados desde localStorage (alreadyRendered)
 	$: shouldShowTyping =
 		enableTyping &&
 		isLastAssistantMessage &&
 		message.role === 'assistant' &&
 		!message.pending &&
 		!message.error &&
-		!hasTyped;
+		!hasTyped &&
+		!message.metadata?.alreadyRendered; // No aplicar efecto a mensajes guardados
 
 	// Marcar como ya escrito cuando termina el efecto
 	function handleTypingComplete() {
@@ -214,21 +216,29 @@
 		position: relative;
 		backdrop-filter: blur(10px);
 		transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-		box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03);
+		box-shadow:
+			0 1px 4px rgba(0, 0, 0, 0.05),
+			0 1px 2px rgba(0, 0, 0, 0.03);
 
 		&:hover {
 			transform: translateY(-1px);
-			box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08), 0 2px 6px rgba(0, 0, 0, 0.05);
+			box-shadow:
+				0 4px 12px rgba(0, 0, 0, 0.08),
+				0 2px 6px rgba(0, 0, 0, 0.05);
 		}
 	}
 
 	/* Estilos específicos para mensajes de usuario */
 	.message-container.user {
 		.message-bubble {
-			box-shadow: 0 2px 8px rgba(156, 39, 176, 0.15), 0 1px 3px rgba(103, 58, 183, 0.1);
+			box-shadow:
+				0 2px 8px rgba(156, 39, 176, 0.15),
+				0 1px 3px rgba(103, 58, 183, 0.1);
 
 			&:hover {
-				box-shadow: 0 8px 24px rgba(156, 39, 176, 0.2), 0 4px 16px rgba(103, 58, 183, 0.15);
+				box-shadow:
+					0 8px 24px rgba(156, 39, 176, 0.2),
+					0 4px 16px rgba(103, 58, 183, 0.15);
 			}
 		}
 	}
@@ -236,10 +246,14 @@
 	/* Estilos específicos para mensajes del asistente */
 	.message-container.assistant {
 		.message-bubble {
-			box-shadow: 0 2px 8px rgba(255, 99, 71, 0.12), 0 1px 3px rgba(255, 69, 0, 0.08);
+			box-shadow:
+				0 2px 8px rgba(255, 99, 71, 0.12),
+				0 1px 3px rgba(255, 69, 0, 0.08);
 
 			&:hover {
-				box-shadow: 0 8px 24px rgba(255, 99, 71, 0.18), 0 4px 16px rgba(255, 69, 0, 0.12);
+				box-shadow:
+					0 8px 24px rgba(255, 99, 71, 0.18),
+					0 4px 16px rgba(255, 69, 0, 0.12);
 			}
 		}
 	}

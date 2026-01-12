@@ -15,7 +15,7 @@ const estadisticasUyanaSchema = z.object({
 	consulta: z
 		.string()
 		.min(1, 'La consulta es requerida')
-		.describe('Consulta sobre proyectos, participantes, facultades o estadísticas de UYANA')
+		.describe('Consulta sobre proyectos, participantes, facultades o estadísticas generales de los proyectos de investigación')
 		.optional(),
 	input: z.string().optional(),
 	tipo: z
@@ -23,6 +23,7 @@ const estadisticasUyanaSchema = z.object({
 			'resumen',
 			'participantes',
 			'facultades',
+			'facultades-proyectos',
 			'carreras',
 			'proyectos',
 			'areas',
@@ -71,13 +72,26 @@ function detectarTipoConsulta(consulta: string): string {
 		return 'participantes';
 	}
 
-	// Facultades
+	// Facultades por proyectos vs participantes
 	if (
 		consultaLower.includes('facultad') ||
-		consultaLower.includes('facultades') ||
-		consultaLower.includes('decano') ||
-		consultaLower.includes('subdecano')
+		consultaLower.includes('facultades')
 	) {
+		// Si menciona explícitamente proyectos, usar el tipo facultades-proyectos
+		if (
+			consultaLower.includes('proyecto') ||
+			consultaLower.includes('activo') ||
+			consultaLower.includes('más proyectos') ||
+			consultaLower.includes('con proyectos')
+		) {
+			return 'facultades-proyectos';
+		}
+		// Por defecto, devolver por participantes
+		return 'facultades';
+	}
+	
+	// Decanos y subdecanos (siempre por participantes)
+	if (consultaLower.includes('decano') || consultaLower.includes('subdecano')) {
 		return 'facultades';
 	}
 
@@ -237,7 +251,7 @@ function formatearTopParticipantes(participantes: any[], limite: number): string
 }
 
 /**
- * Formatea top de facultades
+ * Formatea top de facultades por participantes
  */
 function formatearTopFacultades(facultades: any[]): string {
 	let resultado = `🏛️ **Top Facultades por Participantes**\n\n`;
@@ -255,6 +269,20 @@ function formatearTopFacultades(facultades: any[]): string {
 		resultado += `   - Total participantes: ${totalParticipantes}\n`;
 		resultado += `   - Masculino: ${masculino} (${pctMasculino}%)\n`;
 		resultado += `   - Femenino: ${femenino} (${pctFemenino}%)\n\n`;
+	});
+
+	return resultado;
+}
+
+/**
+ * Formatea top de facultades por número de proyectos
+ */
+function formatearTopFacultadesPorProyectos(facultades: Array<{facultad: string, cantidad: number}>, limite: number): string {
+	let resultado = `🏛️ **Top ${Math.min(limite, facultades.length)} Facultades por Número de Proyectos**\n\n`;
+
+	facultades.forEach((f, index) => {
+		resultado += `${index + 1}. **${f.facultad}**\n`;
+		resultado += `   - Total proyectos: ${f.cantidad}\n\n`;
 	});
 
 	return resultado;
@@ -449,6 +477,16 @@ async function manejarEstadisticasUyana(args: any): Promise<McpResponse> {
 					respuesta = formatearTopFacultades(facultades);
 				} else {
 					respuesta = '❌ No se encontraron datos de facultades.';
+				}
+				break;
+			}
+
+			case 'facultades-proyectos': {
+				const facultades = await estadisticasRepository.obtenerTopFacultadesPorProyectos(limite);
+				if (facultades.length > 0) {
+					respuesta = formatearTopFacultadesPorProyectos(facultades, limite);
+				} else {
+					respuesta = '❌ No se encontraron datos de facultades por proyectos.';
 				}
 				break;
 			}
@@ -697,8 +735,10 @@ export const estadisticasUyanaTool: McpTool<EstadisticasUyanaArgs> = {
 			],
 			suggestedQuestions: [
 				'¿Cuántos proyectos de investigación hay en total?',
-				'Muéstrame el top de investigadores',
-				'¿Cuáles son las facultades con más participantes?',
+			'Muéstrame el top de investigadores',
+			'¿Cuáles son las 5 facultades con más proyectos activos?',
+			'¿Cuáles son las facultades con más participantes?',
+			'¿Qué instituciones colaboradoras tienen más proyectos?',
 				'¿Qué carreras tienen más proyectos?',
 				'Estadísticas de proyectos por estado',
 				'¿Cuáles son las principales áreas de conocimiento?',

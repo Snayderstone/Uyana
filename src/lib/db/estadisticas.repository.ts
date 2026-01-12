@@ -292,6 +292,25 @@ export class EstadisticasRepository {
 	}
 
 	/**
+	 * Obtiene el top de facultades con más proyectos activos
+	 */
+	async obtenerTopFacultadesPorProyectos(limite: number = 10): Promise<Array<{facultad: string, cantidad: number}>> {
+		try {
+			// Importar dinámicamente el servicio para evitar dependencias circulares
+			const { obtenerProyectosPorFacultad } = await import('$lib/services/proyectosService');
+			const facultades = await obtenerProyectosPorFacultad();
+			
+			// Ordenar por cantidad descendente y limitar
+			return facultades
+				.sort((a, b) => b.cantidad - a.cantidad)
+				.slice(0, limite);
+		} catch (error) {
+			console.error('Error al obtener top facultades por proyectos:', error);
+			return [];
+		}
+	}
+
+	/**
 	 * Obtiene el top de carreras con más participantes
 	 */
 	async obtenerTopCarreras(limite: number = 10): Promise<TopCarrera[]> {
@@ -363,7 +382,11 @@ export class EstadisticasRepository {
 	 */
 	async obtenerTopInstituciones(limite: number = 10): Promise<TopInstitucion[]> {
 		try {
-			const { data, error } = await supabase.from('mv_top_instituciones').select('*').limit(limite);
+			const { data, error } = await supabase
+				.from('mv_top_instituciones')
+				.select('*')
+				.order('cantidad', { ascending: false })
+				.limit(limite);
 
 			if (error) {
 				console.error('Error al obtener top instituciones:', error);

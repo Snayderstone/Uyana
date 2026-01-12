@@ -20,7 +20,7 @@
 	const { config, state, actions } = useChatWidget();
 
 	// Chat store
-	const { messages, connectionStatus } = useChatStore();
+	const { messages, connectionStatus, isLoading } = useChatStore();
 
 	// Estado local
 	let lastMessageCount = 0;
@@ -38,14 +38,15 @@
 		if ($messages.length > 0) {
 			if (
 				confirm(
-					'¿Estás seguro de que deseas iniciar una nueva conversación? Se perderá el historial actual.'
+					'¿Estás seguro de que deseas iniciar una nueva conversación? Se perderá el historial actual. Las herramientas activas se mantendrán.'
 				)
 			) {
 				const chatStore = useChatStore();
+				// clearChat ahora preserva las herramientas activas
 				chatStore.clearChat();
 			}
 		} else {
-			// Si no hay mensajes, simplemente limpiar
+			// Si no hay mensajes, simplemente limpiar (preservando herramientas)
 			const chatStore = useChatStore();
 			chatStore.clearChat();
 		}
@@ -143,13 +144,22 @@
 	}
 
 	// Manejar clics fuera del widget para cerrarlo
+
 	function handleClickOutside(event: MouseEvent) {
 		if (!$state.isOpen) return;
+
+		// No cerrar si se está procesando un mensaje (usando el estado del store)
+		if ($isLoading) return;
 
 		const target = event.target as HTMLElement;
 		// No cerrar si el clic es dentro del widget o en cualquier elemento del chat
 		if (widgetContainer && widgetContainer.contains(target)) {
 			return; // No cerrar si se hace clic dentro del widget
+		}
+
+		// No cerrar si el clic es en algún elemento del DOM que puede ser dinámico (tooltips, dropdowns, etc.)
+		if (target.closest('.chat-widget') || target.closest('.modal') || target.closest('.dropdown')) {
+			return;
 		}
 
 		closeChat();
@@ -227,7 +237,9 @@
 		const watchInterval = setInterval(watchWidgetState, 2000);
 
 		if (browser) {
-			document.addEventListener('click', handleClickOutside);
+			// Usar capture phase (true) para que se ejecute antes que los eventos del chat
+			// Esto evita que se cierre el chat al hacer clic en el input o botones
+			document.addEventListener('click', handleClickOutside, { capture: false });
 			document.addEventListener('keydown', handleKeydown);
 		}
 
@@ -239,7 +251,7 @@
 
 	onDestroy(() => {
 		if (browser) {
-			document.removeEventListener('click', handleClickOutside);
+			document.removeEventListener('click', handleClickOutside, { capture: false });
 			document.removeEventListener('keydown', handleKeydown);
 		}
 	});
