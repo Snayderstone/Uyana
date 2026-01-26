@@ -6,7 +6,7 @@
 	import TubeBarChart from './TubeBarChart.svelte';
 
 	export let proyectos: Proyecto[] = []; // los filtrados
-	export let totalGeneral: number = 167; // quemado por ahora
+	export let totalGeneral: number; // quemado por ahora
 	export let proyectosTotales: Proyecto[] = [];
 
 	// ================== Helpers ==================
@@ -24,12 +24,29 @@
 		return Object.entries(counts).map(([label, value]) => ({ label, value }));
 	}
 
-	function parseYear(dateStr: string) {
+	function parseYear(dateStr: any) {
 		if (!dateStr) return 'No especificado';
-		const parts = dateStr.split('/');
-		if (parts.length === 3) {
-			return parts[2];
+
+		const s = String(dateStr).trim();
+
+		// yyyy-mm-dd o yyyy-mm-ddTHH:mm:ss
+		const isoMatch = s.match(/^(\d{4})-\d{2}-\d{2}/);
+		if (isoMatch) {
+			return isoMatch[1];
 		}
+
+		// dd/mm/yyyy
+		const slashMatch = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+		if (slashMatch) {
+			return slashMatch[3];
+		}
+
+		// Último intento: Date()
+		const d = new Date(s);
+		if (!Number.isNaN(d.getTime())) {
+			return String(d.getFullYear());
+		}
+
 		return 'No especificado';
 	}
 
