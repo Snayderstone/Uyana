@@ -10,6 +10,7 @@ import { json, type RequestHandler } from '@sveltejs/kit';
 import { AdminParticipantsService } from '$lib/services/admin/participants/participants.service';
 import type { UpdateParticipanteDTO, ApiResponseDTO } from '$lib/models/admin';
 import { requireAdmin, jsonError } from '$lib/utils/auth.utils';
+import { deleteParticipantFolder } from '$lib/services/storage.service';
 
 /**
  * GET - Obtener un participante por ID
@@ -178,7 +179,16 @@ export const DELETE: RequestHandler = async (event) => {
 			);
 		}
 
-		// Eliminar
+		// Eliminar carpeta de fotos del bucket
+		const folderResult = await deleteParticipantFolder(id);
+		if (!folderResult.success) {
+			console.warn(
+				`Failed to delete folder for participant ${id}: ${folderResult.error}`
+			);
+			// Continuar con la eliminación del participante aunque falle la eliminación del bucket
+		}
+
+		// Eliminar participante de la base de datos
 		const deleted = await AdminParticipantsService.deleteParticipant(id);
 
 		if (!deleted) {

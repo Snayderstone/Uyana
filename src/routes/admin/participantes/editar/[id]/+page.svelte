@@ -19,8 +19,7 @@
 			m: 'Masculino',
 			f: 'Femenino',
 			Masculino: 'Masculino',
-			Femenino: 'Femenino',
-
+			Femenino: 'Femenino'
 		};
 		return genderMap[gender] || gender;
 	}
@@ -29,7 +28,7 @@
 	function mapGenderToDB(gender: string): string {
 		const genderMap: Record<string, string> = {
 			Masculino: 'm',
-			Femenino: 'f',
+			Femenino: 'f'
 		};
 		return genderMap[gender] || gender;
 	}
@@ -278,24 +277,6 @@
 			}
 		}
 
-		// Validar foto (si se proporciona)
-		if (formData.foto && formData.foto.trim()) {
-			const fotoValue = formData.foto.trim();
-			if (isBase64Image(fotoValue)) {
-				// Validar que el base64 sea válido
-				if (fotoValue.length < 100) {
-					errors.foto = 'Los datos base64 parecen estar incompletos';
-				}
-			} else {
-				// Validar que sea una URL válida
-				try {
-					new URL(fotoValue);
-				} catch {
-					errors.foto = 'Ingrese una URL válida o datos base64 válidos (data:image/...)';
-				}
-			}
-		}
-
 		return Object.keys(errors).length === 0;
 	}
 
@@ -321,21 +302,19 @@
 		saving = true;
 
 		try {
-			// Prepare update data (remove facultad_id as it's not part of the participant model)
+			// Prepare update data (no incluir url_foto, ya se actualiza en el upload)
 			const updateData = {
 				nombre: formData.nombre.trim(),
 				email: formData.email.trim() || null,
 				genero: mapGenderToDB(formData.genero),
 				acreditado: formData.acreditado,
 				carrera_id: formData.carrera_id,
-				redes_sociales: formData.redes_sociales.trim() || null,
-				url_foto: formData.foto.trim() || null
+				redes_sociales: formData.redes_sociales.trim() || null
 			};
 
 			console.log('📤 Enviando datos para actualización:', {
 				participanteId,
-				formData: formData.foto,
-				updateData: updateData.url_foto
+				updateData
 			});
 
 			const response = await fetch(`/api/admin/participants/${participanteId}`, {
@@ -349,10 +328,18 @@
 			const result = await response.json();
 
 			if (result.success) {
-				successMessage = `¡Perfecto! Los datos de ${formData.nombre} han sido actualizados correctamente. Redirigiendo...`;
-
 				// Refresh participant data
 				participante = result.data;
+
+				// Upload photo if a new one was selected
+				if (photoFile) {
+					await uploadPhotoToServer(photoFile);
+					// Reset photoFile after successful upload
+					photoFile = null;
+					if (photoInput) photoInput.value = '';
+				}
+
+				successMessage = `¡Perfecto! Los datos de ${formData.nombre} han sido actualizados correctamente. Redirigiendo...`;
 
 				// Redirect after 2 seconds
 				setTimeout(() => {
@@ -384,7 +371,7 @@
 	}
 
 	/**
-	 * Handle photo file selection
+	 * Handle photo file selection - Only create preview, upload on save
 	 */
 	function handlePhotoSelect(event: Event) {
 		const target = event.target as HTMLInputElement;
@@ -401,37 +388,56 @@
 				return;
 			}
 
+			// Save file for later upload
 			photoFile = file;
-			convertFileToBase64(file);
+
+			// Create preview
+			const reader = new FileReader();
+			reader.onload = (e) => {
+				if (e.target?.result) {
+					formData.foto = e.target.result as string;
+				}
+			};
+			reader.readAsDataURL(file);
 		}
 	}
 
 	/**
-	 * Convert file to base64
+	 * Upload photo to Supabase Storage
 	 */
-	function convertFileToBase64(file: File) {
+	async function uploadPhotoToServer(file: File) {
 		uploadingPhoto = true;
 		error = null;
 
-		const reader = new FileReader();
-		reader.onload = () => {
-			const base64Result = reader.result as string;
-			// Actualizar ambos campos
-			formData.foto = base64Result;
-			uploadingPhoto = false;
+		try {
+			const formDataToSend = new FormData();
+			formDataToSend.append('photo', file);
 
-			// Mostrar mensaje de éxito
-			successMessage =
-				'Imagen convertida a base64 correctamente. Lista para guardar en BD (campo TEXT).';
-			setTimeout(() => {
-				successMessage = null;
-			}, 3000);
-		};
-		reader.onerror = () => {
-			error = 'Error al procesar la imagen';
+			const response = await fetch(`/api/admin/participants/${participanteId}/photo`, {
+				method: 'POST',
+				body: formDataToSend
+			});
+
+			const result = await response.json();
+
+			if (result.success && result.data?.url) {
+				// Actualizar la URL de la foto en el formulario
+				formData.foto = result.data.url;
+
+				// Mostrar mensaje de éxito
+				successMessage = 'Imagen subida correctamente al servidor.';
+				setTimeout(() => {
+					successMessage = null;
+				}, 3000);
+			} else {
+				throw new Error(result.message || 'Error al subir la imagen');
+			}
+		} catch (err) {
+			console.error('Error uploading photo:', err);
+			error = err instanceof Error ? err.message : 'Error al subir la imagen';
+		} finally {
 			uploadingPhoto = false;
-		};
-		reader.readAsDataURL(file);
+		}
 	}
 	/**
 	 * Trigger photo upload
@@ -443,15 +449,39 @@
 	/**
 	 * Remove photo
 	 */
-	function removePhoto() {
-		formData.foto = '';
-		photoFile = null;
-		if (photoInput) photoInput.value = '';
+	async function removePhoto() {
+		if (!confirm('¿Estás seguro de eliminar la foto del participante?')) {
+			return;
+		}
 
-		successMessage = 'Imagen eliminada correctamente.';
-		setTimeout(() => {
-			successMessage = null;
-		}, 2000);
+		try {
+			uploadingPhoto = true;
+			error = null;
+
+			const response = await fetch(`/api/admin/participants/${participanteId}/photo`, {
+				method: 'DELETE'
+			});
+
+			const result = await response.json();
+
+			if (result.success) {
+				formData.foto = '';
+				photoFile = null;
+				if (photoInput) photoInput.value = '';
+
+				successMessage = 'Imagen eliminada correctamente.';
+				setTimeout(() => {
+					successMessage = null;
+				}, 2000);
+			} else {
+				throw new Error(result.message || 'Error al eliminar la imagen');
+			}
+		} catch (err) {
+			console.error('Error removing photo:', err);
+			error = err instanceof Error ? err.message : 'Error al eliminar la imagen';
+		} finally {
+			uploadingPhoto = false;
+		}
 	}
 
 	/**
@@ -474,19 +504,6 @@
 
 		// Si es URL, retornarlo directamente
 		return photoUrl;
-	}
-
-	/**
-	 * Handle manual URL change
-	 */
-	function handlePhotoUrlChange() {
-		// Si el usuario pega una URL de base64, también actualizar el preview
-		if (formData.foto && isBase64Image(formData.foto)) {
-			successMessage = 'URL base64 detectada. La imagen se mostrará en el preview.';
-			setTimeout(() => {
-				successMessage = null;
-			}, 2000);
-		}
 	}
 
 	onMount(async () => {
@@ -556,6 +573,7 @@
 							<div
 								class="avatar-upload-area"
 								class:uploading={uploadingPhoto}
+								class:has-pending-photo={photoFile !== null}
 								on:click={triggerPhotoUpload}
 								on:keydown={(e) => e.key === 'Enter' && triggerPhotoUpload()}
 								tabindex="0"
@@ -600,8 +618,17 @@
 							{/if}
 						</div>
 						<p class="help-text">
-							Haz clic en el avatar para subir una foto • Formatos: JPG, PNG, GIF • Máx: 5MB
+							Haz clic en el avatar para seleccionar una foto • Formatos: JPG, PNG, GIF, WEBP • Máx:
+							5MB • La imagen se guardará al hacer clic en "Guardar Cambios"
 						</p>
+						{#if photoFile}
+							<div class="pending-photo-notice">
+								{@html icons.info}
+								<span
+									>Nueva foto seleccionada. Haz clic en "Guardar Cambios" para aplicar los cambios.</span
+								>
+							</div>
+						{/if}
 					</div>
 					<div class="section-content">
 						<!-- Nombre -->
@@ -723,7 +750,9 @@
 					<div class="section-content">
 						<!-- Redes Sociales -->
 						<div class="form-group" class:has-error={errors.redes_sociales}>
-							<span class="form-label" class:error-label={errors.redes_sociales}>Redes Sociales</span>
+							<span class="form-label" class:error-label={errors.redes_sociales}
+								>Redes Sociales</span
+							>
 							<div class="redes-sociales-list">
 								{#each redesSocialesList as redSocial, index}
 									<div class="red-social-item">
@@ -1236,6 +1265,47 @@
 			color: var(--color--text-shade);
 			line-height: 1.5;
 		}
+
+		.pending-photo-notice {
+			display: flex;
+			align-items: center;
+			gap: 0.5rem;
+			padding: 0.75rem 1rem;
+			background: rgba(110, 41, 231, 0.1);
+			border: 1px solid rgba(110, 41, 231, 0.3);
+			border-radius: 6px;
+			color: #8b5cf6;
+			font-size: 0.8rem;
+			margin-top: 0.5rem;
+			animation: fadeIn 0.3s ease-out;
+
+			:global(svg) {
+				width: 16px;
+				height: 16px;
+				flex-shrink: 0;
+			}
+
+			span {
+				line-height: 1.4;
+			}
+		}
+	}
+
+	// Indicador visual en el avatar cuando hay foto pendiente
+	.avatar-upload-area.has-pending-photo {
+		border-color: #8b5cf6;
+		box-shadow: 0 0 0 3px rgba(110, 41, 231, 0.2);
+		animation: pulse 2s ease-in-out infinite;
+	}
+
+	@keyframes pulse {
+		0%,
+		100% {
+			box-shadow: 0 0 0 3px rgba(110, 41, 231, 0.2);
+		}
+		50% {
+			box-shadow: 0 0 0 6px rgba(110, 41, 231, 0.3);
+		}
 	}
 
 	// ==================== Social Networks ====================
@@ -1449,8 +1519,6 @@
 			}
 		}
 
-
-
 		.edit-form {
 			padding: 1.5rem;
 		}
@@ -1478,8 +1546,6 @@
 				justify-content: center;
 			}
 		}
-
-
 	}
 
 	// ==================== Animations ====================

@@ -169,24 +169,6 @@
 			}
 		}
 
-		// Validar foto (si se proporciona)
-		if (formData.foto && formData.foto.trim()) {
-			const fotoValue = formData.foto.trim();
-			if (isBase64Image(fotoValue)) {
-				// Validar que el base64 sea válido
-				if (fotoValue.length < 100) {
-					errors.foto = 'Los datos base64 parecen estar incompletos';
-				}
-			} else {
-				// Validar que sea una URL válida
-				try {
-					new URL(fotoValue);
-				} catch {
-					errors.foto = 'Ingrese una URL válida o datos base64 válidos (data:image/...)';
-				}
-			}
-		}
-
 		return Object.keys(errors).length === 0;
 	}
 
@@ -227,19 +209,19 @@
 		saving = true;
 
 		try {
-			// Prepare create data
+			// Prepare create data (sin foto, se sube después)
 			const createData = {
 				nombre: formData.nombre.trim(),
 				email: formData.email.trim() || null,
 				genero: mapGenderToDB(formData.genero),
 				acreditado: formData.acreditado,
 				carrera_id: formData.carrera_id,
-				redes_sociales: formData.redes_sociales.trim() || null,
-				url_foto: formData.foto.trim() || null
+				redes_sociales: formData.redes_sociales.trim() || null
 			};
 
 			console.log('📤 Creando participante:', createData);
 
+			// 1. Crear el participante primero
 			const response = await fetch('/api/admin/participants', {
 				method: 'POST',
 				headers: {
@@ -250,20 +232,33 @@
 
 			const result = await response.json();
 
-			if (result.success) {
-				successMessage = `¡Perfecto! El participante "${formData.nombre}" ha sido creado correctamente. Redirigiendo...`;
-
-				// Redirect after 2 seconds
-				setTimeout(() => {
-					if (result.data?.id) {
-						goto(`/admin/participantes/${result.data.id}`);
-					} else {
-						goto('/admin/participantes/tabla');
-					}
-				}, 2000);
-			} else {
+			if (!result.success) {
 				throw new Error(result.message || 'Error al crear');
 			}
+
+			const participantId = result.data?.id;
+			if (!participantId) {
+				throw new Error('No se obtuvo el ID del participante creado');
+			}
+
+			// 2. Si hay foto, subirla al bucket
+			if (photoFile) {
+				uploadingPhoto = true;
+				const photoUploaded = await uploadPhotoAfterCreation(participantId);
+				uploadingPhoto = false;
+
+				if (!photoUploaded) {
+					// Advertir pero no fallar
+					console.warn('La foto no pudo ser subida, pero el participante fue creado');
+				}
+			}
+
+			successMessage = `¡Perfecto! El participante "${formData.nombre}" ha sido creado correctamente. Redirigiendo...`;
+
+			// Redirect after 2 seconds
+			setTimeout(() => {
+				goto(`/admin/participantes/${participantId}`);
+			}, 2000);
 		} catch (err) {
 			console.error('Error creating participante:', err);
 			if (err instanceof Error) {
@@ -305,34 +300,48 @@
 			}
 
 			photoFile = file;
-			convertFileToBase64(file);
+
+			// Crear preview temporal con FileReader
+			const reader = new FileReader();
+			reader.onload = () => {
+				formData.foto = reader.result as string; // Solo para preview
+			};
+			reader.readAsDataURL(file);
+
+			successMessage = 'Imagen seleccionada. Se subirá al crear el participante.';
+			setTimeout(() => {
+				successMessage = null;
+			}, 3000);
 		}
 	}
 
 	/**
-	 * Convert file to base64
+	 * Upload photo to Supabase Storage after participant creation
 	 */
-	function convertFileToBase64(file: File) {
-		uploadingPhoto = true;
-		error = null;
+	async function uploadPhotoAfterCreation(participantId: number): Promise<boolean> {
+		if (!photoFile) return true; // No hay foto, continuar
 
-		const reader = new FileReader();
-		reader.onload = () => {
-			const base64Result = reader.result as string;
-			formData.foto = base64Result;
-			uploadingPhoto = false;
+		try {
+			const formDataToSend = new FormData();
+			formDataToSend.append('photo', photoFile);
 
-			// Show success message
-			successMessage = 'Imagen convertida a base64 correctamente. Lista para guardar.';
-			setTimeout(() => {
-				successMessage = null;
-			}, 3000);
-		};
-		reader.onerror = () => {
-			error = 'Error al procesar la imagen';
-			uploadingPhoto = false;
-		};
-		reader.readAsDataURL(file);
+			const response = await fetch(`/api/admin/participants/${participantId}/photo`, {
+				method: 'POST',
+				body: formDataToSend
+			});
+
+			const result = await response.json();
+
+			if (!result.success) {
+				console.error('Error al subir foto:', result.message);
+				return false;
+			}
+
+			return true;
+		} catch (err) {
+			console.error('Error uploading photo:', err);
+			return false;
+		}
 	}
 
 	/**
@@ -460,7 +469,10 @@
 							/>
 						</div>
 					</div>
-					<p class="photo-help">Formatos: JPG, PNG, GIF. Tamaño máximo: 5 MB</p>
+					<p class="photo-help">
+						Formatos: JPG, PNG, GIF, WEBP. Tamaño máximo: 5 MB. La foto se subirá al crear el
+						participante.
+					</p>
 				</div>
 
 				<div class="form-grid">
