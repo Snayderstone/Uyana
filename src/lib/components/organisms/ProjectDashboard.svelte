@@ -17,7 +17,6 @@
 	let data: any = {};
 	let publicCharts: string[] = [];
 	let chartConfigs: ChartConfig[] = [];
-	let refreshInterval: ReturnType<typeof setInterval> | null = null;
 	let lastUpdate: Date | null = null;
 
 	// Ordenar chartConfigs para que el resumen ejecutivo aparezca primero
@@ -236,11 +235,6 @@
 			renderAllCharts();
 		});
 
-		// Polling periódico cada 30 segundos para actualizaciones
-		refreshInterval = setInterval(() => {
-			refrescarDatos();
-		}, 30000);
-
 		// Cleanup on destroy
 		return () => {
 			themeObserver.disconnect();
@@ -252,11 +246,6 @@
 					delete chartInstances[key];
 				}
 			});
-
-			if (refreshInterval) {
-				clearInterval(refreshInterval);
-				refreshInterval = null;
-			}
 		};
 	});
 </script>

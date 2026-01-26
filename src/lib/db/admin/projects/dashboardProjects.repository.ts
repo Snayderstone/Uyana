@@ -142,6 +142,7 @@ export class AnalyticsRepository {
 		const { data, error } = await supabase
 			.from('mv_top_lineas_investigacion')
 			.select('linea, cantidad, porcentaje')
+			.neq('linea', 'por revisar') // Excluir "por revisar" para evitar análisis sesgado
 			.order('cantidad', { ascending: false });
 
 		if (error) {

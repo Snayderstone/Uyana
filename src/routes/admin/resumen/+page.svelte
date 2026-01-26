@@ -421,7 +421,7 @@
 						</svg>
 					</div>
 					<div class="action-content">
-						<div class="action-title">Añadir Investigador</div>
+						<div class="action-title">Añadir Participante</div>
 						<div class="action-description">Registra un nuevo participante</div>
 					</div>
 				</a>
@@ -474,7 +474,7 @@
 					</div>
 				</a>
 
-				<a href="/admin/blog/gestionar" class="action-card">
+				<a href="/admin/blog" class="action-card">
 					<div class="action-icon">
 						<svg
 							xmlns="http://www.w3.org/2000/svg"
@@ -492,7 +492,7 @@
 						</svg>
 					</div>
 					<div class="action-content">
-						<div class="action-title">Publicar Artículo</div>
+						<div class="action-title">Publicar Post</div>
 						<div class="action-description">Crear contenido para el blog</div>
 					</div>
 				</a>

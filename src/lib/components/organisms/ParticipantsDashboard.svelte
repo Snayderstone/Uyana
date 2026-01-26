@@ -18,7 +18,6 @@
 	let data: any = {};
 	let publicCharts: string[] = [];
 	let chartConfigs: ChartConfig[] = [];
-	let refreshInterval: ReturnType<typeof setInterval> | null = null;
 	let lastUpdate: Date | null = null;
 
 	Chart.register(...registerables);
@@ -243,18 +242,10 @@
 			}
 		});
 
-		// Polling periódico cada 30 segundos para actualizaciones
-		refreshInterval = setInterval(async () => {
-			await refrescarDatos();
-		}, 30000);
-
 		// Cleanup on destroy
 		return () => {
 			observer.disconnect();
 			Object.values(chartInstances).forEach((chart) => chart.destroy());
-			if (refreshInterval) {
-				clearInterval(refreshInterval);
-			}
 		};
 	});
 </script>
