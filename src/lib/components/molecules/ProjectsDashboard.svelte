@@ -148,6 +148,15 @@
 			data: Object.entries(counts).map(([label, value]) => ({ label, value }))
 		};
 	})();
+	// Top 20 instituciones relacionadas
+	$: dataInstitucionesRelacionadasTop = contarPorArrayField(
+		proyectos,
+		'instituciones_relacionadas',
+		(x) => x.trim().toLowerCase()
+	)
+		.sort((a, b) => b.value - a.value)
+		.slice(0, 20)
+		.map((x) => ({ ...x, label: x.label.charAt(0).toUpperCase() + x.label.slice(1) }));
 
 	// -------- E) Presupuesto Bajo/Medio/Alto + total --------
 	function bucketPresupuesto(v: number) {
@@ -212,7 +221,16 @@
 				return f || 'No especificado';
 		}
 	}
-	$: dataFinanciamiento = contarPorCampo(proyectos, 'fuente_financiamiento', formatFinanciamiento);
+	$: dataFinanciamiento = (() => {
+		const all = contarPorCampo(proyectos, 'fuente_financiamiento', formatFinanciamiento).sort(
+			(a, b) => b.value - a.value
+		);
+
+		const top10 = all.slice(0, 10);
+		const otros = all.slice(10).reduce((acc, x) => acc + x.value, 0);
+
+		return otros > 0 ? [...top10, { label: 'Otros', value: otros }] : top10;
+	})();
 
 	// 7. Iniciados por año
 	$: dataInicioYear = contarPorCampo(proyectos, 'fecha_inicio', parseYear);
@@ -290,7 +308,6 @@
 		status="primary"
 		size="md"
 	/>
-
 	<!-- 2. Facultades -->
 	<TubeBarChart
 		title="Proyectos por Facultad"
@@ -300,10 +317,8 @@
 		xRotate={-45}
 		performanceMode="low"
 	/>
-
 	<!-- 3. Tipos -->
 	<DonutChart title="Proyectos por Tipo" data={dataTipo} width={300} height={300} />
-
 	<!-- 4. Campos amplios -->
 	<TubeBarChart
 		title="Proyectos por Campo Amplio"
@@ -312,104 +327,34 @@
 		height={300}
 		performanceMode="low"
 	/>
-
 	<!-- 5. Estados -->
 	<DonutChart title="Proyectos por Estado" data={dataEstado} width={300} height={300} />
 
-	<!-- 6. Financiamiento -->
+	<!-- 6. Institución principal Top 20 -->
 	<TubeBarChart
-		title="Proyectos por Financiamiento"
-		data={asignarColores(dataFinanciamiento)}
-		yLabel="Proyectos"
-		height={300}
+		title="Top 10 Instituciones relacionadas"
+		data={asignarColores(dataInstitucionesRelacionadasTop)}
+		yLabel="Vínculos"
+		height={450}
+		xRotate={-45}
 		performanceMode="low"
 	/>
-
-	<!-- 7. Iniciados por año -->
-	<TubeBarChart
-		title="Proyectos iniciados por año"
-		data={asignarColores(dataInicioYear)}
-		yLabel="Proyectos"
-		height={300}
-		performanceMode="low"
-	/>
-
-	<!-- 8. Finalizados por año -->
-	<TubeBarChart
-		title="Proyectos finalizados por año"
-		data={asignarColores(dataFinYear)}
-		yLabel="Proyectos"
-		height={300}
-		performanceMode="low"
-	/>
-
-	<!-- 9. Duración (como histograma simple por intervalos) -->
-	<TubeBarChart
-		title="Duración de proyectos (meses)"
-		data={[
-			{
-				label: '0-6',
-				value: dataDuracion.filter((d) => d <= 6).length,
-				colorVarName: '--color--primary'
-			},
-			{
-				label: '7-12',
-				value: dataDuracion.filter((d) => d > 6 && d <= 12).length,
-				colorVarName: '--color--secondary'
-			},
-			{
-				label: '13-18',
-				value: dataDuracion.filter((d) => d > 12 && d <= 18).length,
-				colorVarName: '--color--primary'
-			},
-			{
-				label: '19-24',
-				value: dataDuracion.filter((d) => d > 18 && d <= 24).length,
-				colorVarName: '--color--callout-accent--success'
-			},
-			{
-				label: '25+',
-				value: dataDuracion.filter((d) => d > 24).length,
-				colorVarName: '--color--callout-accent--error'
-			}
-		]}
-		yLabel="Proyectos"
-		height={300}
-	/>
-	<!-- 10. Top 10 Coordinadores -->
-	<TubeBarChart
-		title="Top 10 Coordinadores con más proyectos"
-		data={asignarColores(dataCoordinadores)}
-		yLabel="Proyectos"
-		height={400}
-	/>
-	<!-- 11. Líneas de investigación (Top 10) -->
-	<TubeBarChart
-		title="Top 10 Líneas de investigación"
-		data={asignarColores(dataLineasTop10)}
-		yLabel="Proyectos"
-		height={400}
-		performanceMode="low"
-	/>
-
-	<!-- 12. Con vs Sin acreditados (Dona) -->
+	<!-- 7. Con vs Sin acreditados (Dona) -->
 	<DonutChart
 		title={`Acreditados (Con: ${acreditadosCounts.pct}%)`}
 		data={dataAcreditadosDona}
 		width={300}
 		height={300}
 	/>
-
-	<!-- 13. Países (Top 10) -->
+	<!-- 8. Financiamiento -->
 	<TubeBarChart
-		title="Top 10 Países vinculados"
-		data={asignarColores(dataPaisesTop10)}
+		title="Top 10 fuentes de financiamiento"
+		data={asignarColores(dataFinanciamiento)}
 		yLabel="Proyectos"
-		height={400}
+		height={500}
 		performanceMode="low"
 	/>
-
-	<!-- 14. Avance Bajo/Medio/Alto + promedio -->
+	<!-- 9. Avance Bajo/Medio/Alto + promedio -->
 	<CircularStatus
 		title="Avance promedio"
 		value={avanceStats.promedio}
@@ -418,10 +363,38 @@
 		status="primary"
 		size="md"
 	/>
-
+	<!-- 10. Iniciados por año -->
+	<TubeBarChart
+		title="Proyectos iniciados por año"
+		data={asignarColores(dataInicioYear)}
+		yLabel="Proyectos"
+		height={300}
+		performanceMode="low"
+	/>
 	<DonutChart title="Distribución de avance" data={avanceStats.data} width={300} height={300} />
-
-	<!-- 15. Presupuesto Bajo/Medio/Alto + total -->
+	<!-- 11. Finalizados por año -->
+	<TubeBarChart
+		title="Proyectos finalizados por año"
+		data={asignarColores(dataFinYear)}
+		yLabel="Proyectos"
+		height={300}
+		performanceMode="low"
+	/> 
+	<!-- 12. Duración proyectos -->
+	<DonutChart
+		title="Distribución de presupuesto"
+		data={presupuestoDistribucion}
+		width={300}
+		height={300}
+	/>
+	<!-- 13. Top 10 Coordinadores -->
+	<TubeBarChart
+		title="Top 10 Coordinadores con más proyectos"
+		data={asignarColores(dataCoordinadores)}
+		yLabel="Proyectos"
+		height={400}
+	/>
+	<!-- 14. Presupuesto Bajo/Medio/Alto + total -->
 	<CircularStatus
 		title="Presupuesto (filtrado / total)"
 		value={presupuestoTotalFiltrado}
@@ -430,12 +403,21 @@
 		status="secondary"
 		size="md"
 	/>
-
-	<DonutChart
-		title="Distribución de presupuesto"
-		data={presupuestoDistribucion}
-		width={300}
-		height={300}
+	<!-- 15. Líneas de investigación (Top 10) -->
+	<TubeBarChart
+		title="Top 10 Líneas de investigación"
+		data={asignarColores(dataLineasTop10)}
+		yLabel="Proyectos"
+		height={400}
+		performanceMode="low"
+	/>
+	<!-- 16. Países (Top 10) -->
+	<TubeBarChart
+		title="Top 10 Países vinculados"
+		data={asignarColores(dataPaisesTop10)}
+		yLabel="Proyectos"
+		height={400}
+		performanceMode="low"
 	/>
 </div>
 
