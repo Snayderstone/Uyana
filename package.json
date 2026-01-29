@@ -1,5 +1,5 @@
 {
-  "name": "uyana-project",
+  "name": "sigpi-project",
   "version": "1.0.0",
   "private": true,
   "scripts": {
@@ -16,7 +16,7 @@
     "story:preview": "histoire preview",
     "optimize-images": "npx image-transmutation --run --sourceFolder './build/images' --targetFolder './build/images' --inputFormats 'jpg' --inputFormats 'jpeg' --inputFormats 'png' --outputFormats 'png' --outputFormats 'webp' --outputFormats 'avif'",
     "postbuild": "npm run optimize-images",
-    "vercel-sitemap": "svelte-sitemap --out-dir .vercel/output/static --domain https://uyana-project.vercel.app/",
+    "vercel-sitemap": "svelte-sitemap --out-dir .vercel/output/static --domain https://sigpi-project.vercel.app/",
     "vercel-optimize-images": "npx image-transmutation --run --sourceFolder '.vercel/output/static/images' --targetFolder '.vercel/output/static/images' --inputFormats 'jpg' --inputFormats 'jpeg' --inputFormats 'png' --outputFormats 'png' --outputFormats 'webp' --outputFormats 'avif'",
     "vercel-build": "npm run build && npm run vercel-sitemap && npm run vercel-optimize-images"
   },

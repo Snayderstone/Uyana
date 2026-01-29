@@ -2,7 +2,7 @@
 // So they can be added as suffixes on different pages
 // Via <svelte:head>
 
-export const siteBaseUrl = 'https://uyana-project.vercel.app/';
+export const siteBaseUrl = 'https://sigpi-project.vercel.app/';
 
 export const keywords = ['SIGPI', 'Research', 'University', 'UCE', 'Academic', 'Investigation'];
 

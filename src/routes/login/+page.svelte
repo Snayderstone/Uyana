@@ -18,7 +18,7 @@
 </script>
 
 <svelte:head>
-	<title>Login - Administración Uyana</title>
+	<title>Login - Administración SIGPI</title>
 	<meta name="robots" content="noindex, nofollow" />
 </svelte:head>
 

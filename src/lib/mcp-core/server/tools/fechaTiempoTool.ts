@@ -311,7 +311,7 @@ export const fechaTiempoTool: McpTool = {
 	handler: manejarConsultaFechaTiempo,
 	metadata: {
 		version: '1.0.0',
-		author: 'UYANA Team',
+		author: 'SIGPI Team',
 		tags: ['fecha', 'tiempo', 'ecuador', 'zona-horaria', 'calendar'],
 		examples: [
 			{

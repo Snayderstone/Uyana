@@ -325,7 +325,7 @@
 </script>
 
 <svelte:head>
-	<title>Configuración - Admin Uyana</title>
+	<title>Configuración - Admin SIGPI</title>
 </svelte:head>
 
 <div class="configuracion-page">

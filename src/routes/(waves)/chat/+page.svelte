@@ -10,7 +10,7 @@
 </script>
 
 <svelte:head>
-	<title>UYANA Chat - Redirigiendo...</title>
+	<title>SIGPI Chat - Redirigiendo...</title>
 </svelte:head>
 
 <div class="redirect-page">

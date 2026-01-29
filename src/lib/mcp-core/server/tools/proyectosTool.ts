@@ -843,7 +843,7 @@ export const proyectosTool: McpTool = {
 	handler: manejarConsultaProyectos,
 	metadata: {
 		version: '1.0.0',
-		author: 'UYANA Team',
+		author: 'SIGPI Team',
 		tags: [
 			'proyectos',
 			'investigación',

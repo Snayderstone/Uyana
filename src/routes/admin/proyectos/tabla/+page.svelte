@@ -21,6 +21,7 @@
 	let proyectos: ProyectoResponseDTO[] = [];
 	let loading = false;
 	let error: string | null = null;
+	let isFetching = false; // Prevenir llamadas duplicadas
 
 	// Pagination
 	let currentPage = 1;
@@ -47,6 +48,16 @@
 	let sortColumn: string = 'fecha_inicio_planeada';
 	let sortDirection: 'asc' | 'desc' = 'desc';
 
+	// Debounce para búsqueda
+	let searchDebounceTimer: ReturnType<typeof setTimeout>;
+
+	// Configuración de caché
+	const CACHE_VERSION = '1.0';
+	const CACHE_DURATION = {
+		catalogs: 24 * 60 * 60 * 1000, // 24 horas para catálogos
+		projects: 5 * 60 * 1000 // 5 minutos para proyectos
+	};
+
 	// Catalog data
 	let estados: Array<{ id: number; nombre: string }> = [];
 	let tipos: Array<{ id: number; nombre: string }> = [];
@@ -68,72 +79,197 @@
 	let exportingData = false;
 
 	/**
-	 * Fetch proyectos from API
+	 * Sistema de caché para localStorage
+	 */
+	interface CacheData<T> {
+		data: T;
+		timestamp: number;
+		version: string;
+	}
+
+	/**
+	 * Guardar en caché
+	 */
+	function setCache<T>(key: string, data: T, duration?: number): void {
+		if (!browser) return;
+		try {
+			const cacheData: CacheData<T> = {
+				data,
+				timestamp: Date.now(),
+				version: CACHE_VERSION
+			};
+			localStorage.setItem(key, JSON.stringify(cacheData));
+		} catch (error) {
+			console.warn('Error guardando en caché:', error);
+		}
+	}
+
+	/**
+	 * Obtener desde caché
+	 */
+	function getCache<T>(key: string, maxAge: number): T | null {
+		if (!browser) return null;
+		try {
+			const cached = localStorage.getItem(key);
+			if (!cached) return null;
+
+			const cacheData: CacheData<T> = JSON.parse(cached);
+
+			// Verificar versión
+			if (cacheData.version !== CACHE_VERSION) {
+				localStorage.removeItem(key);
+				return null;
+			}
+
+			// Verificar expiración
+			const age = Date.now() - cacheData.timestamp;
+			if (age > maxAge) {
+				localStorage.removeItem(key);
+				return null;
+			}
+
+			return cacheData.data;
+		} catch (error) {
+			console.warn('Error leyendo caché:', error);
+			return null;
+		}
+	}
+
+	/**
+	 * Invalidar caché de proyectos
+	 */
+	function invalidateProjectsCache(): void {
+		if (!browser) return;
+		try {
+			const keys = Object.keys(localStorage);
+			keys.forEach((key) => {
+				if (key.startsWith('projects_cache_')) {
+					localStorage.removeItem(key);
+				}
+			});
+		} catch (error) {
+			console.warn('Error invalidando caché:', error);
+		}
+	}
+
+	/**
+	 * Guardar filtros aplicados
+	 */
+	function saveFiltersToCache(): void {
+		if (!browser) return;
+		try {
+			const filtersState = {
+				searchQuery,
+				filterEstado,
+				filterTipo,
+				advancedFilters,
+				currentPage,
+				itemsPerPage,
+				sortColumn,
+				sortDirection
+			};
+			localStorage.setItem('proyectos_filters_state', JSON.stringify(filtersState));
+		} catch (error) {
+			console.warn('Error guardando filtros:', error);
+		}
+	}
+
+	/**
+	 * Restaurar filtros desde caché
+	 */
+	function restoreFiltersFromCache(): void {
+		if (!browser) return;
+		try {
+			const cached = localStorage.getItem('proyectos_filters_state');
+			if (cached) {
+				const filtersState = JSON.parse(cached);
+				searchQuery = filtersState.searchQuery || '';
+				filterEstado = filtersState.filterEstado || '';
+				filterTipo = filtersState.filterTipo || '';
+				advancedFilters = filtersState.advancedFilters || {};
+				currentPage = filtersState.currentPage || 1;
+				itemsPerPage = filtersState.itemsPerPage || 15;
+				sortColumn = filtersState.sortColumn || 'fecha_inicio_planeada';
+				sortDirection = filtersState.sortDirection || 'desc';
+			}
+		} catch (error) {
+			console.warn('Error restaurando filtros:', error);
+		}
+	}
+
+	/**
+	 * Construir parámetros de consulta de manera optimizada
+	 */
+	function buildQueryParams(): URLSearchParams {
+		const params = new URLSearchParams({
+			page: currentPage.toString(),
+			limit: itemsPerPage.toString()
+		});
+
+		// Mapeo de filtros para evitar repetición
+		const filterMap: Record<string, any> = {
+			titulo: searchQuery,
+			estado_id: filterEstado,
+			tipo_id: filterTipo,
+			codigo: advancedFilters.codigo,
+			fecha_inicio_desde: advancedFilters.fecha_inicio_desde,
+			fecha_inicio_hasta: advancedFilters.fecha_inicio_hasta,
+			fecha_fin_desde: advancedFilters.fecha_fin_desde,
+			fecha_fin_hasta: advancedFilters.fecha_fin_hasta,
+			presupuesto_min: advancedFilters.presupuesto_min,
+			presupuesto_max: advancedFilters.presupuesto_max,
+			avance_min: advancedFilters.avance_min,
+			avance_max: advancedFilters.avance_max,
+			requiere_aval: advancedFilters.requiere_aval,
+			acreditado_senescyt: advancedFilters.acreditado_senescyt,
+			area_id: advancedFilters.area_id,
+			linea_id: advancedFilters.linea_id,
+			institucion_id: advancedFilters.institucion_id
+		};
+
+		// Agregar solo filtros con valores
+		Object.entries(filterMap).forEach(([key, value]) => {
+			if (value !== undefined && value !== null && value !== '') {
+				params.append(key, value.toString());
+			}
+		});
+
+		return params;
+	}
+
+	/**
+	 * Fetch proyectos from API (optimizado con caché)
 	 */
 	async function fetchProyectos() {
-		if (!browser) return;
+		if (!browser || isFetching) return;
 
+		isFetching = true;
 		loading = true;
 		error = null;
 
 		try {
-			const params = new URLSearchParams({
-				page: currentPage.toString(),
-				limit: itemsPerPage.toString()
-			});
+			// Construir params de manera optimizada
+			const params = buildQueryParams();
+			const cacheKey = `projects_cache_${params.toString()}`;
 
-			// Add filters
-			if (searchQuery) {
-				params.append('titulo', searchQuery);
+			// Intentar obtener desde caché
+			const cachedData = getCache<ListProyectosResponseDTO>(cacheKey, CACHE_DURATION.projects);
+
+			if (cachedData) {
+				console.log('📦 Cargando proyectos desde caché');
+				proyectos = cachedData.data || [];
+				totalItems = cachedData.pagination?.total || 0;
+				totalPages = cachedData.pagination?.total_pages || 0;
+				appliedFiltersCount = countActiveFilters();
+				hasActiveFilters = appliedFiltersCount > 0;
+				syncSelectAllState();
+				loading = false;
+				isFetching = false;
+				return;
 			}
-			if (filterEstado) {
-				params.append('estado_id', filterEstado);
-			}
-			if (filterTipo) {
-				params.append('tipo_id', filterTipo);
-			}
-			if (advancedFilters.codigo) {
-				params.append('codigo', advancedFilters.codigo);
-			}
-			if (advancedFilters.fecha_inicio_desde) {
-				params.append('fecha_inicio_desde', advancedFilters.fecha_inicio_desde);
-			}
-			if (advancedFilters.fecha_inicio_hasta) {
-				params.append('fecha_inicio_hasta', advancedFilters.fecha_inicio_hasta);
-			}
-			if (advancedFilters.fecha_fin_desde) {
-				params.append('fecha_fin_desde', advancedFilters.fecha_fin_desde);
-			}
-			if (advancedFilters.fecha_fin_hasta) {
-				params.append('fecha_fin_hasta', advancedFilters.fecha_fin_hasta);
-			}
-			if (advancedFilters.presupuesto_min) {
-				params.append('presupuesto_min', advancedFilters.presupuesto_min.toString());
-			}
-			if (advancedFilters.presupuesto_max) {
-				params.append('presupuesto_max', advancedFilters.presupuesto_max.toString());
-			}
-			if (advancedFilters.avance_min !== undefined) {
-				params.append('avance_min', advancedFilters.avance_min.toString());
-			}
-			if (advancedFilters.avance_max !== undefined) {
-				params.append('avance_max', advancedFilters.avance_max.toString());
-			}
-			if (advancedFilters.requiere_aval !== undefined) {
-				params.append('requiere_aval', advancedFilters.requiere_aval.toString());
-			}
-			if (advancedFilters.acreditado_senescyt !== undefined) {
-				params.append('acreditado_senescyt', advancedFilters.acreditado_senescyt.toString());
-			}
-			if (advancedFilters.area_id) {
-				params.append('area_id', advancedFilters.area_id.toString());
-			}
-			if (advancedFilters.linea_id) {
-				params.append('linea_id', advancedFilters.linea_id.toString());
-			}
-			if (advancedFilters.institucion_id) {
-				params.append('institucion_id', advancedFilters.institucion_id.toString());
-			}
+
+			// Si no hay caché, hacer petición al servidor
+			console.log('🌐 Cargando proyectos desde servidor');
 			const response = await fetch(`/api/admin/projects?${params.toString()}`);
 
 			if (!response.ok) {
@@ -147,27 +283,73 @@
 				totalItems = result.data.pagination?.total || 0;
 				totalPages = result.data.pagination?.total_pages || 0;
 
+				// Guardar en caché
+				setCache(cacheKey, result.data, CACHE_DURATION.projects);
+
 				// Update filter count
 				appliedFiltersCount = countActiveFilters();
 				hasActiveFilters = appliedFiltersCount > 0;
+
+				// Sincronizar selectAll con la realidad
+				syncSelectAllState();
+
+				// Guardar estado de filtros
+				saveFiltersToCache();
 			} else {
 				throw new Error(result.message || 'Error desconocido');
 			}
 		} catch (err) {
 			console.error('Error fetching proyectos:', err);
 			error = err instanceof Error ? err.message : 'Error al cargar proyectos';
+			proyectos = [];
 		} finally {
 			loading = false;
+			isFetching = false;
 		}
 	}
 
 	/**
-	 * Fetch catalogs
+	 * Fetch catalogs (optimizado con caché)
 	 */
 	async function fetchCatalogs() {
 		if (!browser) return;
 
 		try {
+			// Intentar cargar desde caché
+			const cachedEstados = getCache<Array<{ id: number; nombre: string }>>(
+				'catalogs_estados',
+				CACHE_DURATION.catalogs
+			);
+			const cachedTipos = getCache<Array<{ id: number; nombre: string }>>(
+				'catalogs_tipos',
+				CACHE_DURATION.catalogs
+			);
+			const cachedAreas = getCache<Array<{ id: number; nombre: string }>>(
+				'catalogs_areas',
+				CACHE_DURATION.catalogs
+			);
+			const cachedLineas = getCache<Array<{ id: number; nombre: string }>>(
+				'catalogs_lineas',
+				CACHE_DURATION.catalogs
+			);
+			const cachedInstituciones = getCache<Array<{ id: number; nombre: string }>>(
+				'catalogs_instituciones',
+				CACHE_DURATION.catalogs
+			);
+
+			// Si todos los catálogos están en caché, usarlos
+			if (cachedEstados && cachedTipos && cachedAreas && cachedLineas && cachedInstituciones) {
+				console.log('📦 Cargando catálogos desde caché');
+				estados = cachedEstados;
+				tipos = cachedTipos;
+				areas = cachedAreas;
+				lineas = cachedLineas;
+				instituciones = cachedInstituciones;
+				return;
+			}
+
+			// Si no están en caché, cargar desde servidor
+			console.log('🌐 Cargando catálogos desde servidor');
 			const [estadosRes, tiposRes, areasRes, lineasRes, institucionesRes] = await Promise.all([
 				fetch('/api/admin/catalogs/estados'),
 				fetch('/api/admin/catalogs/tipos'),
@@ -179,26 +361,31 @@
 			if (estadosRes.ok) {
 				const data = await estadosRes.json();
 				estados = data.success ? data.data : [];
+				setCache('catalogs_estados', estados, CACHE_DURATION.catalogs);
 			}
 
 			if (tiposRes.ok) {
 				const data = await tiposRes.json();
 				tipos = data.success ? data.data : [];
+				setCache('catalogs_tipos', tipos, CACHE_DURATION.catalogs);
 			}
 
 			if (areasRes.ok) {
 				const data = await areasRes.json();
 				areas = data.success ? data.data : [];
+				setCache('catalogs_areas', areas, CACHE_DURATION.catalogs);
 			}
 
 			if (lineasRes.ok) {
 				const data = await lineasRes.json();
 				lineas = data.success ? data.data : [];
+				setCache('catalogs_lineas', lineas, CACHE_DURATION.catalogs);
 			}
 
 			if (institucionesRes.ok) {
 				const data = await institucionesRes.json();
 				instituciones = data.success ? data.data : [];
+				setCache('catalogs_instituciones', instituciones, CACHE_DURATION.catalogs);
 			}
 		} catch (err) {
 			console.error('Error fetching catalogs:', err);
@@ -206,7 +393,7 @@
 	}
 
 	/**
-	 * Delete project
+	 * Delete project (con invalidación de caché)
 	 */
 	async function deleteProyecto(id: number) {
 		loading = true;
@@ -220,6 +407,9 @@
 			const result = await response.json();
 
 			if (result.success) {
+				// Invalidar caché de proyectos
+				invalidateProjectsCache();
+
 				await fetchProyectos();
 				showDeleteModal = false;
 				proyectoToDelete = null;
@@ -246,7 +436,7 @@
 	}
 
 	/**
-	 * Bulk delete
+	 * Bulk delete (mejorado con mejor manejo de errores e invalidación de caché)
 	 */
 	async function bulkDelete() {
 		if (selectedProjects.size === 0) return;
@@ -255,11 +445,27 @@
 		error = null;
 
 		try {
-			const deletePromises = Array.from(selectedProjects).map((id) =>
-				fetch(`/api/admin/projects/${id}`, { method: 'DELETE' })
+			const idsToDelete = Array.from(selectedProjects);
+			const deletePromises = idsToDelete.map((id) =>
+				fetch(`/api/admin/projects/${id}`, { method: 'DELETE' }).then((res) => {
+					if (!res.ok) throw new Error(`Error eliminando proyecto ${id}`);
+					return res.json();
+				})
 			);
 
-			await Promise.all(deletePromises);
+			const results = await Promise.allSettled(deletePromises);
+
+			const failed = results.filter((r) => r.status === 'rejected').length;
+			const success = results.length - failed;
+
+			if (failed > 0) {
+				showToast(`⚠️ Se eliminaron ${success} proyectos. ${failed} fallaron.`, 'warning');
+			} else {
+				showToast('✅ Proyectos eliminados correctamente', 'success');
+			}
+
+			// Invalidar caché de proyectos
+			invalidateProjectsCache();
 
 			selectedProjects.clear();
 			selectedProjects = selectedProjects;
@@ -267,40 +473,44 @@
 			showBulkDeleteModal = false;
 
 			await fetchProyectos();
-			showToast('✅ Proyectos eliminados correctamente', 'success');
 		} catch (err) {
 			console.error('Error in bulk delete:', err);
 			error = 'Error al eliminar proyectos';
+			showToast('❌ Error al eliminar proyectos', 'error');
 		} finally {
 			loading = false;
 		}
 	}
 
 	/**
-	 * Handle export button click
+	 * Handle export button click (mejorado)
 	 */
 	function handleExportClick() {
 		if (selectedProjects.size === 0) {
-			showToast(
-				'⚠️ Debes seleccionar al menos un proyecto para exportar. Selecciónalos manualmente o aplica filtros.',
-				'warning'
-			);
+			showToast('⚠️ Debes seleccionar al menos un proyecto para exportar.', 'warning');
 			return;
 		}
 		showExportModal = true;
 	}
 
 	/**
-	 * Export selected projects
+	 * Export selected projects (mejorado con validación)
 	 */
 	async function exportProjects() {
-		if (selectedProjects.size === 0) return;
+		if (selectedProjects.size === 0) {
+			showToast('⚠️ No hay proyectos seleccionados para exportar', 'warning');
+			return;
+		}
 
 		exportingData = true;
 
 		try {
 			// Get selected projects with all their relations
 			const selectedData = proyectos.filter((p) => selectedProjects.has(p.id));
+
+			if (selectedData.length === 0) {
+				throw new Error('No se encontraron datos para exportar');
+			}
 
 			if (exportFormat === 'csv') {
 				exportToCSV(selectedData);
@@ -309,8 +519,8 @@
 			}
 
 			showToast(
-				`✅ ${selectedProjects.size} proyecto${selectedProjects.size !== 1 ? 's' : ''} exportado${
-					selectedProjects.size !== 1 ? 's' : ''
+				`✅ ${selectedData.length} proyecto${selectedData.length !== 1 ? 's' : ''} exportado${
+					selectedData.length !== 1 ? 's' : ''
 				} correctamente`,
 				'success'
 			);
@@ -506,34 +716,50 @@
 	}
 
 	/**
-	 * Handle select all
+	 * Sincronizar estado de selectAll con la realidad
+	 */
+	function syncSelectAllState() {
+		if (proyectos.length === 0) {
+			selectAll = false;
+			return;
+		}
+		selectAll = proyectos.every((p) => selectedProjects.has(p.id));
+	}
+
+	/**
+	 * Handle select all (optimizado)
 	 */
 	function handleSelectAll() {
 		if (selectAll) {
+			// Agregar solo proyectos que no están seleccionados
 			proyectos.forEach((p) => selectedProjects.add(p.id));
 		} else {
-			selectedProjects.clear();
+			// Remover solo proyectos de la página actual
+			proyectos.forEach((p) => selectedProjects.delete(p.id));
 		}
 		selectedProjects = selectedProjects;
 	}
 
 	/**
-	 * Handle select project
+	 * Handle select project (optimizado)
 	 */
 	function handleSelectProject(id: number) {
 		if (selectedProjects.has(id)) {
 			selectedProjects.delete(id);
+			selectAll = false;
 		} else {
 			selectedProjects.add(id);
+			// Solo actualizar selectAll si todos están seleccionados
+			syncSelectAllState();
 		}
 		selectedProjects = selectedProjects;
-		selectAll = selectedProjects.size === proyectos.length;
 	}
 
 	/**
-	 * Reset filters
+	 * Reset filters (optimizado)
 	 */
 	function resetFilters() {
+		// Limpiar todos los filtros
 		searchQuery = '';
 		filterEstado = '';
 		filterTipo = '';
@@ -542,55 +768,104 @@
 		currentPage = 1;
 		appliedFiltersCount = 0;
 		hasActiveFilters = false;
-		// Clear selections
+
+		// Limpiar selecciones
 		selectedProjects.clear();
 		selectedProjects = selectedProjects;
 		selectAll = false;
+
+		// Limpiar filtros guardados en caché
+		if (browser) {
+			localStorage.removeItem('proyectos_filters_state');
+		}
+
 		showToast('✅ Filtros limpiados correctamente', 'success');
 		fetchProyectos();
 	}
 
 	/**
-	 * Apply filters
+	 * Limpiar todo el caché (catálogos y proyectos)
+	 */
+	function clearAllCache() {
+		if (!browser) return;
+		try {
+			// Limpiar caché de proyectos
+			invalidateProjectsCache();
+
+			// Limpiar caché de catálogos
+			localStorage.removeItem('catalogs_estados');
+			localStorage.removeItem('catalogs_tipos');
+			localStorage.removeItem('catalogs_areas');
+			localStorage.removeItem('catalogs_lineas');
+			localStorage.removeItem('catalogs_instituciones');
+
+			// Limpiar filtros guardados
+			localStorage.removeItem('proyectos_filters_state');
+
+			showToast('✅ Caché limpiado correctamente. Recargando datos...', 'success');
+
+			// Recargar todo desde el servidor
+			fetchCatalogs();
+			fetchProyectos();
+		} catch (error) {
+			console.error('Error limpiando caché:', error);
+			showToast('❌ Error al limpiar caché', 'error');
+		}
+	}
+
+	/**
+	 * Apply filters (optimizado y mejorado)
 	 */
 	async function applyFilters() {
+		if (applyingFilters) return; // Prevenir doble clic
+
 		applyingFilters = true;
 
-		// Copy pending filters to applied
-		advancedFilters = { ...pendingFilters };
+		try {
+			// Copy pending filters to applied
+			advancedFilters = { ...pendingFilters };
 
-		// Count active filters
-		appliedFiltersCount = countActiveFilters();
-		hasActiveFilters = appliedFiltersCount > 0;
+			// Resetear página al aplicar filtros
+			currentPage = 1;
 
-		currentPage = 1;
+			// Close filter panel
+			showFilters = false;
 
-		// Close filter panel
-		showFilters = false;
+			await fetchProyectos();
 
-		await fetchProyectos();
-
-		// Auto-select filtered projects
-		if (hasActiveFilters && proyectos.length > 0) {
-			selectedProjects.clear();
-			proyectos.forEach((p) => selectedProjects.add(p.id));
-			selectedProjects = selectedProjects;
-			selectAll = true;
+			// Show feedback based on results
+			if (proyectos.length === 0) {
+				showToast('⚠️ No se encontraron proyectos con los filtros aplicados', 'warning');
+				// Limpiar selecciones si no hay resultados
+				selectedProjects.clear();
+				selectedProjects = selectedProjects;
+				selectAll = false;
+			} else {
+				const count = countActiveFilters();
+				if (count > 0) {
+					showToast(
+						`✅ Se encontraron ${proyectos.length} proyecto${proyectos.length !== 1 ? 's' : ''}`,
+						'success'
+					);
+				}
+			}
+		} catch (err) {
+			console.error('Error applying filters:', err);
+			showToast('❌ Error al aplicar filtros', 'error');
+		} finally {
+			applyingFilters = false;
 		}
+	}
 
-		// Show feedback based on results
-		if (proyectos.length === 0) {
-			showToast('⚠️ No se encontraron proyectos con los filtros aplicados', 'warning');
-		} else {
-			showToast(
-				`✅ ${proyectos.length} proyecto${proyectos.length !== 1 ? 's' : ''} encontrado${
-					proyectos.length !== 1 ? 's' : ''
-				} y seleccionado${proyectos.length !== 1 ? 's' : ''}`,
-				'success'
-			);
-		}
-
-		applyingFilters = false;
+	/**
+	 * Búsqueda con debounce
+	 */
+	function handleSearchInput() {
+		clearTimeout(searchDebounceTimer);
+		searchDebounceTimer = setTimeout(() => {
+			currentPage = 1;
+			fetchProyectos();
+		}, 500); // 500ms de delay
 	}
 
 	/**
@@ -633,7 +908,7 @@
 	}
 
 	/**
-	 * Handle column sort
+	 * Handle column sort (optimizado)
 	 */
 	function handleSort(column: string) {
 		if (sortColumn === column) {
@@ -646,66 +921,63 @@
 	}
 
 	/**
-	 * Sort proyectos locally
+	 * Sort proyectos locally (optimizado con función de comparación)
 	 */
 	function sortProyectos() {
+		if (!proyectos || proyectos.length === 0) return;
+
+		const compareFunctions: Record<
+			string,
+			(a: ProyectoResponseDTO, b: ProyectoResponseDTO) => number
+		> = {
+			codigo: (a, b) => a.codigo.localeCompare(b.codigo),
+			titulo: (a, b) => a.titulo.localeCompare(b.titulo),
+			estado: (a, b) => a.estado.nombre.localeCompare(b.estado.nombre),
+			fecha_inicio: (a, b) =>
+				new Date(a.fecha_inicio_planeada).getTime() - new Date(b.fecha_inicio_planeada).getTime(),
+			avance: (a, b) => a.porcentaje_avance - b.porcentaje_avance,
+			presupuesto: (a, b) => a.monto_presupuesto_total - b.monto_presupuesto_total
+		};
+
+		const compareFunc = compareFunctions[sortColumn];
+		if (!compareFunc) return;
+
 		proyectos = [...proyectos].sort((a, b) => {
-			let aVal: any;
-			let bVal: any;
-
-			switch (sortColumn) {
-				case 'codigo':
-					aVal = a.codigo;
-					bVal = b.codigo;
-					break;
-				case 'titulo':
-					aVal = a.titulo.toLowerCase();
-					bVal = b.titulo.toLowerCase();
-					break;
-				case 'estado':
-					aVal = a.estado.nombre.toLowerCase();
-					bVal = b.estado.nombre.toLowerCase();
-					break;
-				case 'fecha_inicio':
-					aVal = new Date(a.fecha_inicio_planeada).getTime();
-					bVal = new Date(b.fecha_inicio_planeada).getTime();
-					break;
-				case 'avance':
-					aVal = a.porcentaje_avance;
-					bVal = b.porcentaje_avance;
-					break;
-				case 'presupuesto':
-					aVal = a.monto_presupuesto_total;
-					bVal = b.monto_presupuesto_total;
-					break;
-				default:
-					return 0;
-			}
-
-			if (aVal < bVal) return sortDirection === 'asc' ? -1 : 1;
-			if (aVal > bVal) return sortDirection === 'asc' ? 1 : -1;
-			return 0;
+			const result = compareFunc(a, b);
+			return sortDirection === 'asc' ? result : -result;
 		});
 	}
 
 	/**
-	 * Change page
+	 * Change page (optimizado)
 	 */
 	function changePage(newPage: number) {
-		if (newPage < 1 || newPage > totalPages) return;
+		if (newPage < 1 || newPage > totalPages || newPage === currentPage) return;
 		currentPage = newPage;
+		fetchProyectos();
+	}
+
+	/**
+	 * Handle items per page change (optimizado)
+	 */
+	function handleItemsPerPageChange() {
+		currentPage = 1; // Resetear a primera página
 		fetchProyectos();
 	}
 
 	// Lifecycle
 	onMount(() => {
+		// Restaurar filtros guardados
+		restoreFiltersFromCache();
+
+		// Cargar catálogos y proyectos
 		fetchCatalogs();
 		fetchProyectos();
 	});
 </script>
 
 <svelte:head>
-	<title>Tabla de Proyectos - Admin UYANA</title>
+	<title>Tabla de Proyectos - Admin SIGPI</title>
 </svelte:head>
 
 <div class="tabla-proyectos-page">
@@ -733,6 +1005,7 @@
 					type="text"
 					placeholder="Buscar por título o código..."
 					bind:value={searchQuery}
+					on:input={handleSearchInput}
 					on:keydown={(e) => e.key === 'Enter' && applyFilters()}
 				/>
 				{#if searchQuery}
@@ -787,6 +1060,15 @@
 			>
 				<span>{icons.close}</span>
 				Limpiar
+			</button>
+
+			<button
+				class="btn-icon-text"
+				on:click={clearAllCache}
+				title="Limpiar caché y recargar datos del servidor"
+			>
+				<span>🔄</span>
+				Actualizar
 			</button>
 		</div>
 
@@ -1286,7 +1568,7 @@
 				</button>
 			</div>
 
-			<select bind:value={itemsPerPage} on:change={() => ((currentPage = 1), fetchProyectos())}>
+			<select bind:value={itemsPerPage} on:change={handleItemsPerPageChange}>
 				<option value={10}>10 por página</option>
 				<option value={15}>15 por página</option>
 				<option value={25}>25 por página</option>

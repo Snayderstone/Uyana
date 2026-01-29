@@ -80,7 +80,7 @@ export class DeepSeekProvider extends AIProvider {
 				headers: {
 					'Content-Type': 'application/json',
 					Authorization: `Bearer ${requestConfig.apiKey}`,
-					'User-Agent': 'uyana-ai-client/2.0'
+					'User-Agent': 'sigpi-ai-client/2.0'
 				},
 				body: JSON.stringify(requestBody),
 				signal: controller.signal

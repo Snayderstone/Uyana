@@ -91,7 +91,7 @@
 </script>
 
 <svelte:head>
-	<title>Estadísticas de Participantes - Uyana</title>
+	<title>Estadísticas de Participantes - SIGPI</title>
 	<meta
 		name="description"
 		content="Estadísticas públicas sobre participantes en proyectos de investigación"

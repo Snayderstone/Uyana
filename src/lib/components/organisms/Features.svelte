@@ -9,7 +9,7 @@
 <ContentSection
 	id="features"
 	title="Características"
-	description="Aqui algunas de las características principales de Uyana"
+	description="Aqui algunas de las características principales de SIGPI."
 >
 	<div class="features-container">
 		<div class="three-group-grid">

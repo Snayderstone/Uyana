@@ -1142,7 +1142,7 @@
 </script>
 
 <svelte:head>
-	<title>Editar Proyecto - Admin UYANA</title>
+	<title>Editar Proyecto - Admin SIGPI</title>
 </svelte:head>
 
 <div class="proyecto-form-page">

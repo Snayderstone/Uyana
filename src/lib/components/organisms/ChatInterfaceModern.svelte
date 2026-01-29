@@ -73,12 +73,12 @@
 		if (!$activeTools.has('fecha-tiempo-ecuador')) {
 			toggleTool('fecha-tiempo-ecuador');
 		}
-		if (!$activeTools.has('estadisticas-uyana')) {
-			toggleTool('estadisticas-uyana');
+		if (!$activeTools.has('estadisticas-sigpi')) {
+			toggleTool('estadisticas-sigpi');
 		}
 
 		// Log solo si se activaron herramientas
-		if (!$activeTools.has('fecha-tiempo-ecuador') || !$activeTools.has('estadisticas-uyana')) {
+		if (!$activeTools.has('fecha-tiempo-ecuador') || !$activeTools.has('estadisticas-sigpi')) {
 			mcpLogger.info(
 				'CHAT_INTERFACE',
 				'TOOL_AUTO_ACTIVATED',
@@ -207,13 +207,13 @@
 			);
 		}
 
-		if (shouldActivateEstadisticas && !newActiveTools.has('estadisticas-uyana')) {
-			newActiveTools.add('estadisticas-uyana');
+		if (shouldActivateEstadisticas && !newActiveTools.has('estadisticas-sigpi')) {
+			newActiveTools.add('estadisticas-sigpi');
 			toolsChanged = true;
 			mcpLogger.info(
 				'CHAT_INTERFACE',
 				'TOOL_AUTO_ACTIVATED',
-				'Auto-activada herramienta: estadisticas-uyana'
+				'Auto-activada herramienta: estadisticas-sigpi'
 			);
 		}
 
@@ -412,7 +412,7 @@
 				return detectTimeQuery(message);
 			case 'fecha-tiempo-ecuador':
 				return detectFechaTiempoEcuadorQuery(message);
-			case 'estadisticas-uyana':
+			case 'estadisticas-sigpi':
 				return detectEstadisticasQuery(message);
 			case 'proyectos-uce':
 				return detectProyectosUceQuery(message);
@@ -664,7 +664,7 @@
 	}
 
 	/**
-	 * Detecta consultas de estadísticas de UYANA
+	 * Detecta consultas de estadísticas de SIGPI
 	 */
 	function detectEstadisticasQuery(message: string): Record<string, any> | null {
 		const lowerMessage = message.toLowerCase().trim();
@@ -741,7 +741,7 @@
 		const messages: import('$lib/ai/aiManager').AIMessage[] = [
 			{
 				role: 'system',
-				content: `Eres Chasky, el asistente inteligente de Uyana, una plataforma de 
+				content: `Eres Chasky, el asistente inteligente de SIGPI, una plataforma de 
 				divulgación de la actividad investigativa en la Universidad Central del Ecuador impulsada por 
 				la Dirección de Investigación. 
 Tu rol principal:
@@ -783,7 +783,7 @@ Estilo de respuesta:
 		const messages: import('$lib/ai/aiManager').AIMessage[] = [
 			{
 				role: 'system',
-				content: `Eres Chasky, el asistente inteligente de Uyana, una plataforma de 
+				content: `Eres Chasky, el asistente inteligente de SIGPI, una plataforma de 
 				divulgación de la actividad investigativa en la Universidad Central del Ecuador impulsada por 
 				la Dirección de Investigación. 
 Tu rol principal:

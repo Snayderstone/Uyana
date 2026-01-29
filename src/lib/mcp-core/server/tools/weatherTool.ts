@@ -274,7 +274,7 @@ class AdvancedWeatherService {
 					...options,
 					signal: controller.signal,
 					headers: {
-						'User-Agent': 'UYANA-MCP-Weather/2.0',
+						'User-Agent': 'SIGPI-MCP-Weather/2.0',
 						Accept: 'application/json',
 						...options.headers
 					}
@@ -704,7 +704,7 @@ export const weatherTool: McpTool<WeatherToolArgs> = {
 	handler: handleWeatherTool,
 	metadata: {
 		version: '2.0.0',
-		author: 'UYANA',
+		author: 'SIGPI',
 		supportedRegions: ['Global'],
 		dataSource: 'Open-Meteo API',
 		rateLimit: 'Sin límites para uso normal',

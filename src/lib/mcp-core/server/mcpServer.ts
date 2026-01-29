@@ -24,16 +24,16 @@ import { JsonRpcErrorCodes, McpValidation } from '../shared/types';
 import { mcpLogger } from '../shared/mcpLogger';
 import { weatherTool } from './tools/weatherTool';
 import { fechaTiempoTool } from './tools/fechaTiempoTool';
-import { estadisticasUyanaTool } from './tools/estadisticasUyanaTool';
+import { estadisticasSigpiTool } from './tools/estadisticasSigpiTool';
 
 /**
- * Configuración del servidor MCP de UYANA
+ * Configuración del servidor MCP de sigpi
  */
-const UYANA_MCP_CONFIG: McpServerConfig = {
-	name: 'uyana-mcp-server',
+const SIGPI_MCP_CONFIG: McpServerConfig = {
+	name: 'sigpi-mcp-server',
 	version: '2.0.0',
-	description: 'Servidor MCP para la plataforma UYANA con herramientas de investigación',
-	author: 'UYANA Team',
+	description: 'Servidor MCP para la plataforma Sigpigpi con herramientas de investigación',
+	author: 'SIGPI Team',
 	capabilities: {
 		tools: true,
 		resources: true,
@@ -41,9 +41,9 @@ const UYANA_MCP_CONFIG: McpServerConfig = {
 		logging: true
 	},
 	metadata: {
-		homepage: 'https://uyana.com',
-		repository: 'https://github.com/uyana/mcp-server',
-		documentation: 'https://docs.uyana.com/mcp'
+		homepage: 'https://sigpi.com',
+		repository: 'https://github.com/sigpi/mcp-server',
+		documentation: 'https://docs.sigpi.com/mcp'
 	}
 };
 
@@ -182,8 +182,8 @@ class SessionManager {
 		// Herramienta de fecha y tiempo en Ecuador
 		session.tools.set(fechaTiempoTool.name, fechaTiempoTool);
 
-		// Herramienta de estadísticas de UYANA
-		session.tools.set(estadisticasUyanaTool.name, estadisticasUyanaTool);
+		// Herramienta de estadísticas de SIGPI
+		session.tools.set(estadisticasSigpiTool.name, estadisticasSigpiTool);
 	}
 
 	/**
@@ -241,13 +241,13 @@ class SessionManager {
 /**
  * Servidor MCP principal
  */
-class UyanaMcpServer {
+class SigpiMcpServer {
 	private sessionManager: SessionManager;
 	private config: McpServerConfig;
 
 	constructor() {
 		this.sessionManager = new SessionManager();
-		this.config = UYANA_MCP_CONFIG;
+		this.config = SIGPI_MCP_CONFIG;
 	}
 
 	/**
@@ -653,7 +653,7 @@ class UyanaMcpServer {
 /**
  * Instancia principal del servidor MCP
  */
-export const uyanaMcpServer = new UyanaMcpServer();
+export const sigpiMcpServer = new SigpiMcpServer();
 
 /**
  * Función de conveniencia para procesar solicitudes
@@ -663,19 +663,19 @@ export async function processMcpRequest(
 	sessionId?: string,
 	metadata?: Record<string, any>
 ): Promise<{ response: JsonRpcResponse; sessionId: string }> {
-	return uyanaMcpServer.processRequest(request, sessionId, metadata);
+	return sigpiMcpServer.processRequest(request, sessionId, metadata);
 }
 
 /**
  * Función de conveniencia para eliminar sesiones
  */
 export function deleteSession(sessionId: string): boolean {
-	return uyanaMcpServer.deleteSession(sessionId);
+	return sigpiMcpServer.deleteSession(sessionId);
 }
 
 /**
  * Función de conveniencia para obtener estadísticas
  */
 export function getServerStats(): any {
-	return uyanaMcpServer.getServerStats();
+	return sigpiMcpServer.getServerStats();
 }

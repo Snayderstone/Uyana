@@ -104,7 +104,7 @@
 </script>
 
 <svelte:head>
-	<title>Administración de Catálogos - Uyana</title>
+	<title>Administración de Catálogos - SIGPI</title>
 </svelte:head>
 
 <div class="catalogos-page">

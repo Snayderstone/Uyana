@@ -50,7 +50,7 @@ const initialState: ChatState = {
 /**
  * Clave para localStorage
  */
-const STORAGE_KEY = 'uyana-chat-state';
+const STORAGE_KEY = 'sigpi-chat-state';
 
 /**
  * Carga el estado desde localStorage

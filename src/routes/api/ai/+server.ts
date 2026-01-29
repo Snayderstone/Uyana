@@ -14,7 +14,7 @@ import type { AIMessage } from '$lib/ai/aiManager';
 function necesitaHerramientasMCP(mensaje: string): string | null {
 	const msgLower = mensaje.toLowerCase().trim();
 
-	// Patrones para estadísticas de UYANA
+	// Patrones para estadísticas de SIGPI
 	const patronesEstadisticas = [
 		/cuántos?\s+proyectos?/,
 		/cuánt[oa]s?\s+proyectos?/,
@@ -49,7 +49,7 @@ function necesitaHerramientasMCP(mensaje: string): string | null {
 
 	for (const patron of patronesEstadisticas) {
 		if (patron.test(msgLower)) {
-			return 'estadisticas-uyana';
+			return 'estadisticas-sigpi';
 		}
 	}
 
@@ -279,7 +279,7 @@ export const GET: RequestHandler = async () => {
 				apiKeyConfigured: true,
 				version: '1.0.0',
 				provider: 'DeepSeek',
-				availableTools: ['estadisticas-uyana', 'weather', 'fecha-tiempo-ecuador']
+				availableTools: ['estadisticas-sigpi', 'weather', 'fecha-tiempo-ecuador']
 			}
 		});
 	} catch (error: any) {

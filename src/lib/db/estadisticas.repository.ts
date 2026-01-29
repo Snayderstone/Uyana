@@ -1,6 +1,6 @@
 /**
  * Repositorio para consultar vistas materializadas de estadísticas
- * Datos públicos para el chat asistente de UYANA
+ * Datos públicos para el chat asistente de sigpi
  */
 
 import { supabase } from './supabase.client';

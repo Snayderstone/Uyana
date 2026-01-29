@@ -449,7 +449,7 @@
 					<p>{error}</p>
 					<div class="error-actions">
 						<a
-							href="https://github.com/Snayderstone/Uyana/blob/main/database/SETUP_INSTRUCTIONS.md"
+							href="https://github.com/Snayderstone/SIGPI/blob/main/database/SETUP_INSTRUCTIONS.md"
 							target="_blank"
 							rel="noopener noreferrer"
 							class="setup-link"
@@ -461,7 +461,7 @@
 					<details class="error-details">
 						<summary>Pasos rápidos de configuración</summary>
 						<ol>
-							<li>Accede al SQL Editor de tu proyecto Supabase</li>
+							<li>Accede al SQL Editor de tu proyecto</li>
 							<li>Ejecuta el script <code>database/views_participantes.sql</code></li>
 							<li>Ejecuta el script <code>database/grafico_config_participantes.sql</code></li>
 							<li>Verifica con: <code>SELECT refresh_participantes_stats();</code></li>
@@ -1487,8 +1487,8 @@
 													{item.genero === 'masculino'
 														? '♂'
 														: item.genero === 'femenino'
-														? '♀'
-														: '⚧'}
+															? '♀'
+															: '⚧'}
 												</span>
 												<span class="gender-name">{item.genero}</span>
 											</div>

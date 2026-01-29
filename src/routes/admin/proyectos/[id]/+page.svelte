@@ -89,7 +89,7 @@
 </script>
 
 <svelte:head>
-	<title>{project?.titulo || 'Cargando...'} - Admin UYANA</title>
+	<title>{project?.titulo || 'Cargando...'} - Admin SIGPI</title>
 </svelte:head>
 
 <div class="proyecto-detalle-page">

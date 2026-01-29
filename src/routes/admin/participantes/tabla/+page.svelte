@@ -783,7 +783,7 @@
 </script>
 
 <svelte:head>
-	<title>Tabla de Participantes - Admin UYANA</title>
+	<title>Tabla de Participantes - Admin SIGPI</title>
 </svelte:head>
 
 <div class="tabla-participantes-page">
@@ -2801,7 +2801,6 @@
 			border-top: 1px solid rgba(var(--color--text-rgb), 0.15);
 		}
 	}
-
 
 	// Bulk Delete Modal Specific Styles
 	.bulk-delete-confirmation {

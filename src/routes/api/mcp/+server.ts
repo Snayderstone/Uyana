@@ -145,7 +145,7 @@ export const GET: RequestHandler = async ({ url }) => {
 			message: 'Servidor MCP público operativo',
 			version: '2.0.0',
 			isPublic: true,
-			availableTools: ['estadisticas-uyana', 'weather', 'fecha-tiempo-ecuador'],
+			availableTools: ['estadisticas-sigpi', 'weather', 'fecha-tiempo-ecuador'],
 			capabilities: {
 				tools: true,
 				resources: true,

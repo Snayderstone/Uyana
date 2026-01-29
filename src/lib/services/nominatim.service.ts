@@ -33,7 +33,7 @@ export interface SearchResult {
 }
 
 const NOMINATIM_URL = 'https://nominatim.openstreetmap.org';
-const USER_AGENT = 'Uyana-Geoespacial/1.0'; // Nominatim requiere un User-Agent
+const USER_AGENT = 'SIGPI-Geoespacial/1.0'; // Nominatim requiere un User-Agent
 
 /**
  * Busca direcciones usando Nominatim

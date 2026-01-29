@@ -49,7 +49,7 @@
 
 		<p class="modal-warning">
 			{#if willBePublic}
-				✓ El gráfico será <strong>visible en la página pública</strong> de Uyana para todos los visitantes.
+				✓ El gráfico será <strong>visible en la página pública</strong> de SIGPI para todos los visitantes.
 			{:else}
 				✓ El gráfico será <strong>visible solo para administradores</strong> en este panel.
 			{/if}

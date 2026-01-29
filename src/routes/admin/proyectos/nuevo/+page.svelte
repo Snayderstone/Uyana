@@ -1169,7 +1169,7 @@
 </script>
 
 <svelte:head>
-	<title>Nuevo Proyecto - Admin UYANA</title>
+	<title>Nuevo Proyecto - Admin SIGPI</title>
 </svelte:head>
 
 <div class="proyecto-form-page">

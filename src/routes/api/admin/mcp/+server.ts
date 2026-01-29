@@ -153,7 +153,7 @@ export const POST: RequestHandler = async (event) => {
 				'Content-Type': 'application/json',
 				[SESSION_ID_HEADER]: newSessionId,
 				'Cache-Control': 'no-cache',
-				'X-MCP-Server': 'uyana-mcp-server/2.0.0',
+				'X-MCP-Server': 'sigpi-mcp-server/2.0.0',
 				'X-Request-ID': requestId,
 				'X-Response-Time': `${totalDuration}ms`
 			}
@@ -210,7 +210,7 @@ export const GET: RequestHandler = async (event) => {
 				return json({
 					status: 'healthy',
 					timestamp: Date.now(),
-					server: 'uyana-mcp-server',
+					server: 'sigpi-mcp-server',
 					version: '2.0.0'
 				});
 
@@ -221,15 +221,15 @@ export const GET: RequestHandler = async (event) => {
 			default:
 				// Información básica del servidor
 				return json({
-					name: 'uyana-mcp-server',
+					name: 'sigpi-mcp-server',
 					version: '2.0.0',
-					description: 'Servidor MCP para la plataforma UYANA',
+					description: 'Servidor MCP para la plataforma SIGPI',
 					endpoints: {
 						stats: '/api/admin/mcp?action=stats',
 						health: '/api/admin/mcp?action=health',
 						events: '/api/admin/mcp?action=events'
 					},
-					documentation: 'https://docs.uyana.com/mcp'
+					documentation: 'https://docs.sigpi.com/mcp'
 				});
 		}
 	} catch (error: any) {

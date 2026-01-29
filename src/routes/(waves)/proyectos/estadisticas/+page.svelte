@@ -95,7 +95,7 @@
 </script>
 
 <svelte:head>
-	<title>Estadísticas de Proyectos - Uyana</title>
+	<title>Estadísticas de Proyectos - SIGPI</title>
 	<meta name="description" content="Estadísticas públicas sobre proyectos de investigación" />
 </svelte:head>
 

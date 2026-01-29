@@ -40,7 +40,7 @@
 
 <header class:has-background={showBackground}>
 	<nav class="container">
-		<a href="/" class="logo" aria-label="Uyana - Página principal">
+		<a href="/" class="logo" aria-label="SIGPI - Página principal">
 			<Logo />
 		</a>
 

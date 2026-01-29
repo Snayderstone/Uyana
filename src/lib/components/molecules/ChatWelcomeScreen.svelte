@@ -11,7 +11,7 @@
 		suggestion: { message: string };
 	}>();
 
-	// Sugerencias dinámicas basadas en estadísticas reales de Uyana
+	// Sugerencias dinámicas basadas en estadísticas reales del SIGPI
 	const suggestions = [
 		'¿Qué instituciones colaboradoras tienen más proyectos?',
 		'¿Cuántos proyectos hay en estado aprobado vs en ejecución?'

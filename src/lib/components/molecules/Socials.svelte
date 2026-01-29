@@ -4,17 +4,15 @@
 	import FacebookIcon from '$lib/icons/socials/facebook.svelte';
 	import XIcon from '$lib/icons/socials/x.svelte';
 
-
 	// Props for configurable social links
-	export let githubUrl = 'https://github.com/Snayderstone/Uyana';
+	export let githubUrl = 'https://github.com/Snayderstone/SIGPI';
 	export let emailUrl = 'mailto:investigacion@uce.edu.ec';
 	export let facebookUrl = 'https://www.facebook.com/InvestigaUCE';
 	export let xUrl = 'https://x.com/InvestigaUCE';
 </script>
 
 <div class="socials">
-	
-		<a
+	<a
 		href={facebookUrl}
 		target="_blank"
 		rel="noopener noreferrer"
@@ -23,8 +21,7 @@
 	>
 		<FacebookIcon />
 	</a>
-	
-	
+
 	<a
 		href={xUrl}
 		target="_blank"
