@@ -3,7 +3,6 @@
 	import { fly } from 'svelte/transition';
 	import type { ChatMessage } from '$lib/stores/chatStore';
 	import ChatMessageModern from '$lib/components/molecules/ChatMessageModern.svelte';
-	import GlowPoint from '$lib/components/atoms/GlowPoint.svelte';
 
 	export let messages: ChatMessage[] = [];
 	export let showTimestamps = false;
@@ -35,7 +34,7 @@
 				showAvatar: true,
 				showTimestamp: false,
 				isLastAssistantMessage: isLastAssistantMsg(messages, index)
-		  }));
+			}));
 
 	// Función para determinar si es el último mensaje del asistente
 	function isLastAssistantMsg(msgs: ChatMessage[], currentIndex: number): boolean {
@@ -93,49 +92,17 @@
 		// Mostrar el botón de volver abajo si no está en auto-scroll
 		showScrollToBottom = !autoScroll;
 	}
-
-	function handleSuggestion(message: string) {
-		// Disparar evento personalizado para enviar la sugerencia
-		const event = new CustomEvent('suggestion', {
-			detail: { message },
-			bubbles: true
-		});
-		messagesContainer?.dispatchEvent(event);
-	}
 </script>
 
 <div class="messages-container" bind:this={messagesContainer}>
-	{#if messages.length === 0}
-		<div class="empty-state" in:fly={{ y: 20, duration: 300, delay: 200 }}>
-			<div class="empty-icon">💬</div>
-			<h3>¡Hola! Soy UYANA</h3>
-			<p>¿En qué puedo ayudarte hoy?</p>
-
-			<div class="suggestion-chips">
-				<button class="suggestion-chip" on:click={() => handleSuggestion('¿Qué es UYANA?')}>
-					¿Qué es UYANA?
-				</button>
-				<button
-					class="suggestion-chip"
-					on:click={() => handleSuggestion('Explícame sobre datos geoespaciales')}
-				>
-					Datos geoespaciales
-				</button>
-				<button class="suggestion-chip" on:click={() => handleSuggestion('¿Cómo puedes ayudarme?')}>
-					¿Cómo me ayudas?
-				</button>
-			</div>
-		</div>
-	{:else}
-		{#each processedMessages as { message, showAvatar, showTimestamp: showMessageTimestamp, isLastAssistantMessage } (message.id)}
-			<ChatMessageModern
-				{message}
-				{showAvatar}
-				showTimestamp={showMessageTimestamp}
-				{isLastAssistantMessage}
-			/>
-		{/each}
-	{/if}
+	{#each processedMessages as { message, showAvatar, showTimestamp: showMessageTimestamp, isLastAssistantMessage } (message.id)}
+		<ChatMessageModern
+			{message}
+			{showAvatar}
+			showTimestamp={showMessageTimestamp}
+			{isLastAssistantMessage}
+		/>
+	{/each}
 
 	{#if showScrollToBottom}
 		<button
@@ -172,71 +139,6 @@
 		position: relative;
 	}
 
-	.empty-state {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-		text-align: center;
-		height: 100%;
-		padding: 2rem 1.5rem;
-		opacity: 0.9;
-
-		.empty-icon {
-			font-size: 2.25rem;
-			margin-bottom: 0.75rem;
-			filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.08));
-		}
-
-		h3 {
-			font-size: 1.25rem;
-			margin: 0 0 0.375rem;
-			color: var(--color--text);
-			font-weight: 600;
-		}
-
-		p {
-			color: var(--color--text-shade);
-			font-size: 0.875rem;
-			max-width: 380px;
-			margin: 0 0 1.5rem;
-			line-height: 1.5;
-			opacity: 0.9;
-		}
-	}
-
-	.suggestion-chips {
-		display: flex;
-		flex-wrap: wrap;
-		justify-content: center;
-		gap: 0.5rem;
-		margin-top: 0.75rem;
-
-		.suggestion-chip {
-			background-color: var(--color--card-background);
-			color: var(--color--text);
-			border: 1.5px solid rgba(var(--color--primary-rgb), 0.15);
-			border-radius: 16px;
-			padding: 0.5rem 0.875rem;
-			font-size: 0.8rem;
-			font-weight: 500;
-			transition: all 0.2s ease;
-			cursor: pointer;
-			box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-
-			&:hover {
-				background-color: rgba(var(--color--primary-rgb), 0.1);
-				border-color: rgba(var(--color--primary-rgb), 0.4);
-				transform: translateY(-2px);
-				box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-			}
-
-			&:active {
-				transform: translateY(0);
-			}
-		}
-	}
-
 	.scroll-to-bottom {
 		position: absolute;
 		bottom: 20px;
@@ -271,27 +173,6 @@
 	@include for-phone-only {
 		.messages-container {
 			padding: 1rem 1rem 0.5rem;
-		}
-
-		.empty-state {
-			padding: 1.5rem 1rem;
-
-			.empty-icon {
-				font-size: 2.2rem;
-			}
-
-			h3 {
-				font-size: 1.1rem;
-			}
-
-			p {
-				font-size: 0.9rem;
-			}
-		}
-
-		.suggestion-chips .suggestion-chip {
-			padding: 6px 12px;
-			font-size: 0.8rem;
 		}
 	}
 </style>

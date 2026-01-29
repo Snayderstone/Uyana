@@ -6,10 +6,11 @@
 
 <section class="hero-image-section">
 	<div class="hero-image-container">
-		<Image src="/images/sample-image.png" alt="UYANA - Plataforma de investigaciones UCE" />
+		<Image src="/images/sample-image.png" alt="SIGPI - Plataforma de Gestión de Proyectos de Investigación" />
 		<div class="image-caption">
-			<h1>UYANA</h1>
-			<p>Unión UCE + Dirección de Investigación = Uyana</p>
+			<h1>SIGPI</h1>
+						<p>Unión UCE + Dirección de Investigación = SIGPI</p>
+
 		</div>
 	</div>
 </section>

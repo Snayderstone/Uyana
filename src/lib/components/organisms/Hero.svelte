@@ -4,7 +4,7 @@
 
 <section id="hero">
 	<h1 class="hello">
-		Plataforma de <SparklingHighlight color="primary">Georreferenciación</SparklingHighlight>
+		Sistema Integral de <SparklingHighlight color="primary">Gestión</SparklingHighlight>
 		de Proyectos de Investigación.
 	</h1>
 	<div class="Introduccion">

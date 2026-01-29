@@ -2,7 +2,6 @@
 	import { page } from '$app/stores';
 	import Logo from '$lib/components/atoms/Logo.svelte';
 	import ThemeToggle from '$lib/components/molecules/ThemeToggle.svelte';
-	import RssLink from '$lib/components/atoms/RssLink.svelte';
 	import { browser } from '$app/environment';
 
 	export let showBackground = false;
@@ -66,7 +65,6 @@
 			<div class="links">
 				<a href="/blog" class:active={isBlogActive}>Blog</a>
 
-				<RssLink />
 				<ThemeToggle />
 			</div>
 		</div>
@@ -122,7 +120,6 @@
 		<a href="/blog" class:active={isBlogActive} on:click={closeMenu}>Blog</a>
 
 		<div class="mobile-menu-actions">
-			<RssLink />
 			<ThemeToggle />
 		</div>
 	</div>

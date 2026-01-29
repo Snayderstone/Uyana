@@ -46,7 +46,7 @@
 </script>
 
 <svelte:head>
-	<title>Investigadores UCE - Directorio de Investigadores</title>
+	<title>Directorio de Investigadores</title>
 	<meta
 		name="description"
 		content="Directorio completo de investigadores de la Universidad Central del Ecuador con sus líneas de investigación, facultad y contacto."

@@ -85,19 +85,174 @@
 	});
 
 	function formatMessage(content: string): string {
-		// Primero procesar markdown básico
 		let formatted = content;
+		const backtick = String.fromCharCode(96); // backtick character
 
-		// Convertir **texto** a <strong>texto</strong> (negrita)
-		formatted = formatted.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+		// 1. Procesar bloques de código
+		const tripleBacktick = backtick + backtick + backtick;
+		const codeBlockPattern = tripleBacktick + '([a-z]*)\\n([\\s\\S]*?)' + tripleBacktick;
+		const codeBlockRegex = new RegExp(codeBlockPattern, 'gi');
+		const codeBlocks: Array<{ placeholder: string; html: string }> = [];
+		let blockIndex = 0;
 
-		// Convertir *texto* a <em>texto</em> (cursiva)
-		formatted = formatted.replace(/(?<!\*)\*(?!\*)(.+?)\*(?!\*)/g, '<em>$1</em>');
+		formatted = formatted.replace(codeBlockRegex, (match, lang, code) => {
+			const language = lang || 'text';
+			const escapedCode = code.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+			const placeholder = '__CODEBLOCK_' + blockIndex + '__';
+			const openDiv = '<div class="code-block">';
+			const header = '<div class="code-header">' + language + '<' + '/div>';
+			const pre = '<pre><code>' + escapedCode + '<' + '/code><' + '/pre>';
+			const closeDiv = '<' + '/div>';
+			const html = openDiv + header + pre + closeDiv;
+			codeBlocks.push({ placeholder, html });
+			blockIndex++;
+			return placeholder;
+		});
 
-		// Convertir saltos de línea
-		formatted = formatted.replace(/\n/g, '<br>');
+		// 2. Procesar tablas (antes de listas para evitar conflictos)
+		formatted = formatTables(formatted);
+
+		// 3. Procesar listas ordenadas y no ordenadas
+		formatted = formatLists(formatted);
+
+		// 4. Procesar código inline
+		const inlineCodeRegex = new RegExp(backtick + '([^' + backtick + ']+)' + backtick, 'g');
+		formatted = formatted.replace(inlineCodeRegex, '<code class="inline-code">$1</code>');
+
+		// 5. Convertir **texto** a <strong>texto</strong> (negrita)
+		const boldRegex = new RegExp('\\*\\*(.+?)\\*\\*', 'g');
+		formatted = formatted.replace(boldRegex, '<strong>$1</strong>');
+
+		// 6. Convertir *texto* a <em>texto</em> (cursiva)
+		const italicRegex = new RegExp('\\*([^*]+)\\*', 'g');
+		formatted = formatted.replace(italicRegex, '<em>$1</em>');
+
+		// 7. Convertir saltos de línea
+		const newLineRegex = new RegExp('\\n', 'g');
+		formatted = formatted.replace(newLineRegex, '<br>');
+
+		// 8. Restaurar bloques de código
+		for (let i = 0; i < codeBlocks.length; i++) {
+			formatted = formatted.replace(codeBlocks[i].placeholder, codeBlocks[i].html);
+		}
 
 		return formatted;
+	}
+
+	function formatTables(text: string): string {
+		const lines = text.split('\n');
+		let result = '';
+		let inTable = false;
+		let tableRows: string[] = [];
+
+		for (let i = 0; i < lines.length; i++) {
+			const line = lines[i].trim();
+
+			// Detectar línea de tabla (| col1 | col2 |)
+			if (line.startsWith('|') && line.endsWith('|')) {
+				if (!inTable) {
+					inTable = true;
+					tableRows = [];
+				}
+				tableRows.push(line);
+			} else {
+				// Fin de tabla
+				if (inTable && tableRows.length > 0) {
+					result += buildTableHTML(tableRows) + '\n';
+					tableRows = [];
+					inTable = false;
+				}
+				result += lines[i] + '\n';
+			}
+		}
+
+		// Tabla al final
+		if (inTable && tableRows.length > 0) {
+			result += buildTableHTML(tableRows);
+		}
+
+		return result;
+	}
+
+	function buildTableHTML(rows: string[]): string {
+		let html = '<table class="markdown-table">';
+
+		for (let i = 0; i < rows.length; i++) {
+			// Saltar línea separadora (|---|---|)
+			if (rows[i].includes('---')) continue;
+
+			const cells = rows[i].split('|').filter((cell) => cell.trim());
+			const isHeader = i === 0;
+			const tag = isHeader ? 'th' : 'td';
+
+			html += '<tr>';
+			for (const cell of cells) {
+				html += '<' + tag + '>' + cell.trim() + '<' + '/' + tag + '>';
+			}
+			html += '<' + '/tr>';
+		}
+
+		return html + '<' + '/table>';
+	}
+
+	function formatLists(text: string): string {
+		const lines = text.split('\n');
+		let result = '';
+		let inOrderedList = false;
+		let inUnorderedList = false;
+
+		for (let i = 0; i < lines.length; i++) {
+			const line = lines[i];
+			const trimmed = line.trim();
+
+			// Lista ordenada (1. item)
+			const orderedMatch = trimmed.match(/^(\d+)\.\s+(.+)$/);
+			if (orderedMatch) {
+				if (inUnorderedList) {
+					result += '<' + '/ul>\n';
+					inUnorderedList = false;
+				}
+				if (!inOrderedList) {
+					result += '<ol class="markdown-list">';
+					inOrderedList = true;
+				}
+				result += '<li>' + orderedMatch[2] + '<' + '/li>';
+				continue;
+			}
+
+			// Lista no ordenada (- item o * item)
+			const unorderedMatch = trimmed.match(/^[-*]\s+(.+)$/);
+			if (unorderedMatch) {
+				if (inOrderedList) {
+					result += '<' + '/ol>\n';
+					inOrderedList = false;
+				}
+				if (!inUnorderedList) {
+					result += '<ul class="markdown-list">';
+					inUnorderedList = true;
+				}
+				result += '<li>' + unorderedMatch[1] + '<' + '/li>';
+				continue;
+			}
+
+			// No es item de lista
+			if (inOrderedList) {
+				result += '<' + '/ol>\n';
+				inOrderedList = false;
+			}
+			if (inUnorderedList) {
+				result += '<' + '/ul>\n';
+				inUnorderedList = false;
+			}
+
+			result += line + '\n';
+		}
+
+		// Cerrar listas abiertas
+		if (inOrderedList) result += '<' + '/ol>\n';
+		if (inUnorderedList) result += '<' + '/ul>\n';
+
+		return result;
 	}
 </script>
 
@@ -298,37 +453,113 @@
 			color: var(--color--text-secondary);
 		}
 
+		/* Código inline */
 		:global(.inline-code) {
 			background: rgba(var(--color--primary-rgb), 0.1);
 			color: var(--color--primary);
 			padding: 2px 6px;
 			border-radius: 4px;
-			font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
-			font-size: 12px;
+			font-family: 'SF Mono', 'Monaco', 'Consolas', 'Courier New', monospace;
+			font-size: 11px;
+			font-weight: 500;
+			border: 1px solid rgba(var(--color--primary-rgb), 0.2);
+		}
+
+		/* Bloques de código */
+		:global(.code-block) {
+			background: rgba(var(--color--primary-rgb), 0.05);
+			border: 1px solid rgba(var(--color--border-rgb), 0.2);
 			border-radius: 8px;
-			margin: 12px 0;
+			margin: 10px 0;
 			overflow: hidden;
 
 			:global(.code-header) {
-				background: rgba(var(--color--primary-rgb), 0.1);
-				padding: 8px 16px;
-				font-size: 12px;
-				font-weight: 500;
+				background: rgba(var(--color--primary-rgb), 0.08);
+				padding: 6px 12px;
+				font-size: 10px;
+				font-weight: 600;
 				color: var(--color--primary);
-				border-bottom: 1px solid rgba(var(--color--border-rgb), 0.1);
+				border-bottom: 1px solid rgba(var(--color--border-rgb), 0.15);
+				text-transform: uppercase;
+				letter-spacing: 0.5px;
 			}
 
 			:global(pre) {
 				margin: 0;
-				padding: 16px;
+				padding: 12px;
 				overflow-x: auto;
+				background: transparent;
 
 				:global(code) {
-					font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
-					font-size: 12px;
-					line-height: 1.5;
-					color: var(--color--text-primary);
+					font-family: 'SF Mono', 'Monaco', 'Consolas', 'Courier New', monospace;
+					font-size: 11px;
+					line-height: 1.6;
+					color: var(--color--text);
+					white-space: pre;
+					word-wrap: normal;
 				}
+			}
+		}
+
+		/* Tablas */
+		:global(.markdown-table) {
+			width: 100%;
+			border-collapse: collapse;
+			margin: 10px 0;
+			border: 1px solid rgba(var(--color--border-rgb), 0.2);
+			border-radius: 6px;
+			overflow: hidden;
+			font-size: 11px;
+
+			:global(th) {
+				background: rgba(var(--color--primary-rgb), 0.1);
+				color: var(--color--primary);
+				padding: 8px 10px;
+				text-align: left;
+				font-weight: 600;
+				border-bottom: 2px solid rgba(var(--color--border-rgb), 0.3);
+			}
+
+			:global(td) {
+				padding: 8px 10px;
+				border-bottom: 1px solid rgba(var(--color--border-rgb), 0.1);
+				color: var(--color--text);
+			}
+
+			:global(tr:last-child td) {
+				border-bottom: none;
+			}
+
+			:global(tr:hover td) {
+				background: rgba(var(--color--primary-rgb), 0.03);
+			}
+		}
+
+		/* Listas */
+		:global(.markdown-list) {
+			margin: 8px 0;
+			padding-left: 24px;
+
+			:global(li) {
+				margin: 4px 0;
+				line-height: 1.6;
+				color: var(--color--text);
+			}
+		}
+
+		:global(ul.markdown-list) {
+			list-style-type: disc;
+
+			:global(li) {
+				list-style-type: disc;
+			}
+		}
+
+		:global(ol.markdown-list) {
+			list-style-type: decimal;
+
+			:global(li) {
+				list-style-type: decimal;
 			}
 		}
 	}
@@ -342,9 +573,32 @@
 		}
 
 		:global(.inline-code) {
-			background: rgba(156, 39, 176, 0.15);
+			background: rgba(156, 39, 176, 0.12);
 			color: #7b1fa2;
-			border: 1px solid rgba(156, 39, 176, 0.3);
+			border: 1px solid rgba(156, 39, 176, 0.25);
+		}
+
+		:global(.code-block) {
+			background: rgba(156, 39, 176, 0.05);
+			border-color: rgba(156, 39, 176, 0.2);
+
+			:global(.code-header) {
+				background: rgba(156, 39, 176, 0.1);
+				color: #7b1fa2;
+			}
+		}
+
+		:global(.markdown-table) {
+			border-color: rgba(156, 39, 176, 0.2);
+
+			:global(th) {
+				background: rgba(156, 39, 176, 0.12);
+				color: #7b1fa2;
+			}
+
+			:global(tr:hover td) {
+				background: rgba(156, 39, 176, 0.05);
+			}
 		}
 	}
 

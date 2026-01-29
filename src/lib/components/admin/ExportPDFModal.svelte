@@ -48,11 +48,11 @@
 		const pageWidth = pdf.internal.pageSize.getWidth();
 		const margin = 10;
 
-		// Logo UYANA (texto estilizado)
+		// Logo SIGPI (texto estilizado)
 		pdf.setFontSize(20);
 		pdf.setFont('helvetica', 'bold');
 		pdf.setTextColor(110, 41, 231); // Color primario
-		pdf.text('UYANA', margin, margin + 6);
+		pdf.text('SIGPI', margin, margin + 6);
 
 		// Línea decorativa debajo del logo
 		pdf.setDrawColor(110, 41, 231);
@@ -91,7 +91,7 @@
 		pdf.setTextColor(107, 114, 128);
 
 		const currentYear = new Date().getFullYear();
-		const footerText = `Creado por UYANA © ${currentYear} - Todos los derechos reservados`;
+		const footerText = `Creado por SIGPI © ${currentYear} - Todos los derechos reservados`;
 		const textWidth = pdf.getTextWidth(footerText);
 		const centerX = (pageWidth - textWidth) / 2;
 
@@ -356,7 +356,7 @@
 				.toLowerCase()
 				.replace(/\s+/g, '-')
 				.replace(/[^a-z0-9-]/g, '');
-			const filename = `uyana-${dashboardSlug}-${new Date().getTime()}.pdf`;
+			const filename = `SIGPI-${dashboardSlug}-${new Date().getTime()}.pdf`;
 			pdf.save(filename);
 
 			alert('✅ PDF exportado exitosamente');

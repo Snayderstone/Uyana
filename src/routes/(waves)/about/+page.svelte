@@ -1,6 +1,14 @@
 <script lang="ts">
 	import AboutUs from '$lib/about/aboutUs.svelte';
+	import { onMount } from 'svelte';
+
 </script>
+
+<svelte:head>
+	<title>Sobre Nosotros</title>
+	<meta name="Sobre Nosotros" content="SIGPI es la plataforma digital de la Universidad Central del Ecuador, desarrollada en conjunto con la Dirección de Investigación, cuyo propósito es impulsar, fortalecer y difundir la producción científica generada dentro de la institución."/>
+	
+</svelte:head>
 
 <div class="about-page">
 	<div class="page-header">

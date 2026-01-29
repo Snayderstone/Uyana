@@ -8,6 +8,11 @@
 
 	let { posts } = data;
 </script>
+<svelte:head>
+	<title>Blog del Sitio</title>
+	<meta name="Blog del Sitio" content="Descubre las últimas novedades sobre investigación, innovación y desarrollo científico en la Universidad Central del Ecuador."/>
+	
+</svelte:head>
 
 <div class="blog-page">
 	<div class="page-header">

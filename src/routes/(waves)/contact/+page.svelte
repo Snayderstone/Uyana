@@ -1,7 +1,11 @@
 <script lang="ts">
 	import ContactForm from '$lib/contact/ContactForm.svelte';
 </script>
-
+<svelte:head>
+	<title>Contáctanos</title>
+	<meta name="Contáctanos" content="Comunícate con la Dirección de Investigación de la Universidad Central del Ecuador. Tu opinión y tus consultas son fundamentales para fortalecer la visibilidad y mejora continua de la producción científica institucional."/>
+	
+</svelte:head>
 <div class="contacto-page">
 	<div class="page-header">
 		<div class="header-content">

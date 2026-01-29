@@ -34,7 +34,7 @@
 </script>
 
 <svelte:head>
-	<title>Explorador de Proyectos | Uyana</title>
+	<title>Explorador de Proyectos</title>
 	<meta
 		name="description"
 		content="Explora la distribución geográfica de proyectos de investigación en nuestro mapa interactivo por facultad y obtén estadísticas detalladas."
