@@ -3,6 +3,7 @@
 	import { goto } from '$app/navigation';
 	import { browser } from '$app/environment';
 	import { consentStore } from '$lib/stores/consent.store';
+	import { dev } from '$app/environment';
 
 	let loading = false;
 	let error = '';
@@ -13,6 +14,13 @@
 	const HCAPTCHA_SITE_KEY = import.meta.env.PUBLIC_HCAPTCHA_SITE_KEY || '';
 
 	onMount(() => {
+		//BYPASS CAPTCHA EN LOCAL / DEV
+		if (dev) {
+			console.warn('[hCaptcha] BYPASS frontend activo (DEV)');
+			consentStore.setCaptchaVerified(true, 'DEV_BYPASS');
+			goto('/');
+			return;
+		}
 		// Verificar si ya pasó el CAPTCHA
 		const consent = consentStore;
 		if (consent && typeof consent.subscribe === 'function') {
@@ -151,7 +159,7 @@
 
 			<div class="captcha-wrapper">
 				{#if HCAPTCHA_SITE_KEY}
-					<div bind:this={hcaptchaContainer} class="hcaptcha-box"></div>
+					<div bind:this={hcaptchaContainer} class="hcaptcha-box" />
 				{:else}
 					<div class="error-box">
 						<svg
@@ -192,7 +200,7 @@
 
 				{#if loading}
 					<div class="loading-indicator">
-						<div class="spinner"></div>
+						<div class="spinner" />
 						<p>Verificando...</p>
 					</div>
 				{/if}
@@ -315,9 +323,7 @@
 		border-radius: 20px;
 		border: 1px solid rgba(255, 255, 255, 0.1);
 		padding: 3rem 2.5rem;
-		box-shadow:
-			0 20px 60px rgba(0, 0, 0, 0.5),
-			inset 0 1px 0 rgba(255, 255, 255, 0.05);
+		box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05);
 		animation: fadeInUp 0.8s ease-out 0.2s both;
 	}
 
