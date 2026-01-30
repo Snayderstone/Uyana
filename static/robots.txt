@@ -1,4 +1,4 @@
-# robots.txt - Plataforma UYANA
+# robots.txt - Plataforma SIGPI
 # Universidad Central del Ecuador
 # Última actualización: 30 de enero de 2026
 
@@ -154,7 +154,7 @@ Crawl-delay: 10
 # ==============================================================================
 # SITEMAP (Opcional - solo para contenido público autorizado)
 # ==============================================================================
-# Sitemap: https://uyana.uce.edu.ec/sitemap.xml
+# Sitemap: https://SIGPI.uce.edu.ec/sitemap.xml
 
 # ==============================================================================
 # NOTAS IMPORTANTES

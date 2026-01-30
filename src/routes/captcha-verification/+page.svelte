@@ -100,7 +100,7 @@
 </script>
 
 <svelte:head>
-	<title>Verificación de Seguridad - UYANA UCE</title>
+	<title>Verificación de Seguridad - SIGPI UCE</title>
 	<meta name="robots" content="noindex, nofollow" />
 </svelte:head>
 
@@ -123,7 +123,7 @@
 					<path d="M2 12l10 5 10-5" />
 				</svg>
 			</div>
-			<h1>UYANA</h1>
+			<h1>SIGPI</h1>
 			<p class="subtitle">Sistema de Gestión de Proyectos de Investigación</p>
 		</div>
 

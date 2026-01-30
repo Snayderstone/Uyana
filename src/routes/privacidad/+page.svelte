@@ -4,10 +4,10 @@
 </script>
 
 <svelte:head>
-	<title>Política de Privacidad - UYANA UCE</title>
+	<title>Política de Privacidad - SIGPI UCE</title>
 	<meta
 		name="description"
-		content="Política de privacidad y protección de datos personales de la plataforma UYANA - Universidad Central del Ecuador"
+		content="Política de privacidad y protección de datos personales de la plataforma SIGPI - Universidad Central del Ecuador"
 	/>
 	<meta name="robots" content="noindex, follow" />
 </svelte:head>
@@ -16,7 +16,7 @@
 	<div class="legal-container">
 		<header class="legal-header">
 			<h1>Política de Privacidad</h1>
-			<p class="subtitle">Plataforma UYANA - Universidad Central del Ecuador</p>
+			<p class="subtitle">Plataforma SIGPI - Universidad Central del Ecuador</p>
 			<div class="metadata">
 				<span><strong>Versión:</strong> {version}</span>
 				<span><strong>Última actualización:</strong> {lastUpdated}</span>
@@ -28,7 +28,7 @@
 				<h2>1. Introducción</h2>
 				<p>
 					La Universidad Central del Ecuador (en adelante, "UCE" o "la Universidad"), a través de su
-					Dirección de Investigación, es responsable de la plataforma UYANA y del tratamiento de los
+					Dirección de Investigación, es responsable de la plataforma SIGPI y del tratamiento de los
 					datos personales recopilados mediante la misma.
 				</p>
 				<p>
@@ -53,7 +53,7 @@
 			<section id="datos-recopilados">
 				<h2>3. Datos Personales Recopilados</h2>
 				<h3>3.1 Información de Acceso a la Plataforma</h3>
-				<p>Cuando accede a UYANA, recopilamos automáticamente:</p>
+				<p>Cuando accede a SIGPI, recopilamos automáticamente:</p>
 				<ul>
 					<li><strong>Dirección IP:</strong> Para fines de seguridad y auditoría</li>
 					<li><strong>Fecha y hora de acceso:</strong> Para registro de consentimientos</li>
@@ -82,7 +82,7 @@
 				</p>
 
 				<h3>3.4 Datos No Recopilados</h3>
-				<p>UYANA NO recopila:</p>
+				<p>SIGPI NO recopila:</p>
 				<ul>
 					<li>Datos de identificación personal detallados (cédulas, pasaportes)</li>
 					<li>Información financiera o bancaria</li>
@@ -229,7 +229,7 @@
 			<section id="cookies">
 				<h2>8. Cookies y Tecnologías Similares</h2>
 				<h3>8.1 Uso de Cookies</h3>
-				<p>UYANA utiliza cookies y almacenamiento local (localStorage) para:</p>
+				<p>SIGPI utiliza cookies y almacenamiento local (localStorage) para:</p>
 				<ul>
 					<li>
 						<strong>Cookies de sesión:</strong> Mantener su estado de autenticación (solo área administrativa)
@@ -258,7 +258,7 @@
 			<section id="menores">
 				<h2>9. Menores de Edad</h2>
 				<p>
-					UYANA no está dirigida a menores de 18 años. No recopilamos intencionalmente información
+					SIGPI no está dirigida a menores de 18 años. No recopilamos intencionalmente información
 					personal de menores. Si un padre o tutor descubre que su hijo ha proporcionado información
 					personal, debe contactarnos para su eliminación inmediata.
 				</p>

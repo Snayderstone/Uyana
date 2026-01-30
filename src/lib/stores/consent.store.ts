@@ -9,7 +9,7 @@ export interface ConsentState {
 }
 
 // Clave para localStorage
-const CONSENT_STORAGE_KEY = 'uyana_public_consent';
+const CONSENT_STORAGE_KEY = 'SIGPI_public_consent';
 
 // Estado inicial
 function getInitialState(): ConsentState {

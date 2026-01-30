@@ -57,7 +57,7 @@
 					<span class="checkbox-text">
 						He leído y acepto los
 						<a href="/terminos" target="_blank" rel="noopener noreferrer">Términos y Condiciones</a>
-						del Sistema de Gestión de Proyectos de Investigación UYANA.
+						del Sistema de Gestión de Proyectos de Investigación SIGPI.
 					</span>
 				</label>
 			</div>
@@ -80,7 +80,7 @@
 				<label class="checkbox-label">
 					<input type="checkbox" bind:checked={academicUseAccepted} />
 					<span class="checkbox-text">
-						Declaro que utilizaré la información de la plataforma UYANA
+						Declaro que utilizaré la información de la plataforma SIGPI
 						<strong
 							>exclusivamente con fines académicos, educativos y de investigación científica</strong
 						>, y que no haré uso comercial de los datos de propiedad de la Dirección de

@@ -6,10 +6,10 @@
 </script>
 
 <svelte:head>
-	<title>Términos y Condiciones - UYANA UCE</title>
+	<title>Términos y Condiciones - SIGPI UCE</title>
 	<meta
 		name="description"
-		content="Términos y condiciones de uso de la plataforma UYANA para la visualización de proyectos de investigación de la Universidad Central del Ecuador"
+		content="Términos y condiciones de uso de la plataforma SIGPI para la visualización de proyectos de investigación de la Universidad Central del Ecuador"
 	/>
 	<meta name="robots" content="noindex, follow" />
 </svelte:head>
@@ -18,7 +18,7 @@
 	<div class="legal-container">
 		<header class="legal-header">
 			<h1>Términos y Condiciones de Uso</h1>
-			<p class="subtitle">Plataforma UYANA - Universidad Central del Ecuador</p>
+			<p class="subtitle">Plataforma SIGPI - Universidad Central del Ecuador</p>
 			<div class="metadata">
 				<span><strong>Versión:</strong> {version}</span>
 				<span><strong>Última actualización:</strong> {lastUpdated}</span>
@@ -29,7 +29,7 @@
 			<section id="introduccion">
 				<h2>1. Introducción y Aceptación</h2>
 				<p>
-					Bienvenido a UYANA, la plataforma web de georreferenciación y visualización interactiva de
+					Bienvenido a SIGPI, la plataforma web de georreferenciación y visualización interactiva de
 					proyectos de investigación de la Universidad Central del Ecuador (en adelante, "UCE" o "la
 					Universidad").
 				</p>
@@ -45,7 +45,7 @@
 				<h2>2. Objeto y Alcance de la Plataforma</h2>
 				<h3>2.1 Propósito</h3>
 				<p>
-					UYANA tiene como propósito facilitar el análisis, fortalecer la toma de decisiones
+					SIGPI tiene como propósito facilitar el análisis, fortalecer la toma de decisiones
 					estratégicas y mejorar la transparencia institucional mediante la visualización de datos
 					de proyectos de investigación realizados en la UCE durante el período 2011-2025.
 				</p>
@@ -62,7 +62,7 @@
 
 				<h3>2.3 Naturaleza de los Datos</h3>
 				<p>
-					Los datos visualizados en UYANA son de propiedad exclusiva de la <strong
+					Los datos visualizados en SIGPI son de propiedad exclusiva de la <strong
 						>Dirección de Investigación de la Universidad Central del Ecuador</strong
 					> y están protegidos por las leyes de propiedad intelectual y protección de datos personales
 					vigentes en Ecuador.
@@ -73,7 +73,7 @@
 				<h2>3. Uso Académico y No Comercial</h2>
 				<h3>3.1 Finalidad Exclusivamente Académica</h3>
 				<p>
-					El acceso a los datos de UYANA está permitido <strong
+					El acceso a los datos de SIGPI está permitido <strong
 						>únicamente con fines académicos, educativos y de investigación científica</strong
 					>. Queda expresamente prohibido cualquier uso comercial, publicitario o con ánimo de
 					lucro.
@@ -112,10 +112,10 @@
 
 				<h3>4.2 Citación Apropiada</h3>
 				<p>
-					Si utiliza datos de UYANA en publicaciones académicas, debe citar de la siguiente manera:
+					Si utiliza datos de SIGPI en publicaciones académicas, debe citar de la siguiente manera:
 				</p>
 				<blockquote>
-					Universidad Central del Ecuador, Dirección de Investigación. (2026). UYANA: Plataforma de
+					Universidad Central del Ecuador, Dirección de Investigación. (2026). SIGPI: Plataforma de
 					Georreferenciación de Proyectos de Investigación. Quito, Ecuador. Disponible en: [URL de
 					la plataforma]
 				</blockquote>
@@ -125,7 +125,7 @@
 				<h2>5. Propiedad Intelectual</h2>
 				<h3>5.1 Derechos de la UCE</h3>
 				<p>
-					Todos los contenidos de la plataforma UYANA, incluyendo pero no limitado a textos,
+					Todos los contenidos de la plataforma SIGPI, incluyendo pero no limitado a textos,
 					gráficos, bases de datos, código fuente, diseño visual y estructura, son propiedad de la
 					Universidad Central del Ecuador o de sus respectivos titulares.
 				</p>
@@ -167,7 +167,7 @@
 			<section id="disponibilidad">
 				<h2>7. Disponibilidad del Servicio</h2>
 				<p>
-					La UCE se reserva el derecho de modificar, suspender o discontinuar la plataforma UYANA,
+					La UCE se reserva el derecho de modificar, suspender o discontinuar la plataforma SIGPI,
 					temporal o permanentemente, sin previo aviso. La Universidad no será responsable por
 					cualquier modificación, suspensión o discontinuación del servicio.
 				</p>
@@ -207,7 +207,7 @@
 				<p>
 					La UCE se reserva el derecho de modificar estos Términos y Condiciones en cualquier
 					momento. Las modificaciones entrarán en vigencia inmediatamente después de su publicación
-					en la plataforma. El uso continuado de UYANA después de la publicación de cambios
+					en la plataforma. El uso continuado de SIGPI después de la publicación de cambios
 					constituye su aceptación de dichas modificaciones.
 				</p>
 			</section>
