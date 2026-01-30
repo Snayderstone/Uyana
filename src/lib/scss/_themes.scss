@@ -80,14 +80,19 @@
 
 :root {
 	@include base-theme;
+	
+	// Optimizar cambio de tema instantáneo
+	color-scheme: light;
 
 	&[data-theme='dark'] {
 		@include dark-theme;
+		color-scheme: dark;
 	}
 
 	&[data-theme='auto'] {
 		@media (prefers-color-scheme: dark) {
 			@include dark-theme;
+			color-scheme: dark;
 		}
 	}
 }

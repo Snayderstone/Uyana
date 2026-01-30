@@ -65,10 +65,10 @@ export interface TopParticipanteProyectos {
 	acreditado: boolean;
 	carrera_nombre: string;
 	facultad_nombre: string;
-	total_proyectos: number;
-	cargo_principal: string;
-	proyectos_como_director: number;
-	proyectos_como_investigador: number;
+	proyectos_en_direccion: number;
+	monto_total_direccion: number;
+	monto_maximo_direccion: number;
+	monto_promedio_direccion: number;
 }
 
 /**

@@ -106,6 +106,44 @@
 		}
 	}
 
+	// Helper para formatear moneda
+	function formatCurrency(amount: number | string | null | undefined): string {
+		if (amount == null) {
+			return '$0';
+		}
+		const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+		if (isNaN(numAmount)) {
+			return '$0';
+		}
+		return new Intl.NumberFormat('es-EC', {
+			style: 'currency',
+			currency: 'USD',
+			minimumFractionDigits: 0,
+			maximumFractionDigits: 0
+		}).format(numAmount);
+	}
+
+	function formatCurrencyCompact(amount: number | string | null | undefined): string {
+		if (amount == null) {
+			return '$0';
+		}
+		const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+		if (isNaN(numAmount)) {
+			return '$0';
+		}
+
+		// Para números grandes, usar formato compacto
+		if (numAmount >= 1000000) {
+			const millions = numAmount / 1000000;
+			return '$' + (millions % 1 === 0 ? millions.toFixed(0) : millions.toFixed(1)) + 'M';
+		} else if (numAmount >= 1000) {
+			const thousands = numAmount / 1000;
+			return '$' + (thousands % 1 === 0 ? thousands.toFixed(0) : thousands.toFixed(1)) + 'K';
+		}
+
+		return '$' + numAmount.toFixed(0);
+	}
+
 	onMount(async () => {
 		// Load stats grid configuration from localStorage
 		if (browser) {
@@ -130,7 +168,16 @@
 			if (result.success) {
 				dashboardData = result.data;
 				lastUpdate = new Date().toLocaleString('es-ES');
-				if (!silent) console.log('📊 Dashboard data loaded:', dashboardData);
+				if (!silent) {
+					console.log('📊 Dashboard data loaded:', dashboardData);
+					console.log('👥 Top Participantes:', dashboardData?.topParticipantes);
+					if (dashboardData?.topParticipantes?.[0]) {
+						console.log(
+							'🔍 Primer participante completo:',
+							JSON.stringify(dashboardData.topParticipantes[0], null, 2)
+						);
+					}
+				}
 			} else {
 				error = result.message || 'Error al cargar datos del dashboard';
 
@@ -708,12 +755,20 @@
 										{/if}
 										<div class="podium-stats">
 											<div class="podium-stat">
-												<span class="stat-value">{second.total_proyectos}</span>
+												<span class="stat-value"
+													>{formatCurrencyCompact(second.monto_total_direccion ?? 0)}</span
+												>
+												<span class="stat-label">Presupuesto Total</span>
+											</div>
+											<div class="podium-stat">
+												<span class="stat-value">{second.proyectos_en_direccion ?? 0}</span>
 												<span class="stat-label">Proyectos</span>
 											</div>
 											<div class="podium-stat">
-												<span class="stat-value">{second.proyectos_como_director}</span>
-												<span class="stat-label">Director</span>
+												<span class="stat-value"
+													>{formatCurrencyCompact(second.monto_maximo_direccion ?? 0)}</span
+												>
+												<span class="stat-label">Proyecto Mayor</span>
 											</div>
 										</div>
 									</div>
@@ -782,13 +837,20 @@
 										{/if}
 										<div class="podium-stats">
 											<div class="podium-stat">
-												<span class="stat-value">{first.total_proyectos}</span>
-												<span class="stat-label">Proyectos</span>
+												<span class="stat-value">{formatCurrency(first.monto_total_direccion)}</span
+												>
+												<span class="stat-label">Presupuesto Total</span>
 											</div>
 											<div class="podium-stat">
-												<span class="stat-value">{first.proyectos_como_director}</span>
-												<span class="stat-label">Director</span>
+												<span class="stat-value">{first.proyectos_en_direccion ?? 0}</span>
+												<span class="stat-label">Proyectos</span>
 											</div>
+										</div>
+										<div class="podium-stat">
+											<span class="stat-value"
+												>{formatCurrencyCompact(first.monto_maximo_direccion ?? 0)}</span
+											>
+											<span class="stat-label">Proyecto Mayor</span>
 										</div>
 									</div>
 								{/each}
@@ -855,13 +917,20 @@
 										{/if}
 										<div class="podium-stats">
 											<div class="podium-stat">
-												<span class="stat-value">{third.total_proyectos}</span>
-												<span class="stat-label">Proyectos</span>
+												<span class="stat-value">{formatCurrency(third.monto_total_direccion)}</span
+												>
+												<span class="stat-label">Presupuesto Total</span>
 											</div>
 											<div class="podium-stat">
-												<span class="stat-value">{third.proyectos_como_director}</span>
-												<span class="stat-label">Director</span>
+												<span class="stat-value">{third.proyectos_en_direccion ?? 0}</span>
+												<span class="stat-label">Proyectos</span>
 											</div>
+										</div>
+										<div class="podium-stat">
+											<span class="stat-value"
+												>{formatCurrencyCompact(third.monto_maximo_direccion ?? 0)}</span
+											>
+											<span class="stat-label">Proyecto Mayor</span>
 										</div>
 									</div>
 								{/each}
@@ -884,7 +953,6 @@
 										<div class="participant-details">
 											<h5 class="participant-name">{participante.participante_nombre}</h5>
 											<p class="participant-subtitle">{participante.facultad_nombre}</p>
-											<span class="participant-cargo">{participante.cargo_principal}</span>
 											{#if participante.redes_sociales}
 												{@const redes = parseSocialNetworks(participante.redes_sociales)}
 												{#if redes.length > 0}
@@ -923,16 +991,20 @@
 										</div>
 										<div class="participant-metrics">
 											<div class="metric-item">
-												<span class="metric-value">{participante.total_proyectos}</span>
+												<span class="metric-value"
+													>{formatCurrency(participante.monto_total_direccion)}</span
+												>
+												<span class="metric-label">Presupuesto Total</span>
+											</div>
+											<div class="metric-item">
+												<span class="metric-value">{participante.proyectos_en_direccion ?? 0}</span>
 												<span class="metric-label">Proyectos</span>
 											</div>
 											<div class="metric-item">
-												<span class="metric-value">{participante.proyectos_como_director}</span>
-												<span class="metric-label">Director</span>
-											</div>
-											<div class="metric-item">
-												<span class="metric-value">{participante.proyectos_como_investigador}</span>
-												<span class="metric-label">Investig.</span>
+												<span class="metric-value"
+													>{formatCurrency(participante.monto_promedio_direccion)}</span
+												>
+												<span class="metric-label">Promedio</span>
 											</div>
 										</div>
 									</div>
@@ -2250,14 +2322,14 @@
 		border: 1px solid var(--dashboard-border);
 
 		.stat-value {
-			font-size: 1.75rem;
+			font-size: 1.1rem;
 			font-weight: 700;
 			color: var(--dashboard-primary);
 			line-height: 1;
 		}
 
 		.stat-label {
-			font-size: 0.75rem;
+			font-size: 0.7rem;
 			color: var(--dashboard-text-secondary);
 			margin-top: 0.25rem;
 		}

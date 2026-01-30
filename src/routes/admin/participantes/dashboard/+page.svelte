@@ -18,12 +18,16 @@
 	$: ({ loading, error, lastUpdate, dashboardData, chartConfigs, visibleCharts } =
 		$participantsDashboardStore);
 
-	$: availableChartsForExport = chartConfigs.map((config) => ({
-		id: config.nombre_grafico,
-		name: config.nombre_grafico,
-		title: config.titulo_display,
-		category: 'participantes'
-	}));
+	$: availableChartsForExport = chartConfigs.map((config) => {
+		const chartConfig = getChartConfig(config.nombre_grafico);
+		return {
+			id: config.nombre_grafico,
+			name: config.nombre_grafico,
+			title: config.titulo_display,
+			category: 'participantes',
+			config: chartConfig // Incluir la configuración con los datos
+		};
+	});
 
 	function requestTogglePublic(chartName: string): void {
 		chartToToggle = chartName;

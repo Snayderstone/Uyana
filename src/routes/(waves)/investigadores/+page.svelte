@@ -1,55 +1,23 @@
 <script lang="ts">
+	import ResearcherDirectory from '$lib/components/organisms/ResearcherDirectory.svelte';
 	import ParticipantsDashboard from '$lib/components/organisms/ParticipantsDashboard.svelte';
-	import ParticipantsLeaderboard from '$lib/components/admin/participants/ParticipantsLeaderboard.svelte';
-	import { onMount } from 'svelte';
+	import type { Investigador } from '$lib/models/investigator.model';
 	import { fade } from 'svelte/transition';
 
-	let activeTab: 'leaderboard' | 'dashboard' = 'leaderboard';
-	let loading = true;
-	let error: string | null = null;
-	let topParticipantes: any[] = [];
+	export let data: { investigadores: Investigador[] };
 
-	// Cargar datos del leaderboard
-	async function cargarLeaderboard() {
-		try {
-			loading = true;
-			error = null;
+	let activeTab: 'directorio' | 'dashboard' = 'directorio';
 
-			// Añadir timestamp para evitar cache de Vercel CDN
-			const cacheBuster = `t=${Date.now()}`;
-			const response = await fetch(`/api/public/participantes/charts?${cacheBuster}`, {
-				cache: 'no-store',
-				headers: {
-					'Cache-Control': 'no-cache'
-				}
-			});
-			const result = await response.json();
-
-			if (result.success && result.data.topParticipantes) {
-				topParticipantes = result.data.topParticipantes;
-			}
-		} catch (err) {
-			error = 'Error al cargar datos';
-			console.error(err);
-		} finally {
-			loading = false;
-		}
-	}
-
-	onMount(() => {
-		cargarLeaderboard();
-	});
-
-	function setTab(tab: 'leaderboard' | 'dashboard') {
+	function setTab(tab: 'directorio' | 'dashboard') {
 		activeTab = tab;
 	}
 </script>
 
 <svelte:head>
-	<title>Directorio de Investigadores</title>
+	<title>Directorio de Investigadores - Universidad Central del Ecuador</title>
 	<meta
 		name="description"
-		content="Directorio completo de investigadores de la Universidad Central del Ecuador con sus líneas de investigación, facultad y contacto."
+		content="Directorio completo de investigadores acreditados de la Universidad Central del Ecuador con sus líneas de investigación, facultad y carrera."
 	/>
 </svelte:head>
 
@@ -59,15 +27,15 @@
 			<h1>Investigadores</h1>
 			<p class="description">
 				Explora la comunidad académica e investigativa de la Universidad Central del Ecuador.
-				Descubre los investigadores más activos y consulta estadísticas detalladas de participación.
+				Descubre investigadores acreditados y consulta estadísticas detalladas de participación.
 			</p>
 		</div>
 
 		<div class="tab-selector">
 			<button
 				class="tab-button"
-				class:active={activeTab === 'leaderboard'}
-				on:click={() => setTab('leaderboard')}
+				class:active={activeTab === 'directorio'}
+				on:click={() => setTab('directorio')}
 			>
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
@@ -80,14 +48,12 @@
 					stroke-linecap="round"
 					stroke-linejoin="round"
 				>
-					<path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" />
-					<path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" />
-					<path d="M4 22h16" />
-					<path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22" />
-					<path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22" />
-					<path d="M18 2H6v7a6 6 0 0 0 12 0V2Z" />
+					<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+					<circle cx="9" cy="7" r="4" />
+					<path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+					<path d="M16 3.13a4 4 0 0 1 0 7.75" />
 				</svg>
-				Leaderboard
+				Directorio
 			</button>
 			<button
 				class="tab-button"
@@ -114,35 +80,9 @@
 		</div>
 	</div>
 
-	{#if activeTab === 'leaderboard'}
+	{#if activeTab === 'directorio'}
 		<div class="content-container" in:fade={{ duration: 300 }}>
-			{#if loading}
-				<div class="loading-container">
-					<div class="loader" />
-					<p>Cargando leaderboard de investigadores...</p>
-				</div>
-			{:else if error}
-				<div class="error-message">
-					<h3>⚠️ Error al cargar datos</h3>
-					<p>{error}</p>
-					<button on:click={cargarLeaderboard}>Intentar de nuevo</button>
-				</div>
-			{:else if topParticipantes.length === 0}
-				<div class="empty-message">
-					<h3>Sin datos disponibles</h3>
-					<p>No hay datos del ranking de investigadores en este momento</p>
-				</div>
-			{:else}
-				<div class="leaderboard-card">
-					<div class="card-header">
-						<h2>Ranking de Investigadores Más Activos</h2>
-						<p class="card-description">
-							Investigadores destacados por su participación en proyectos de investigación
-						</p>
-					</div>
-					<ParticipantsLeaderboard participants={topParticipantes} />
-				</div>
-			{/if}
+			<ResearcherDirectory investigadores={data.investigadores} />
 		</div>
 	{:else if activeTab === 'dashboard'}
 		<div class="content-container" in:fade={{ duration: 300 }}>
@@ -261,114 +201,9 @@
 		min-height: 400px;
 	}
 
-	.leaderboard-card {
-		background: var(--color--card-background, rgba(255, 255, 255, 0.05));
-		border-radius: 12px;
-		padding: 2rem;
-		border: 2px solid color-mix(in srgb, var(--color--primary) 30%, transparent);
-		backdrop-filter: blur(10px);
-		background: linear-gradient(
-			135deg,
-			color-mix(in srgb, var(--color--primary) 5%, transparent),
-			color-mix(in srgb, var(--color--secondary) 5%, transparent)
-		);
-	}
-
-	.card-header {
-		text-align: center;
-		margin-bottom: 2rem;
-
-		h2 {
-			font-size: 2rem;
-			font-weight: 700;
-			color: var(--color--text);
-			margin-bottom: 0.5rem;
-		}
-
-		.card-description {
-			font-size: 1.125rem;
-			color: var(--color--text-shade);
-		}
-	}
-
-	.loading-container,
-	.error-message,
-	.empty-message {
-		background: var(--color--card-background, rgba(255, 255, 255, 0.05));
-		border-radius: 12px;
-		padding: 3rem;
-		text-align: center;
-		border: 1px solid var(--color--border, rgba(255, 255, 255, 0.1));
-
-		p {
-			color: var(--color--text-shade);
-			font-size: 1.125rem;
-			margin-bottom: 1rem;
-		}
-	}
-
-	.loading-container {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		gap: 1rem;
-	}
-
-	.loader {
-		border: 4px solid var(--color--border, rgba(0, 0, 0, 0.1));
-		border-radius: 50%;
-		border-top: 4px solid var(--color--primary);
-		width: 50px;
-		height: 50px;
-		animation: spin 1s linear infinite;
-	}
-
-	@keyframes spin {
-		0% {
-			transform: rotate(0deg);
-		}
-		100% {
-			transform: rotate(360deg);
-		}
-	}
-
-	.error-message {
-		border-color: var(--color--callout-accent--error, rgba(239, 68, 68, 0.3));
-		background: color-mix(in srgb, var(--color--callout-accent--error, #ef4444) 10%, transparent);
-
-		h3 {
-			color: #ef4444;
-		}
-
-		button {
-			padding: 0.75rem 1.5rem;
-			background: var(--color--primary);
-			color: var(--color--button-text, white);
-			border: none;
-			border-radius: 8px;
-			font-weight: 600;
-			cursor: pointer;
-			transition: all 0.2s;
-			font-size: 1rem;
-
-			&:hover {
-				filter: brightness(1.1);
-				transform: translateY(-2px);
-			}
-		}
-	}
-
 	@include for-phone-only {
 		.investigadores-page {
 			padding: 0 10px 20px;
-		}
-
-		.leaderboard-card {
-			padding: 1rem;
-		}
-
-		.card-header h2 {
-			font-size: 1.5rem;
 		}
 	}
 </style>

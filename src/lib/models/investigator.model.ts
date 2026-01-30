@@ -12,6 +12,7 @@ export type Investigador = {
   nombre: string;
   email: string;
   linea_investigacion: string;
+  carrera: string;
   facultad: string;
   redes: string;
   // Propiedades calculadas para la interfaz

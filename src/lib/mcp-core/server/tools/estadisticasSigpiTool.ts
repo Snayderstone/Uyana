@@ -231,14 +231,14 @@ function formatearTopParticipantes(participantes: any[], limite: number): string
 	let resultado = `🏆 **Top ${Math.min(
 		limite,
 		participantes.length
-	)} Investigadores por Número de Proyectos**\n\n`;
+	)} Investigadores por Presupuesto como Director**\n\n`;
 
 	participantes.forEach((p, index) => {
 		resultado += `${index + 1}. **${p.participante_nombre}**\n`;
-		resultado += `   - Total proyectos: ${p.total_proyectos}\n`;
-		resultado += `   - Cargo principal: ${p.cargo_principal}\n`;
-		resultado += `   - Como director: ${p.proyectos_como_director}\n`;
-		resultado += `   - Como investigador: ${p.proyectos_como_investigador}\n`;
+		resultado += `   - Presupuesto total como director: $${p.monto_total_direccion.toLocaleString('es-EC')}\n`;
+		resultado += `   - Proyectos como director: ${p.proyectos_en_direccion}\n`;
+		resultado += `   - Presupuesto promedio: $${p.monto_promedio_direccion.toLocaleString('es-EC')}\n`;
+		resultado += `   - Proyecto mayor: $${p.monto_maximo_direccion.toLocaleString('es-EC')}\n`;
 		resultado += `   - Facultad: ${p.facultad_nombre}\n`;
 		resultado += `   - Carrera: ${p.carrera_nombre}\n`;
 		if (p.acreditado) {

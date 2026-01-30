@@ -22,15 +22,19 @@ export const ParticipantsDashboardRepository = {
 				return null;
 			}
 
-			// Ordenar topParticipantes por total_proyectos y proyectos_como_director
+			// Ordenar topParticipantes por monto_total_direccion y proyectos_en_direccion
 			if (data && data.topParticipantes) {
 				data.topParticipantes.sort((a: any, b: any) => {
-					// Primero por total_proyectos (descendente)
-					if (b.total_proyectos !== a.total_proyectos) {
-						return b.total_proyectos - a.total_proyectos;
+					// Primero por monto_total_direccion (descendente)
+					if (b.monto_total_direccion !== a.monto_total_direccion) {
+						return b.monto_total_direccion - a.monto_total_direccion;
 					}
-					// Desempate por proyectos_como_director (descendente)
-					return b.proyectos_como_director - a.proyectos_como_director;
+					// Desempate por proyectos_en_direccion (descendente)
+					if (b.proyectos_en_direccion !== a.proyectos_en_direccion) {
+						return b.proyectos_en_direccion - a.proyectos_en_direccion;
+					}
+					// Segundo desempate por monto_maximo_direccion (descendente)
+					return b.monto_maximo_direccion - a.monto_maximo_direccion;
 				});
 			}
 
@@ -168,15 +172,16 @@ export const ParticipantsDashboardRepository = {
 	},
 
 	/**
-	 * Obtener top participantes con más proyectos desde la vista materializada
+	 * Obtener top participantes con más presupuesto como director desde la vista materializada
 	 */
 	async getTopParticipantesProyectos(limit: number = 20) {
 		try {
 			const { data, error } = await supabase
 				.from('top_participantes_proyectos_mv')
 				.select('*')
-				.order('total_proyectos', { ascending: false })
-				.order('proyectos_como_director', { ascending: false })
+				.order('monto_total_direccion', { ascending: false })
+				.order('proyectos_en_direccion', { ascending: false })
+				.order('monto_maximo_direccion', { ascending: false })
 				.limit(limit);
 
 			if (error) {

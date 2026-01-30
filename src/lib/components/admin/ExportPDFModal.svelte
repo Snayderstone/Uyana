@@ -10,6 +10,7 @@
 		name: string;
 		title: string;
 		category: string;
+		config?: any; // Configuración del gráfico con datos
 	}> = [];
 
 	const dispatch = createEventDispatcher();
@@ -42,6 +43,200 @@
 		isOpen = false;
 		dispatch('close');
 	}
+
+	/**
+	 * Genera una tabla HTML con los datos del gráfico
+	 */
+	function generateDataTable(chartId: string): HTMLElement | null {
+		const chartInfo = availableCharts.find((c) => c.id === chartId);
+		if (!chartInfo || !chartInfo.config || !chartInfo.config.data) {
+			return null;
+		}
+
+		const config = chartInfo.config;
+		const { labels, datasets } = config.data;
+
+		// Si no hay datos, no crear tabla
+		if (!labels || !datasets || datasets.length === 0) {
+			return null;
+		}
+
+		// Detectar tema actual para colores apropiados
+		const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+		const bgColor = isDark ? '#1a1f26' : '#ffffff';
+		const textColor = isDark ? '#ffffff' : '#1a1a1a';
+		const borderColor = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+		const headerBg = isDark ? 'rgba(110, 41, 231, 0.2)' : 'rgba(110, 41, 231, 0.1)';
+		const primaryColor = '#6e29e7';
+
+		// Crear contenedor de tabla
+		const tableContainer = document.createElement('div');
+		tableContainer.className = 'export-data-table';
+		tableContainer.style.cssText = `
+			padding: 1.5rem;
+			background: ${bgColor};
+			border-radius: 8px;
+			margin-top: 1rem;
+			border: 1px solid ${borderColor};
+		`;
+
+		// Crear título de la tabla
+		const tableTitle = document.createElement('h4');
+		tableTitle.textContent = 'Datos Detallados';
+		tableTitle.style.cssText = `
+			margin: 0 0 1rem 0;
+			font-size: 0.95rem;
+			font-weight: 600;
+			color: ${textColor};
+			font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+		`;
+		tableContainer.appendChild(tableTitle);
+
+		// Crear tabla
+		const table = document.createElement('table');
+		table.style.cssText = `
+			width: 100%;
+			border-collapse: collapse;
+			font-size: 0.875rem;
+			font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+		`;
+
+		// Crear encabezado
+		const thead = document.createElement('thead');
+		const headerRow = document.createElement('tr');
+
+		// Primera columna (etiqueta/categoría)
+		const th1 = document.createElement('th');
+		th1.textContent = 'Categoría';
+		th1.style.cssText = `
+			text-align: left;
+			padding: 0.75rem;
+			background: ${headerBg};
+			color: ${textColor};
+			font-weight: 600;
+			border: 1px solid ${borderColor};
+		`;
+		headerRow.appendChild(th1);
+
+		// Columnas para cada dataset
+		datasets.forEach((dataset: any, index: number) => {
+			const th = document.createElement('th');
+			th.textContent = dataset.label || `Valor ${index + 1}`;
+			th.style.cssText = `
+				text-align: right;
+				padding: 0.75rem;
+				background: ${headerBg};
+				color: ${textColor};
+				font-weight: 600;
+				border: 1px solid ${borderColor};
+			`;
+			headerRow.appendChild(th);
+		});
+
+		// Columna de porcentaje (si aplica)
+		if (config.type === 'pie' || config.type === 'doughnut') {
+			const thPercent = document.createElement('th');
+			thPercent.textContent = 'Porcentaje';
+			thPercent.style.cssText = `
+				text-align: right;
+				padding: 0.75rem;
+				background: ${headerBg};
+				color: ${textColor};
+				font-weight: 600;
+				border: 1px solid ${borderColor};
+			`;
+			headerRow.appendChild(thPercent);
+		}
+
+		thead.appendChild(headerRow);
+		table.appendChild(thead);
+
+		// Crear cuerpo de la tabla
+		const tbody = document.createElement('tbody');
+
+		// Calcular total para porcentajes (solo para gráficos circulares)
+		let total = 0;
+		if (config.type === 'pie' || config.type === 'doughnut') {
+			datasets.forEach((dataset: any) => {
+				if (dataset.data) {
+					total += dataset.data.reduce((sum: number, val: number) => sum + (val || 0), 0);
+				}
+			});
+		}
+
+		// Preparar datos para ordenamiento
+		const rowsData: Array<{ label: string; values: number[]; total: number }> = [];
+		labels.forEach((label: string, labelIndex: number) => {
+			const values: number[] = [];
+			let rowTotal = 0;
+			datasets.forEach((dataset: any) => {
+				const value = dataset.data[labelIndex] || 0;
+				values.push(value);
+				rowTotal += value;
+			});
+			rowsData.push({ label, values, total: rowTotal });
+		});
+
+		// Ordenar por total descendente (mayor a menor)
+		rowsData.sort((a, b) => b.total - a.total);
+
+		// Generar filas ordenadas
+		rowsData.forEach(({ label, values, total: rowTotal }) => {
+			const row = document.createElement('tr');
+
+			// Celda de etiqueta
+			const tdLabel = document.createElement('td');
+			tdLabel.textContent = label;
+			tdLabel.style.cssText = `
+				padding: 0.75rem;
+				border: 1px solid ${borderColor};
+				color: ${textColor};
+				font-weight: 500;
+			`;
+			row.appendChild(tdLabel);
+
+			// Celdas de datos
+			values.forEach((value) => {
+				const tdValue = document.createElement('td');
+				tdValue.textContent = value.toLocaleString('es-ES');
+				tdValue.style.cssText = `
+					padding: 0.75rem;
+					text-align: right;
+					border: 1px solid ${borderColor};
+					color: ${textColor};
+					font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+				`;
+				row.appendChild(tdValue);
+			});
+
+			// Celda de porcentaje (si aplica)
+			if (config.type === 'pie' || config.type === 'doughnut') {
+				const percentage = total > 0 ? ((rowTotal / total) * 100).toFixed(1) : '0.0';
+				const tdPercent = document.createElement('td');
+				tdPercent.textContent = `${percentage}%`;
+				tdPercent.style.cssText = `
+					padding: 0.75rem;
+					text-align: right;
+					border: 1px solid ${borderColor};
+					color: ${primaryColor};
+					font-weight: 600;
+					font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+				`;
+				row.appendChild(tdPercent);
+			}
+
+			tbody.appendChild(row);
+		});
+
+		table.appendChild(tbody);
+		tableContainer.appendChild(table);
+
+		return tableContainer;
+	}
+
+	/**
+	 * Captura el gráfico junto con su tabla de datos
+	 */
 
 	// Función para agregar encabezado con logo en cada página
 	function addHeader(pdf: jsPDF, pageNumber: number) {
@@ -105,6 +300,64 @@
 		pdf.text(dateText, pageWidth - margin - dateWidth, pageHeight - 8);
 	}
 
+	/**
+	 * Espera inteligente hasta que un canvas esté completamente renderizado
+	 */
+	async function waitForCanvasReady(
+		canvas: HTMLCanvasElement,
+		maxWaitTime = 10000
+	): Promise<boolean> {
+		const startTime = Date.now();
+
+		while (Date.now() - startTime < maxWaitTime) {
+			// Verificar que el canvas tenga contenido dibujado
+			const ctx = canvas.getContext('2d');
+			if (ctx) {
+				const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+				const hasContent = imageData.data.some((value, index) => {
+					// Verificar que hay píxeles no transparentes
+					return index % 4 === 3 && value > 0;
+				});
+
+				if (hasContent) {
+					// Esperar un poco más para asegurar que la animación termine
+					await new Promise((resolve) => setTimeout(resolve, 300));
+					return true;
+				}
+			}
+
+			// Esperar antes de verificar nuevamente
+			await new Promise((resolve) => setTimeout(resolve, 100));
+		}
+
+		console.warn('Canvas did not render within timeout');
+		return false;
+	}
+
+	/**
+	 * Espera inteligente hasta que un elemento esté en el DOM
+	 */
+	async function waitForElement(
+		container: HTMLElement,
+		selector: string,
+		maxWaitTime = 10000
+	): Promise<HTMLElement | null> {
+		const startTime = Date.now();
+
+		while (Date.now() - startTime < maxWaitTime) {
+			const element = container.querySelector(selector) as HTMLElement;
+			if (element) {
+				return element;
+			}
+			await new Promise((resolve) => setTimeout(resolve, 100));
+		}
+
+		return null;
+	}
+
+	/**
+	 * Captura el gráfico junto con su tabla de datos
+	 */
 	async function captureChartImage(chartId: string): Promise<string | null> {
 		// Buscar el contenedor del gráfico
 		const chartContainer = document.getElementById(`chart-container-${chartId}`);
@@ -154,65 +407,82 @@
 		const wasCollapsed = chartContainer.classList.contains('collapsed');
 		if (wasCollapsed) {
 			chartContainer.classList.remove('collapsed');
-			await new Promise((resolve) => setTimeout(resolve, 800));
+			// Esperar un momento para que se expanda
+			await new Promise((resolve) => setTimeout(resolve, 200));
 		}
 
 		// Buscar el chart-body primero
 		const chartBody = chartContainer.querySelector('.chart-body') as HTMLElement;
-		// Buscar el canvas dentro del contenedor
-		let chartCanvas = chartContainer.querySelector('canvas') as HTMLCanvasElement;
 
-		// Si no hay canvas, esperar un poco más por si se está renderizando
-		if (!chartCanvas && chartBody) {
-			await new Promise((resolve) => setTimeout(resolve, 1000));
-			chartCanvas = chartContainer.querySelector('canvas') as HTMLCanvasElement;
+		// Esperar inteligentemente a que el canvas aparezca
+		let chartCanvas = (await waitForElement(chartContainer, 'canvas', 10000)) as HTMLCanvasElement;
+
+		// Si hay canvas, esperar a que esté completamente renderizado
+		if (chartCanvas) {
+			const isReady = await waitForCanvasReady(chartCanvas, 10000);
+			if (!isReady) {
+				console.warn(`Canvas for ${chartId} did not render properly`);
+			}
 		}
 
-		// Si aún no hay canvas, capturar el HTML directamente
+		// Generar la tabla de datos
+		const dataTable = generateDataTable(chartId);
+
+		// Si no hay canvas, capturar el HTML directamente
 		// Esto es común en gráficos de participantes (podio, barras HTML, etc.)
 		if (!chartCanvas) {
 			try {
-				// Determinar qué elemento capturar
-				let targetElement: HTMLElement;
+				const elementToCapture = chartBody || chartContainer;
 
-				// Para gráficos específicos de participantes
-				if (chartId === 'top-researchers') {
-					// Capturar el podio y la lista de leaderboard
-					targetElement =
-						(chartContainer.querySelector('.podium-container') as HTMLElement) || chartContainer;
+				// Si hay tabla, crear contenedor temporal
+				if (dataTable) {
+					const exportContainer = document.createElement('div');
+					exportContainer.style.cssText = `
+						background: ${bgColor};
+						padding: 1.5rem;
+						border-radius: 8px;
+						position: absolute;
+						left: -9999px;
+						top: 0;
+					`;
 
-					// Si hay leaderboard-list también, capturar todo el chart-card
-					const leaderboardList = chartContainer.querySelector('.leaderboard-list');
-					if (leaderboardList) {
-						targetElement = chartContainer;
-					}
-				} else if (chartBody) {
-					// Para otros gráficos, capturar el chart-body
-					targetElement = chartBody;
+					// Clonar elemento para no modificar el original
+					const clonedElement = elementToCapture.cloneNode(true) as HTMLElement;
+					exportContainer.appendChild(clonedElement);
+					exportContainer.appendChild(dataTable);
+
+					document.body.appendChild(exportContainer);
+					// Esperar un momento para renderizado del DOM
+					await new Promise((resolve) => setTimeout(resolve, 300));
+
+					const canvas = await html2canvas(exportContainer, {
+						scale: 2,
+						backgroundColor: bgColor,
+						logging: false,
+						useCORS: true,
+						allowTaint: true
+					});
+
+					const imgData = canvas.toDataURL('image/png', 1.0);
+					document.body.removeChild(exportContainer);
+					if (wasCollapsed) chartContainer.classList.add('collapsed');
+					return imgData;
 				} else {
-					// Como último recurso, capturar todo el contenedor
-					targetElement = chartContainer;
+					// Sin tabla, capturar directamente
+					// El elemento ya está renderizado, pequeña espera
+					await new Promise((resolve) => setTimeout(resolve, 200));
+					const canvas = await html2canvas(elementToCapture, {
+						scale: 2,
+						backgroundColor: bgColor,
+						logging: false,
+						useCORS: true,
+						allowTaint: true
+					});
+
+					const imgData = canvas.toDataURL('image/png', 1.0);
+					if (wasCollapsed) chartContainer.classList.add('collapsed');
+					return imgData;
 				}
-
-				// Esperar renderizado completo
-				await new Promise((resolve) => setTimeout(resolve, 500));
-
-				const canvas = await html2canvas(targetElement, {
-					scale: 2,
-					backgroundColor: bgColor,
-					logging: false,
-					useCORS: true,
-					allowTaint: true,
-					imageTimeout: 0,
-					removeContainer: false
-				});
-
-				const imgData = canvas.toDataURL('image/png', 1.0);
-
-				// Restaurar estado colapsado
-				if (wasCollapsed) chartContainer.classList.add('collapsed');
-
-				return imgData;
 			} catch (error) {
 				console.error(`Error capturing HTML chart ${chartId}:`, error);
 				if (wasCollapsed) chartContainer.classList.add('collapsed');
@@ -220,28 +490,71 @@
 			}
 		}
 
-		// Si hay canvas, capturarlo como antes
+		// Si hay canvas, capturarlo con la tabla
 		try {
-			// Esperar renderizado completo
-			await new Promise((resolve) => setTimeout(resolve, 800));
-
-			// Capturar el chart-body completo para mejor calidad
+			// El canvas ya está verificado y listo, no necesitamos esperar más
 			const targetElement = chartBody || chartCanvas;
 
-			const canvas = await html2canvas(targetElement, {
-				scale: 2,
-				backgroundColor: bgColor,
-				logging: false,
-				useCORS: true,
-				allowTaint: true
-			});
+			// Si hay tabla, crear contenedor temporal
+			if (dataTable) {
+				const exportContainer = document.createElement('div');
+				exportContainer.style.cssText = `
+					background: ${bgColor};
+					padding: 1.5rem;
+					border-radius: 8px;
+					position: absolute;
+					left: -9999px;
+					top: 0;
+				`;
 
-			const imgData = canvas.toDataURL('image/png', 1.0);
+				// Capturar primero el canvas original
+				const chartImgData = await html2canvas(targetElement, {
+					scale: 2,
+					backgroundColor: bgColor,
+					logging: false,
+					useCORS: true,
+					allowTaint: true
+				});
 
-			// Restaurar estado colapsado
-			if (wasCollapsed) chartContainer.classList.add('collapsed');
+				// Crear imagen del canvas
+				const img = document.createElement('img');
+				img.src = chartImgData.toDataURL('image/png', 1.0);
+				img.style.width = '100%';
+				img.style.height = 'auto';
 
-			return imgData;
+				exportContainer.appendChild(img);
+				exportContainer.appendChild(dataTable);
+
+				document.body.appendChild(exportContainer);
+				// Esperar renderizado del DOM
+				await new Promise((resolve) => setTimeout(resolve, 300));
+
+				const canvas = await html2canvas(exportContainer, {
+					scale: 2,
+					backgroundColor: bgColor,
+					logging: false,
+					useCORS: true,
+					allowTaint: true
+				});
+
+				const imgData = canvas.toDataURL('image/png', 1.0);
+				document.body.removeChild(exportContainer);
+				if (wasCollapsed) chartContainer.classList.add('collapsed');
+				return imgData;
+			} else {
+				// Sin tabla, capturar directamente
+				const canvas = await html2canvas(targetElement, {
+					scale: 2,
+					backgroundColor: bgColor,
+					logging: false,
+					useCORS: true,
+					allowTaint: true
+				});
+
+				const imgData = canvas.toDataURL('image/png', 1.0);
+				if (wasCollapsed) chartContainer.classList.add('collapsed');
+				return imgData;
+			}
 		} catch (error) {
 			console.error(`Error capturing canvas chart ${chartId}:`, error);
 			if (wasCollapsed) chartContainer.classList.add('collapsed');
@@ -376,13 +689,16 @@
 	}
 
 	// Group charts by category
-	$: groupedCharts = availableCharts.reduce((acc, chart) => {
-		if (!acc[chart.category]) {
-			acc[chart.category] = [];
-		}
-		acc[chart.category].push(chart);
-		return acc;
-	}, {} as Record<string, typeof availableCharts>);
+	$: groupedCharts = availableCharts.reduce(
+		(acc, chart) => {
+			if (!acc[chart.category]) {
+				acc[chart.category] = [];
+			}
+			acc[chart.category].push(chart);
+			return acc;
+		},
+		{} as Record<string, typeof availableCharts>
+	);
 
 	const categoryNames: Record<string, string> = {
 		indices: 'Índices Generales',

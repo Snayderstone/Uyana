@@ -13,4 +13,5 @@ export interface Participante {
 	url_foto?: string;
 	acreditado?: boolean;
 	redes_sociales?: string;
+	linea_investigacion?: string;
 }

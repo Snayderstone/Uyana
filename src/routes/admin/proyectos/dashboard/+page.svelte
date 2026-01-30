@@ -49,11 +49,15 @@
 			exportCategory = 'participantes';
 		}
 
+		// Obtener la configuración completa del gráfico con sus datos
+		const chartConfig = getChartConfig(config.nombre_grafico);
+
 		return {
 			id: config.nombre_grafico,
 			name: config.nombre_grafico,
 			title: config.titulo_display,
-			category: exportCategory
+			category: exportCategory,
+			config: chartConfig // Incluir la configuración con los datos
 		};
 	});
 

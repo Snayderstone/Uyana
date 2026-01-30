@@ -48,10 +48,10 @@ export interface TopParticipante {
 	acreditado: boolean;
 	carrera_nombre: string;
 	facultad_nombre: string;
-	total_proyectos: number;
-	cargo_principal: string;
-	proyectos_como_director: number;
-	proyectos_como_investigador: number;
+	proyectos_en_direccion: number;
+	monto_total_direccion: number;
+	monto_maximo_direccion: number;
+	monto_promedio_direccion: number;
 }
 
 /**
@@ -227,14 +227,15 @@ export class EstadisticasRepository {
 	}
 
 	/**
-	 * Obtiene el top de participantes con más proyectos
+	 * Obtiene el top de participantes con más presupuesto como director
 	 */
 	async obtenerTopParticipantes(limite: number = 10): Promise<TopParticipante[]> {
 		try {
 			const { data, error } = await supabase
 				.from('top_participantes_proyectos_mv')
 				.select('*')
-				.order('total_proyectos', { ascending: false })
+				.order('monto_total_direccion', { ascending: false })
+				.order('proyectos_en_direccion', { ascending: false })
 				.limit(limite);
 
 			if (error) {
@@ -523,7 +524,8 @@ export class EstadisticasRepository {
 				.from('top_participantes_proyectos_mv')
 				.select('*')
 				.or(`participante_nombre.ilike.%${nombreOEmail}%,email.ilike.%${nombreOEmail}%`)
-				.order('total_proyectos', { ascending: false })
+				.order('monto_total_direccion', { ascending: false })
+				.order('proyectos_en_direccion', { ascending: false })
 				.limit(5);
 
 			if (error) {
