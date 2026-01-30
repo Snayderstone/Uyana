@@ -1,6 +1,14 @@
 <script>
 	import FooterWave from '$lib/icons/footer-wave.svelte';
 	import Socials from '$lib/components/molecules/Socials.svelte';
+	import { beforeNavigate } from '$app/navigation';
+
+	// Scroll al inicio cuando se navega a términos o privacidad
+	beforeNavigate(({ to }) => {
+		if (to?.route?.id?.includes('/terminos') || to?.route?.id?.includes('/privacidad')) {
+			setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 0);
+		}
+	});
 </script>
 
 <footer>
@@ -15,13 +23,23 @@
 				rel="noopener noreferrer">- Dirección de Investigación</a
 			>.
 		</div>
+
 		<div class="credits">
-			Impulsado por <a href="https://www.uce.edu.ec/web/fing" target="_blank" rel="noopener noreferrer"
-				>Sistemas de Información</a
+			Impulsado por <a
+				href="https://www.uce.edu.ec/web/fing"
+				target="_blank"
+				rel="noopener noreferrer">Sistemas de Información</a
 			>.
 		</div>
+
 		<div class="socials">
 			<Socials />
+		</div>
+
+		<div class="legal-links">
+			<a href="/terminos">Términos y Condiciones</a>
+			<span class="separator">•</span>
+			<a href="/privacidad">Política de Privacidad</a>
 		</div>
 	</div>
 </footer>
@@ -42,7 +60,30 @@
 			gap: 15px;
 			font-weight: 600;
 			text-align: center;
-			
+
+			.legal-links {
+				display: flex;
+				align-items: center;
+				gap: 12px;
+				font-size: 90%;
+				color: var(--color--text);
+				margin-bottom: 10px;
+
+				.separator {
+					color: var(--color--text-shade);
+					opacity: 0.6;
+				}
+
+				a {
+					font-weight: 400;
+					transition: opacity 0.3s ease;
+
+					&:hover {
+						opacity: 0.8;
+					}
+				}
+			}
+
 			.copyright {
 				font-size: 100%;
 				color: var(--color--text);
@@ -65,34 +106,23 @@
 		}
 
 		a {
+			position: relative;
+			text-decoration: none;
+
+			&::after {
+				content: '';
+				position: absolute;
+				left: 0;
+				bottom: -2px;
+				width: 100%;
+				height: 2px;
+				background-color: rgb(var(--color--text-rgb));
+				transition: background-color 0.3s ease;
+			}
+
 			&:hover {
 				filter: drop-shadow(0px 0px 3px var(--color--primary));
 			}
 		}
-		a {
-		position: relative;
-		text-decoration: none; /* eliminar underline por defecto */
-		
-		/* subrayado personalizado */
-		&::after {
-			content: "";
-			position: absolute;
-			left: 0;
-			bottom: -2px; /* ajusta la distancia de la raya */
-			width: 100%;
-			height: 2px; /* grosor de la raya */
-			background-color: rgb(var(--color--text-rgb)); /* color secondary */
-			transition: background-color 0.3s ease;
-		}
-
-		&:hover {
-			filter: drop-shadow(0px 0px 3px var(--color--primary));
-
-			/* si quieres cambiar el color de la raya en hover (opcional): */
-			// &::after {
-			//     background-color: rgb(var(--color--primary-rgb));
-			// }
-		}
-	}
 	}
 </style>

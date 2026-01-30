@@ -209,7 +209,7 @@ export const chatWidgetActions = {
 	 * Reinicia el estado del widget completamente
 	 */
 	resetState(): void {
-		console.log('🔄 Reiniciando estado del widget');
+		// console.log('🔄 Reiniciando estado del widget');
 		chatWidgetState.set({
 			isOpen: false,
 			isVisible: true,
@@ -287,12 +287,12 @@ export const chatWidgetActions = {
 		// Si el widget debe mostrarse, asegurar múltiples intentos
 		if (shouldShow) {
 			setTimeout(() => {
-				console.log('🔄 Segundo intento de visibilidad');
+				// console.log('🔄 Segundo intento de visibilidad');
 				this.setVisible(true);
 			}, 100);
 
 			setTimeout(() => {
-				console.log('🔄 Tercer intento de visibilidad');
+				// console.log('🔄 Tercer intento de visibilidad');
 				this.setVisible(true);
 			}, 300);
 		}

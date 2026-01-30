@@ -1,0 +1,172 @@
+# robots.txt - Plataforma UYANA
+# Universidad Central del Ecuador
+# Última actualización: 30 de enero de 2026
+
+# ==============================================================================
+# POLÍTICA GENERAL: ACCESO RESTRINGIDO
+# ==============================================================================
+# Los datos de investigación de la UCE son de propiedad institucional y están
+# protegidos por la Ley Orgánica de Protección de Datos Personales de Ecuador.
+# El uso no autorizado está prohibido.
+# ==============================================================================
+
+# Bloquear todos los robots por defecto
+User-agent: *
+Disallow: /
+
+# Permitir acceso SOLO a páginas institucionales y legales
+Allow: /$
+Allow: /terminos$
+Allow: /privacidad$
+Allow: /about$
+Allow: /contact$
+
+# ==============================================================================
+# BLOQUEOS ESPECÍFICOS - PROTECCIÓN DE DATOS SENSIBLES
+# ==============================================================================
+
+# Bloquear área administrativa completamente
+User-agent: *
+Disallow: /admin/
+Disallow: /login
+
+# Bloquear API endpoints
+Disallow: /api/
+
+# Bloquear datos de investigadores
+Disallow: /investigadores
+Disallow: /participantes
+
+# Bloquear proyectos y estadísticas
+Disallow: /proyectos
+Disallow: /map
+
+# Bloquear recursos y archivos
+Disallow: /static/
+Disallow: /*.json
+Disallow: /*.csv
+Disallow: /*.xlsx
+
+# ==============================================================================
+# BLOQUEOS ESPECÍFICOS POR AGENTE
+# ==============================================================================
+
+# Bloquear bots comerciales y de scraping
+User-agent: GPTBot
+Disallow: /
+
+User-agent: ChatGPT-User
+Disallow: /
+
+User-agent: CCBot
+Disallow: /
+
+User-agent: anthropic-ai
+Disallow: /
+
+User-agent: Claude-Web
+Disallow: /
+
+User-agent: Google-Extended
+Disallow: /
+
+User-agent: PerplexityBot
+Disallow: /
+
+User-agent: Amazonbot
+Disallow: /
+
+User-agent: Applebot-Extended
+Disallow: /
+
+User-agent: Bytespider
+Disallow: /
+
+User-agent: FacebookBot
+Disallow: /
+
+User-agent: Diffbot
+Disallow: /
+
+# Bloquear scrapers comunes
+User-agent: scrapy
+Disallow: /
+
+User-agent: HTTrack
+Disallow: /
+
+User-agent: wget
+Disallow: /
+
+User-agent: curl
+Disallow: /
+
+User-agent: WebCopier
+Disallow: /
+
+User-agent: WebZIP
+Disallow: /
+
+User-agent: SemrushBot
+Disallow: /
+
+User-agent: AhrefsBot
+Disallow: /
+
+User-agent: DotBot
+Disallow: /
+
+User-agent: MJ12bot
+Disallow: /
+
+User-agent: BLEXBot
+Disallow: /
+
+# ==============================================================================
+# PERMISOS LIMITADOS PARA BUSCADORES ACADÉMICOS
+# ==============================================================================
+
+# Google Scholar - Solo páginas informativas
+User-agent: Googlebot-Scholar
+Disallow: /admin/
+Disallow: /api/
+Disallow: /investigadores
+Disallow: /proyectos
+Disallow: /map
+Allow: /about
+Allow: /contact
+
+# Microsoft Academic - Restringido
+User-agent: Bingbot
+Disallow: /admin/
+Disallow: /api/
+Disallow: /investigadores
+Disallow: /proyectos
+Disallow: /map
+
+# ==============================================================================
+# CONFIGURACIÓN DE RASTREO (para robots permitidos)
+# ==============================================================================
+
+# Crawl-delay para prevenir sobrecarga del servidor
+Crawl-delay: 10
+
+# ==============================================================================
+# SITEMAP (Opcional - solo para contenido público autorizado)
+# ==============================================================================
+# Sitemap: https://uyana.uce.edu.ec/sitemap.xml
+
+# ==============================================================================
+# NOTAS IMPORTANTES
+# ==============================================================================
+# 1. Este archivo NO es una medida de seguridad definitiva
+# 2. Los robots maliciosos pueden ignorar estas directivas
+# 3. Implementar CAPTCHA y autenticación para protección adicional
+# 4. Monitorear logs de acceso regularmente
+# 5. Considerar implementar rate limiting a nivel de servidor
+# ==============================================================================
+
+# Información de contacto para consultas sobre acceso
+# Email: investigacion@uce.edu.ec
+# Institución: Universidad Central del Ecuador
+# Departamento: Dirección de Investigación

@@ -20,7 +20,7 @@
 		enabled: true,
 		position: 'bottom-right',
 		showOnPages: [], // Todas las páginas
-		hideOnPages: ['/chat', '/admin', '/api'], // Excepto estas
+		hideOnPages: ['/chat', '/admin', '/api', '/captcha-verification', '/terminos', '/privacidad'], // Excepto estas
 		zIndex: 9999,
 		autoShow: false,
 		showWelcomeMessage: true
