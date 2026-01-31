@@ -244,8 +244,9 @@
 		.filter((v) => v !== null) as number[];
 	// 10. Top 10 coordinadores
 	$: dataCoordinadores = contarPorCampo(proyectos, 'coordinador_director')
-		.sort((a, b) => b.value - a.value) // ordenamos de mayor a menor
-		.slice(0, 10); // tomamos solo los 10 primeros
+		.filter((d) => d.label && d.label.trim().length > 0)
+		.sort((a, b) => b.value - a.value)
+		.slice(0, 10);
 
 	// ================= Colorear datasets ==================
 	function asignarColores(data: { label: string; value: number }[]) {
@@ -271,23 +272,6 @@
 			return { ...item, colorVarName };
 		});
 	}
-	// ===== DEBUG PRESUPUESTO =====
-	$: console.log('[Budget] proyectos (filtrados) len =', proyectos?.length ?? 0);
-	$: console.log('[Budget] proyectosTotales len =', proyectosTotales?.length ?? 0);
-
-	$: console.log('[Budget] presupuestoTotalFiltrado =', presupuestoTotalFiltrado);
-	$: console.log('[Budget] presupuestoTotalGeneral =', presupuestoTotalGeneral);
-
-	// Muestras para detectar formato del monto
-	$: console.log(
-		'[Budget] sample monto filtrado =',
-		proyectos?.find((p) => p.monto_presupuesto_total != null)?.monto_presupuesto_total
-	);
-
-	$: console.log(
-		'[Budget] sample monto total =',
-		proyectosTotales?.find((p) => p.monto_presupuesto_total != null)?.monto_presupuesto_total
-	);
 
 	// Conteo de "montos válidos" vs NaN
 	$: (() => {
@@ -379,7 +363,7 @@
 		yLabel="Proyectos"
 		height={300}
 		performanceMode="low"
-	/> 
+	/>
 	<!-- 12. Duración proyectos -->
 	<DonutChart
 		title="Distribución de presupuesto"

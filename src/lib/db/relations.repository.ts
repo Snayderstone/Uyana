@@ -254,6 +254,8 @@ export const RelacionesSQLRepository = {
         )
       `
       );
+      console.log('[DEBUG] sample row raw:', data?.[0]);
+console.log('[DEBUG] cargos raw:', data?.[0]?.cargos);
 
     if (error) {
       console.error('❌ RelacionesSQLRepository.getProjectParticipantsWithDetails():', error);

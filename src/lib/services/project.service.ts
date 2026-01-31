@@ -248,23 +248,28 @@ async function buildFlatProjects(): Promise<ProyectoFlat[]> {
       facultadesRelacionadasByProject.get(projectId)!.add(facultad);
     }
     const esLider = esRolLider(row.cargo_nombre);
+    const nombre = (row.participante_nombre ?? '').trim();
+    const email = (row.participante_email ?? '').trim();
 
     if (esLider) {
-      // Preferimos facultad del líder
+      // PRIORIDAD: coordinador / director real
       if (facultad) {
         facultadByProject.set(projectId, facultad);
       }
-      const nombre: string = row.participante_nombre ?? '';
-      const email: string = row.participante_email ?? '';
       if (nombre) {
         coordinadorByProject.set(projectId, { nombre, email });
       }
     } else {
-      // Si aún no hay facultad asignada, usamos la primera que aparezca
+      // FACULTAD fallback
       if (facultad && !facultadByProject.has(projectId)) {
         facultadByProject.set(projectId, facultad);
       }
+      //COORDINADOR fallback (primer participante válido)
+      if (!coordinadorByProject.has(projectId) && nombre) {
+        coordinadorByProject.set(projectId, { nombre, email });
+      }
     }
+
   });
 
   // Nº de participantes acreditados por proyecto
