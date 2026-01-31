@@ -108,6 +108,26 @@
 		return `${names[Math.max(1, Math.min(12, mm)) - 1]} ${y}`;
 	}
 	// =========================
+	// FORMATTERS (EJE Y)
+	// =========================
+	const fmtInt = (n: number) => Math.round(n).toString();
+
+	const fmtMoneyCompact = (n: number) => {
+		// compact: 1200 -> "1.2K", 1200000 -> "1.2M"
+		// (en algunos navegadores ES puede mostrar "mil"/"M" según locale;
+		// si prefieres SIEMPRE K/M/B luego lo ajustamos)
+		try {
+			return new Intl.NumberFormat('es', {
+				notation: 'compact',
+				compactDisplay: 'short',
+				maximumFractionDigits: 1
+			}).format(n);
+		} catch {
+			// fallback simple
+			return n.toLocaleString();
+		}
+	};
+	// =========================
 	// AÑOS DISPONIBLES
 	// =========================
 	$: availableYears = (() => {
@@ -319,12 +339,17 @@
 
 	const pad = 2;
 
-	// dividimos el alto en 2 bandas
-	const topMinY = pad; // arriba
-	const topMaxY = 18; // fin de banda superior
+	// Reparto armónico: banda superior + gutter + banda inferior
+	// Banda sup: 2..16  (14 unidades)
+	// Gutter:    16..24 (8 unidades)  <- más aire para separar y para textos
+	// Banda inf: 24..38 (14 unidades)
+	const topMinY = pad; // inicio banda superior
+	const topMaxY = 16; // fin banda superior
 
-	const botMinY = 22; // inicio banda inferior
-	const botMaxY = height - pad; // abajo
+	const midLineY = 20; // línea divisoria visual (centro del gutter)
+
+	const botMinY = 24; // inicio banda inferior
+	const botMaxY = height - pad; // 38
 
 	const x = (i: number): number => (series.length <= 1 ? 0 : (i / (series.length - 1)) * width);
 
@@ -340,6 +365,17 @@
 		return botMaxY - t * (botMaxY - botMinY);
 	};
 	onDestroy(() => clearInterval(timer));
+
+	// =========================
+	// POSICIONES DE TICKS (ETIQUETAS Y)
+	// =========================
+	const yProjMax = topMinY;
+	const yProjMid = (topMinY + topMaxY) / 2;
+	const yProjZero = topMaxY;
+
+	const yBudMax = botMinY;
+	const yBudMid = (botMinY + botMaxY) / 2;
+	const yBudZero = botMaxY;
 </script>
 
 <div class="timeline">
@@ -395,7 +431,7 @@
 	{#if series.length > 0}
 		<svg
 			class="chart"
-			viewBox="0 0 100 40"
+			viewBox="-14 0 114 40"
 			preserveAspectRatio="none"
 			on:mouseleave={() => {
 				hoverPoint = null;
@@ -403,18 +439,59 @@
 			}}
 		>
 			<!-- GRID -->
+			<!-- GRID por banda -->
 			<g>
-				{#each [0.25, 0.5, 0.75] as g}
+				{#each [0.25, 0.5, 0.75] as t}
+					<!-- grid banda superior -->
 					<line
 						x1="0"
 						x2="100"
-						y1={height * (1 - g)}
-						y2={height * (1 - g)}
+						y1={topMaxY - t * (topMaxY - topMinY)}
+						y2={topMaxY - t * (topMaxY - topMinY)}
+						stroke="var(--color--text-inverse-shade)"
+					/>
+					<!-- grid banda inferior -->
+					<line
+						x1="0"
+						x2="100"
+						y1={botMaxY - t * (botMaxY - botMinY)}
+						y2={botMaxY - t * (botMaxY - botMinY)}
 						stroke="var(--color--text-inverse-shade)"
 					/>
 				{/each}
 			</g>
-			<line x1="0" x2="100" y1="20" y2="20" stroke="var(--color--text-inverse-shade)" />
+
+			<!-- separador central (dentro del gutter) -->
+			<line
+				x1="-16"
+				x2="100"
+				y1={midLineY}
+				y2={midLineY}
+				stroke="var(--color--text-inverse-shade)"
+			/>
+
+			<!-- EJE Y (ESCALA DINÁMICA) -->
+			<!-- EJE Y (ESCALA DINÁMICA) -->
+			<g class="y-axis">
+				<!-- Labels de banda (columna izquierda) -->
+				<text y={topMinY} class="band-label" dominant-baseline="hanging">Proyectos.</text>
+				<text y={botMinY} class="band-label" dominant-baseline="hanging">$ Presupuesto.</text>
+
+				<!-- NÚMEROS PROYECTOS (columna derecha) -->
+				<text x="-12" y={topMinY} dominant-baseline="middle">{fmtInt(maxProjects)}</text>
+				<text x="-12" y={(topMinY + topMaxY) / 2} dominant-baseline="middle"
+					>{fmtInt(maxProjects / 2)}</text
+				>
+				<text x="-12" y={topMaxY} dominant-baseline="middle">0</text>
+
+				<!-- NÚMEROS PRESUPUESTO (columna derecha) -->
+				<text x="-14" y={botMinY} dominant-baseline="middle">{fmtMoneyCompact(maxBudget)}</text>
+				<text x="-14" y={(botMinY + botMaxY) / 2} dominant-baseline="middle"
+					>{fmtMoneyCompact(maxBudget / 2)}</text
+				>
+				<text x="-14" y={botMaxY} dominant-baseline="middle">0</text>
+			</g>
+
 			<!-- Solo dibuja cuando el usuario empezó -->
 			{#if hasStarted}
 				<!-- PROYECTOS -->
@@ -576,7 +653,7 @@
 		border-radius: 8px;
 		cursor: pointer;
 		font-weight: 600;
-		background: color-mix(in srgb, var(--color--primary) 65%, transparent);
+		background: color-mix(in srgb, var(--color--callout-accent--info) 65%, transparent);
 	}
 
 	.speed {
@@ -625,5 +702,21 @@
 	}
 	.chart circle {
 		transition: cx 0.4s ease, cy 0.4s ease, opacity 0.3s ease;
+	}
+	.y-axis text {
+		font-size: 2.2px;
+		fill: var(--color--text);
+		user-select: none;
+
+		/* “fondo” para que no se mezcle con la grilla */
+		paint-order: stroke fill;
+		stroke: var(--color--card-background);
+		stroke-width: 1.2px;
+		stroke-linejoin: round;
+	}
+
+	.y-axis .band-label {
+		font-weight: 800;
+		opacity: 0.95;
 	}
 </style>
