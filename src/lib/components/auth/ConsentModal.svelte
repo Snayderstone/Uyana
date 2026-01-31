@@ -71,7 +71,7 @@
 							>Política de Privacidad</a
 						>
 						y entiendo cómo se procesarán mis datos personales conforme a la Ley Orgánica de Protección
-						de Datos Personales de Ecuador.
+						de Datos Personales del Ecuador.
 					</span>
 				</label>
 			</div>
@@ -83,17 +83,17 @@
 						Declaro que utilizaré la información de la plataforma SIGPI
 						<strong
 							>exclusivamente con fines académicos, educativos y de investigación científica</strong
-						>, y que no haré uso comercial de los datos de propiedad de la Dirección de
-						Investigación de la Universidad Central del Ecuador.
+						>, y que no haré uso comercial de los datos de propiedad de la de la Universidad Central
+						del Ecuador que están bajo la responsabilidad de la Dirección de Investigación.
 					</span>
 				</label>
 			</div>
 
 			<div class="warning-box">
 				<p>
-					⚠️ <strong>Aviso Legal:</strong> Los datos de investigación de la UCE son de propiedad institucional
-					y están protegidos por las leyes de propiedad intelectual y protección de datos de Ecuador.
-					El acceso no autorizado o el uso indebido puede estar sujeto a sanciones legales y/o disciplinarias.
+					⚠️ <strong>Aviso Legal:</strong> Los datos expuestos son de propiedad institucional y están
+					protegidos por las leyes de propiedad intelectual y protección de datos de Ecuador. El acceso
+					no autorizado o el uso indebido puede estar sujeto a sanciones legales y/o disciplinarias.
 				</p>
 			</div>
 

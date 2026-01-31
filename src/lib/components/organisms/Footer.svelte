@@ -37,6 +37,7 @@
 		</div>
 
 		<div class="legal-links">
+			<span class="separator">•</span>
 			<a href="/terminos">Términos y Condiciones</a>
 			<span class="separator">•</span>
 			<a href="/privacidad">Política de Privacidad</a>
@@ -57,7 +58,7 @@
 			flex-direction: column;
 			align-items: center;
 			justify-content: center;
-			gap: 15px;
+			gap: 10px;
 			font-weight: 600;
 			text-align: center;
 
@@ -66,7 +67,6 @@
 				align-items: center;
 				gap: 12px;
 				font-size: 90%;
-				color: var(--color--text);
 				margin-bottom: 10px;
 
 				.separator {
@@ -75,7 +75,7 @@
 				}
 
 				a {
-					font-weight: 400;
+					font-weight: 700;
 					transition: opacity 0.3s ease;
 
 					&:hover {
@@ -93,8 +93,11 @@
 			.credits {
 				font-weight: 300;
 				font-size: 90%;
-				color: var(--color--text-shade);
 				margin-bottom: 20px;
+
+				a {
+					font-weight: 700;
+				}
 			}
 
 			.socials {

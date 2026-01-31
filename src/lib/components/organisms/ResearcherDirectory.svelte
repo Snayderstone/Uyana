@@ -108,10 +108,63 @@
 			</div>
 		</div>
 
-		<!-- Filters and Results Bar -->
-		<div class="filters-results-bar">
-			<div class="filters-section">
-				<div class="filter-label">
+		<!-- Filters Section -->
+		<div class="filters-section">
+			<!-- Filtrar por Label -->
+			<div class="filter-label">
+				<svg
+					xmlns="http://www.w3.org/2000/svg"
+					width="18"
+					height="18"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="2"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+				>
+					<polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+				</svg>
+				<span>Filtrar por:</span>
+			</div>
+
+			<!-- Select Facultad -->
+			<select
+				id="facultad-filter"
+				bind:value={selectedFacultad}
+				class="filter-select"
+				aria-label="Filtrar por facultad"
+			>
+				<option value="">Todas las facultades</option>
+				{#each facultades as facultad}
+					<option value={facultad}>{facultad}</option>
+				{/each}
+			</select>
+
+			<!-- Select Carrera -->
+			<select
+				id="carrera-filter"
+				bind:value={selectedCarrera}
+				class="filter-select"
+				aria-label="Filtrar por carrera"
+			>
+				<option value="">Todas las carreras</option>
+				{#each carreras as carrera}
+					<option value={carrera}>{carrera}</option>
+				{/each}
+			</select>
+
+			<!-- Clear Filters Button -->
+			{#if selectedFacultad || selectedCarrera}
+				<button
+					class="clear-filters-btn"
+					on:click={() => {
+						selectedFacultad = '';
+						selectedCarrera = '';
+					}}
+					transition:fade
+					aria-label="Limpiar filtros"
+				>
 					<svg
 						xmlns="http://www.w3.org/2000/svg"
 						width="16"
@@ -123,109 +176,55 @@
 						stroke-linecap="round"
 						stroke-linejoin="round"
 					>
-						<polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+						<line x1="18" y1="6" x2="6" y2="18" />
+						<line x1="6" y1="6" x2="18" y2="18" />
 					</svg>
-					<span>Filtrar por:</span>
-				</div>
+					Limpiar filtros
+				</button>
+			{/if}
+		</div>
 
-				<div class="filters-group">
-					<select
-						id="facultad-filter"
-						bind:value={selectedFacultad}
-						class="filter-select compact"
-						aria-label="Filtrar por facultad"
+		<!-- Results Count -->
+		<div class="results-wrapper">
+			{#if searchTerm || selectedFacultad || selectedCarrera}
+				<div in:fade class="results-badge filtered">
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="16"
+						height="16"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+						stroke-linecap="round"
+						stroke-linejoin="round"
 					>
-						<option value="">Todas las facultades</option>
-						{#each facultades as facultad}
-							<option value={facultad}>{facultad}</option>
-						{/each}
-					</select>
-
-					<select
-						id="carrera-filter"
-						bind:value={selectedCarrera}
-						class="filter-select compact"
-						aria-label="Filtrar por carrera"
-					>
-						<option value="">Todas las carreras</option>
-						{#each carreras as carrera}
-							<option value={carrera}>{carrera}</option>
-						{/each}
-					</select>
-
-					{#if selectedFacultad || selectedCarrera}
-						<button
-							class="clear-filters-btn compact"
-							on:click={() => {
-								selectedFacultad = '';
-								selectedCarrera = '';
-							}}
-							transition:scale
-							aria-label="Limpiar filtros"
-						>
-							<svg
-								xmlns="http://www.w3.org/2000/svg"
-								width="14"
-								height="14"
-								viewBox="0 0 24 24"
-								fill="none"
-								stroke="currentColor"
-								stroke-width="2"
-								stroke-linecap="round"
-								stroke-linejoin="round"
-							>
-								<line x1="18" y1="6" x2="6" y2="18" />
-								<line x1="6" y1="6" x2="18" y2="18" />
-							</svg>
-							Limpiar
-						</button>
-					{/if}
+						<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+						<circle cx="12" cy="10" r="3" />
+					</svg>
+					{filteredInvestigadores.length} resultado{filteredInvestigadores.length !== 1 ? 's' : ''}
 				</div>
-			</div>
-
-			<div class="results-count">
-				{#if searchTerm || selectedFacultad || selectedCarrera}
-					<span in:fade class="results-badge filtered">
-						<svg
-							xmlns="http://www.w3.org/2000/svg"
-							width="14"
-							height="14"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="2"
-							stroke-linecap="round"
-							stroke-linejoin="round"
-						>
-							<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-							<circle cx="12" cy="10" r="3" />
-						</svg>
-						{filteredInvestigadores.length} resultado{filteredInvestigadores.length !== 1
-							? 's'
-							: ''}
-					</span>
-				{:else}
-					<span class="results-badge total">
-						<svg
-							xmlns="http://www.w3.org/2000/svg"
-							width="14"
-							height="14"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="2"
-							stroke-linecap="round"
-							stroke-linejoin="round"
-						>
-							<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-							<circle cx="9" cy="7" r="4" />
-							<path d="M22 21v-2a4 4 0 0 0-3-3.87" />
-							<path d="M16 3.13a4 4 0 0 1 0 7.75" />
-						</svg>
-						{investigadores.length} investigador{investigadores.length !== 1 ? 'es' : ''}
-					</span>
-				{/if}
-			</div>
+			{:else}
+				<div class="results-badge total">
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="16"
+						height="16"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+					>
+						<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+						<circle cx="9" cy="7" r="4" />
+						<path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+						<path d="M16 3.13a4 4 0 0 1 0 7.75" />
+					</svg>
+					{investigadores.length} investigador{investigadores.length !== 1 ? 'es' : ''}
+				</div>
+			{/if}
 		</div>
 	</div>
 
@@ -391,10 +390,11 @@
 	}
 
 	.search-filter-container {
-		margin-bottom: 2.5rem;
 		display: flex;
 		flex-direction: column;
-		gap: 1.25rem;
+		gap: 1rem;
+		width: 100%;
+		margin-bottom: 2.5rem;
 	}
 
 	// Search Box Principal
@@ -405,8 +405,6 @@
 	.search-box {
 		position: relative;
 		width: 100%;
-		max-width: 900px;
-		margin: 0 auto;
 
 		.search-icon {
 			position: absolute;
@@ -422,8 +420,8 @@
 			width: 100%;
 			padding: 1rem 3.5rem 1rem 3.5rem;
 			font-size: 1.0625rem;
-			border: 2px solid rgba(var(--color--text-rgb), 0.15);
-			border-radius: 16px;
+			border: 1.5px solid rgba(138, 43, 226, 0.3);
+			border-radius: 10px;
 			background: var(--color--card-background);
 			color: var(--color--text);
 			transition:
@@ -474,90 +472,51 @@
 		}
 	}
 
-	// Filters and Results Bar
-	.filters-results-bar {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: 1.5rem;
-		padding: 1rem 1.5rem;
-		background: var(--color--card-background);
-		border: 1px solid rgba(var(--color--text-rgb), 0.08);
-		border-radius: 12px;
-		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
-		flex-wrap: wrap;
-
-		@include for-phone-only {
-			flex-direction: column;
-			align-items: stretch;
-			gap: 1rem;
-			padding: 1rem;
-		}
-	}
-
+	// Filters Section (contenedor unificado)
 	.filters-section {
+		width: 100%;
+		padding: 1.25rem;
+		background: var(--color--card-background);
+		border: 1.5px solid rgba(138, 43, 226, 0.3);
+		border-radius: 10px;
+		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
 		display: flex;
-		align-items: center;
+		flex-direction: column;
 		gap: 1rem;
-		flex: 1;
-		flex-wrap: wrap;
-
-		@include for-phone-only {
-			flex-direction: column;
-			align-items: stretch;
-		}
 	}
 
 	.filter-label {
 		display: flex;
 		align-items: center;
-		gap: 0.5rem;
-		font-size: 0.875rem;
+		gap: 0.625rem;
+		font-size: 0.9375rem;
 		font-weight: 600;
 		color: var(--color--text);
-		white-space: nowrap;
-		opacity: 0.8;
 
 		svg {
 			color: var(--color--primary);
-			opacity: 0.7;
-		}
-
-		@include for-phone-only {
-			display: none;
-		}
-	}
-
-	.filters-group {
-		display: flex;
-		align-items: center;
-		gap: 0.75rem;
-		flex-wrap: wrap;
-		flex: 1;
-
-		@include for-phone-only {
-			flex-direction: column;
-			width: 100%;
+			opacity: 0.8;
 		}
 	}
 
 	.filter-select {
-		padding: 0.625rem 1rem;
-		font-size: 0.875rem;
-		border: 1.5px solid rgba(var(--color--text-rgb), 0.12);
+		width: 100%;
+		padding: 0.875rem 1rem;
+		font-size: 0.9375rem;
+		border: 1.5px solid rgba(var(--color--text-rgb), 0.15);
 		border-radius: 8px;
 		background: var(--color--page-background);
 		color: var(--color--text);
 		cursor: pointer;
 		transition:
 			border-color 0.15s ease,
-			box-shadow 0.15s ease;
+			box-shadow 0.15s ease,
+			transform 0.15s ease;
 		font-family: inherit;
-		min-width: 180px;
-
-		&.compact {
-			font-weight: 500;
-		}
+		max-height: 300px;
+		overflow-y: auto;
+		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+		font-weight: 500;
 
 		&:focus {
 			outline: none;
@@ -574,73 +533,63 @@
 			background: var(--color--card-background);
 			color: var(--color--text);
 			padding: 0.5rem;
-		}
-
-		@include for-phone-only {
-			width: 100%;
+			max-height: 40px;
 		}
 	}
 
 	.clear-filters-btn {
-		padding: 0.625rem 1rem;
-		font-size: 0.8125rem;
+		width: 100%;
+		padding: 1rem 1.25rem;
+		font-size: 0.9375rem;
 		font-weight: 600;
-		color: var(--color--primary);
-		background: rgba(var(--color--primary-rgb), 0.08);
-		border: 1.5px solid rgba(var(--color--primary-rgb), 0.2);
-		border-radius: 8px;
+		color: var(--color--text-inverse);
+		background: var(--color--primary);
+		border: 1.5px solid var(--color--primary);
+		border-radius: 10px;
 		cursor: pointer;
 		transition:
 			transform 0.15s ease,
-			box-shadow 0.15s ease;
-		white-space: nowrap;
+			box-shadow 0.15s ease,
+			background-color 0.15s ease;
 		font-family: inherit;
 		display: flex;
 		align-items: center;
-		gap: 0.375rem;
-
-		&.compact {
-			svg {
-				stroke-width: 2.5;
-			}
-		}
+		justify-content: center;
+		gap: 0.5rem;
+		box-shadow: 0 2px 6px rgba(var(--color--primary-rgb), 0.25);
 
 		&:hover {
-			background: var(--color--primary);
-			color: var(--color--text-inverse);
-			border-color: var(--color--primary);
-			transform: translateY(-1px);
-			box-shadow: 0 2px 8px rgba(var(--color--primary-rgb), 0.25);
+			background: var(--color--primary-shade);
+			border-color: var(--color--primary-shade);
+			transform: translateY(-2px);
+			box-shadow: 0 4px 12px rgba(var(--color--primary-rgb), 0.35);
 		}
 
 		&:active {
 			transform: translateY(0);
 		}
-
-		@include for-phone-only {
-			width: 100%;
-			justify-content: center;
-		}
 	}
 
-	.results-count {
+	// Results Wrapper
+	.results-wrapper {
+		width: 100%;
+		padding: 1rem 1.25rem;
+		background: var(--color--card-background);
+		border: 1.5px solid rgba(138, 43, 226, 0.3);
+		border-radius: 10px;
+		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
 		display: flex;
 		align-items: center;
-		justify-content: flex-end;
-
-		@include for-phone-only {
-			justify-content: center;
-		}
+		justify-content: center;
 	}
 
 	.results-badge {
-		display: inline-flex;
+		display: flex;
 		align-items: center;
-		gap: 0.5rem;
-		padding: 0.5rem 1rem;
-		font-size: 0.875rem;
+		justify-content: center;
+		gap: 0.625rem;
+		font-size: 0.9375rem;
 		font-weight: 600;
-		border-radius: 8px;
 		white-space: nowrap;
 		transition: transform 0.15s ease;
 
@@ -650,14 +599,10 @@
 
 		&.total {
 			color: var(--color--text);
-			background: rgba(var(--color--text-rgb), 0.06);
-			border: 1px solid rgba(var(--color--text-rgb), 0.1);
 		}
 
 		&.filtered {
 			color: var(--color--primary);
-			background: rgba(var(--color--primary-rgb), 0.1);
-			border: 1px solid rgba(var(--color--primary-rgb), 0.2);
 			animation: pulse 0.3s ease-in-out;
 		}
 	}
@@ -686,8 +631,8 @@
 
 	.researcher-card {
 		background: var(--color--card-background);
-		border: 1px solid rgba(var(--color--text-rgb), 0.1);
-		border-radius: 16px;
+		border: 1.5px solid rgba(138, 43, 226, 0.3);
+		border-radius: 10px;
 		overflow: hidden;
 		transition:
 			transform 0.2s ease,
@@ -829,7 +774,7 @@
 		font-weight: 600;
 		color: var(--color--primary);
 		background: rgba(var(--color--primary-rgb), 0.1);
-		border-radius: 6px;
+		border-radius: 10px;
 		text-decoration: none;
 		transition: transform 0.15s ease;
 		border: 1px solid transparent;

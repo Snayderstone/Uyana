@@ -152,8 +152,9 @@
 				</div>
 				<h2>Verificación de Seguridad</h2>
 				<p class="description">
-					Para proteger los datos de investigación de la Universidad Central del Ecuador, por favor
-					complete la verificación a continuación.
+					Por motivos de seguridad, es necesario confirmar que el acceso está siendo realizado por
+					una persona y no por un sistema automatizado. Por favor, complete la verificación CAPTCHA
+					para continuar.
 				</p>
 			</div>
 
